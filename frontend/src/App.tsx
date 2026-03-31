@@ -18,7 +18,6 @@ function App() {
 
 
     // fetch("http://backend:3000/treks")
-    
     fetch("http://localhost:3000/treks")
       .then((res) => res.json())
       .then((data) => setTreks(data));
