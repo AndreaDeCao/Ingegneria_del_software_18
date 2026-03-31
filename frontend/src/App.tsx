@@ -13,9 +13,9 @@ function App() {
 
 
   useEffect(() => {
-    //PER USO LOCALE (localhost:3000) -> fetch("http://localhost:3000/treks")
+    //PER USO LOCALE (localhost:3000) -> fetch("http://localhost:3000/treks") 
     //PER USO CON DOCKER (backend:3000) -> fetch("http://backend:3000/treks")
-
+    //va solo localhost
 
     // fetch("http://backend:3000/treks")
     fetch("http://localhost:3000/treks")

@@ -1,4 +1,4 @@
-FROM node:22-alpine
+FROM node:22-bullseye
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
@@ -6,7 +6,7 @@ COPY . .
 
 EXPOSE 5173
 
-CMD ["npm", "run", "dev"]
+# CMD ["npm", "run", "dev"]
 
 #--host è fondamentale per vedere il sito fuori dal container
-# CMD ["npm", "run", "dev", "--", "--host"] 
+CMD ["npm", "run", "dev", "--", "--host"] 
