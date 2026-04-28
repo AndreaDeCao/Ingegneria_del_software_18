@@ -1,0 +1,72 @@
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  border: 0.5px solid var(--border);
+  overflow: hidden;
+  min-width: 200px;
+  flex: 0 0 200px;
+  transition: transform 0.18s;
+  cursor: pointer;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+}
+
+.cardImg {
+  height: 110px;
+  width: 100%;
+  background: linear-gradient(135deg, var(--accent) 0%, #1b4332 100%);
+}
+
+.cardBody {
+  padding: 12px;
+}
+
+.cardName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.cardMeta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.badgeEasy   { background: #d8f3dc; color: #308662; }
+.badgeMedium { background: #f3e8c3; color: #f0b812; }
+.badgeHard   { background: #fde2e4; color: #ae1d29; }
+
+.badgeDuration {
+  background: var(--accent-light);
+  color: var(--accent-text);
+}
+
+.cardFooter {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 0.5px solid var(--border);
+}
+
+.friends {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.likes {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 500;
+}

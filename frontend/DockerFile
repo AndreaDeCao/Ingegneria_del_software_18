@@ -9,4 +9,5 @@ EXPOSE 5173
 # CMD ["npm", "run", "dev"]
 
 #--host è fondamentale per vedere il sito fuori dal container
-CMD ["npm", "run", "dev", "--", "--host"] 
+# CMD ["npm", "run", "dev", "--", "--host"] 
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"] 

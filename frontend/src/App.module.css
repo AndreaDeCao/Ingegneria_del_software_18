@@ -1,0 +1,46 @@
+.main {
+  padding: 2rem 1.5rem;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.sectionCount {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.cardsRow {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: none;
+}
+
+.cardsRow::-webkit-scrollbar {
+  display: none;
+}
+
+.message {
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding: 2rem 0;
+}
+
+.messageError {
+  font-size: 14px;
+  color: #c0392b;
+  padding: 2rem 0;
+}
