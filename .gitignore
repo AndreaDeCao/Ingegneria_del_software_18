@@ -143,3 +143,5 @@ vite.config.ts.timestamp-*
 
 # idea filefolder
 .idea/
+
+.vite/
