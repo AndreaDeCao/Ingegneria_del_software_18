@@ -140,3 +140,6 @@ vite.config.ts.timestamp-*
 
 # Temporary files
 *.txt
+
+# idea filefolder
+.idea/
