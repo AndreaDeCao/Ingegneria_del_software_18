@@ -75,5 +75,20 @@ The goal is to design and develop a system that improves the hiking experience b
 ## Project Info
 
 * **Course:** Software Engineering
+
 * **Deliverable:** D1
 * **Deadline:** 27/03/2026
+
+* **Deliverable:** Pitch
+* **Deadline:** 01/04/2026
+
+* **Deliverable:** D2
+* **Deadline:** 24/04/2026
+
+***
+
+* **Deliverable:** D3
+* **Deadline:** 15/05/2026
+
+* **Deliverable:** D4
+* **Deadline:** 07/06/2026
