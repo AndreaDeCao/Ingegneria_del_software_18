@@ -9,8 +9,8 @@ services:
       - ./backend:/app                # sync codice
     networks:
       - app-network
-    depends_on:
-      - database
+    # depends_on:
+    #   - database
 
   frontend:
     build: ./frontend
@@ -28,20 +28,20 @@ services:
     depends_on:
       - backend
 
-  database:
-    image: postgres:15
-    container_name: postgres-db
-    restart: always
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: dolomate
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data   # PERSISTENZA
-    networks:
-      - app-network
+  # database:
+  #   image: postgres:15
+  #   container_name: postgres-db
+  #   restart: always
+  #   environment:
+  #     POSTGRES_USER: user
+  #     POSTGRES_PASSWORD: password
+  #     POSTGRES_DB: dolomate
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data   # PERSISTENZA
+  #   networks:
+  #     - app-network
 
 # NETWORK condivisa tra i servizi
 networks:
@@ -49,7 +49,7 @@ networks:
     driver: bridge
 
 # VOLUMI (persistenti)
-volumes:
-  postgres_data:           # salva dati DB anche dopo stop container
+# volumes:
+#   postgres_data:           # salva dati DB anche dopo stop container
   # backend_node_modules:   # evita conflitti node_modules
   # frontend_node_modules:  # evita conflitti node_modules

@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
-// import TrekCard from "./components/TrekCard";
-import TrekCard, { type Trek } from "./components/TrekCard";
+import TrekCard from "./components/TrekCard";
+import type { Trek } from "./types/Trek";
+// import TrekCard, { type Trek } from "./components/TrekCard";
 import Navbar from "./components/Navbar";
+
 import { useTheme } from "./hooks/useTheme";
+import type { User } from "./types/User";
+// import type {Treks} from "./types/Trek";
+
 import "./index.css";
 import styles from "./App.module.css";
 
@@ -14,10 +19,13 @@ function App() {
 
   const { theme, toggle } = useTheme();
 
+  // const [treks, setTreks] = useState<Trek[]>([]);
   const [treks, setTreks] = useState<Trek[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState<string | null>(null);
+
+  const [users, setUsers] = useState<User[]>([]);
 
   // useEffect(() => {
   //   //PER USO LOCALE (localhost:3000) -> fetch("http://localhost:3000/treks") 
@@ -31,17 +39,42 @@ function App() {
   // }, []);
   useEffect(() => {
     // setLoading(true);
+  //   fetch(`${API_BASE}/treks`)
+  //   .then((res) => {
+  //     if (!res.ok) throw new Error("Server error: " + res.status);
+  //     return res.json();
+  //   })
+  //   .then((data) => setTreks(data))
+  //     .catch((err: Error) => {
+  //     console.error("Failed to fetch treks:", err);
+  //     setError(err.message);
+  //     })
+  //     .finally(() => setLoading(false));
+  // }, []);
     fetch(`${API_BASE}/treks`)
-    .then((res) => {
-      if (!res.ok) throw new Error("Server error: " + res.status);
-      return res.json();
-    })
-    .then((data) => setTreks(data))
+      .then((res) => {
+        if (!res.ok) throw new Error("Errore percorsi: " + res.status);
+        return res.json();
+      })
+      .then((data) => setTreks(data))
       .catch((err: Error) => {
-      console.error("Failed to fetch treks:", err);
-      setError(err.message);
+        console.error("Errore fetch percorsi:", err);
+        setError(err.message);
       })
       .finally(() => setLoading(false));
+    }, []);
+    
+
+  useEffect(() => {
+    fetch(`${API_BASE}/users`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Errore utenti: " + res.status);
+        return res.json();
+      })
+      .then((data) => setUsers(data))
+      .catch((err: Error) => {
+        console.error("Errore fetch utenti:", err);
+      });
   }, []);
 
   return (
@@ -68,6 +101,20 @@ function App() {
           </div>
         )}
       </main>
+
+      <hr />
+
+      <h2>Utenti registrati</h2>
+
+      <div>
+        {users.map((user) => (
+          <div key={user._id} style={{ border: "1px solid gray", margin: "10px", padding: "10px" }}>
+            <p><strong>Nome:</strong> {user.nome} {user.cognome}</p>
+            <p><strong>Email:</strong> {user.email}</p>
+            <p><strong>Nickname:</strong> {user.nickname}</p>
+          </div>
+        ))}
+      </div>
     </>
   );
 }

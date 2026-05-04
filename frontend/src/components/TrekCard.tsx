@@ -1,5 +1,5 @@
 import styles from "./TrekCard.module.css";
-
+// import type { Trek } from "../types/Trek";
 export type Trek = {
   id: number;
   name: string;

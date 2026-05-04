@@ -8,76 +8,23 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 
 const app = express();
-app.use(cors());
+app.use(cors()); //permette richieste dal frontend
 app.use(express.json());
 
+const userRoutes = require("./routes/usersRoutes");
+const trekRoutes = require("./routes/treksRoutes");
+
+app.use("/treks", trekRoutes);
+
+app.use("/users", userRoutes);
+
+
+
 // Connessione a MongoDB
-mongoose.connect(process.env.MONGODB_URI, { family: 4 })
+mongoose.connect(process.env.MONGODB_URI, { family: 4 })  // Imposta family: 4 per forzare l'uso di IPv4
   .then(() => console.log("MongoDB connesso!"))
   .catch(err => console.error("Errore connessione:", err));
 
-// dati finti
-const treks = [
-  {
-    id: 1,
-    name: "Monte Bondone",
-    difficulty: "Medio",
-    duration: "3h",
-  },
-  {
-    id: 2,
-    name: "Lago di Molveno",
-    difficulty: "Facile",
-    duration: "2h",
-  },
-  {
-    id: 3,
-    name: "TEMP",
-    difficulty: "Difficile",
-    duration: "4h",
-  },
-  {
-    id: 4,
-    name: "TEMP2",
-    difficulty: "Difficile",
-    duration: "5h",
-  },
-  {
-    id: 5,
-    name: "TEMP3",
-    difficulty: "Facile",
-    duration: "0.5h",
-  },
-  {
-    id: 6,
-    name: "TEMP4",
-    difficulty: "Medio",
-    duration: "3h",
-  },
-  {
-    id: 7,
-    name: "TEMP5",
-    difficulty: "Facile",
-    duration: "2h",
-  },
-  {
-    id: 8,
-    name: "TEMP6",
-    difficulty: "Difficile",
-    duration: "4h",
-  },
-  {
-    id: 9,
-    name: "TEMP7",
-    difficulty: "Facile",
-    duration: "1h",
-  }
-];
-
-// endpoint
-app.get("/treks", (req, res) => {
-  res.json(treks);
-});
 
 /**
  * Restituisce un singolo percorso in base all'id.
