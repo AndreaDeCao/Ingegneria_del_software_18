@@ -3,6 +3,7 @@ import TrekCard from "./components/TrekCard";
 import type { Trek } from "./types/Trek";
 // import TrekCard, { type Trek } from "./components/TrekCard";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer"; //!!!
 
 import { useTheme } from "./hooks/useTheme";
 import type { User } from "./types/User";
@@ -79,43 +80,51 @@ function App() {
 
   return (
     <>
-      <Navbar theme={theme} onToggleTheme={toggle} />
+      <div className={styles.app}>
+        <Navbar theme={theme} onToggleTheme={toggle} />
+        
+        <main className={styles.main}>
+          <div className={styles.sectionHead}>
+            <h2 className={styles.sectionTitle}>Di tendenza nelle vicinanze</h2>
+            {!loading && !error && (
+              <span className={styles.sectionCount}>{treks.length} percorsi</span>
+            )}
+          </div>
 
-      <main className={styles.main}>
-        <div className={styles.sectionHead}>
-          <h2 className={styles.sectionTitle}>Di tendenza nelle vicinanze</h2>
-          {!loading && !error && (
-            <span className={styles.sectionCount}>{treks.length} percorsi</span>
+          {loading && <p className={styles.message}>Caricamento percorsi...</p>}
+          {error && <p className={styles.messageError}>Impossibile caricare i percorsi: {error}</p>}
+          {!loading && !error && treks.length === 0 && (
+            <p className={styles.message}>Nessun percorso trovato nelle vicinanze.</p>
           )}
+
+          {!loading && !error && (
+            <div className={styles.cardsRow}>
+              {treks.slice(0, 3).map((trek) => (
+                <TrekCard key={trek.id} trek={trek} />
+              ))}
+            </div>
+          )}
+        </main>
+        
+        <hr />
+
+        <h2>Utenti registrati</h2>
+
+        <div>
+          {users.map((user) => (
+            <div key={user._id} style={{ border: "1px solid gray", margin: "10px", padding: "10px" }}>
+              <p><strong>Nome:</strong> {user.nome} {user.cognome}</p>
+              <p><strong>Email:</strong> {user.email}</p>
+              <p><strong>Nickname:</strong> {user.nickname}</p>
+            </div>
+          ))}
         </div>
-
-        {loading && <p className={styles.message}>Caricamento percorsi...</p>}
-        {error && <p className={styles.messageError}>Impossibile caricare i percorsi: {error}</p>}
-        {!loading && !error && treks.length === 0 && (
-          <p className={styles.message}>Nessun percorso trovato nelle vicinanze.</p>
-        )}
-
-        {!loading && !error && (
-          <div className={styles.cardsRow}>
-          {treks.map((trek) => (<TrekCard key={trek.id} trek={trek} />))}
-          </div>
-        )}
-      </main>
-
-      <hr />
-
-      <h2>Utenti registrati</h2>
-
-      <div>
-        {users.map((user) => (
-          <div key={user._id} style={{ border: "1px solid gray", margin: "10px", padding: "10px" }}>
-            <p><strong>Nome:</strong> {user.nome} {user.cognome}</p>
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Nickname:</strong> {user.nickname}</p>
-          </div>
-        ))}
+        
+        <Footer />
       </div>
     </>
   );
 }
 export default App;
+
+//riga 120
