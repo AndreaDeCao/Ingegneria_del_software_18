@@ -19,7 +19,7 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 function App() {
 
   const { theme, toggle } = useTheme();
-
+  
   // const [treks, setTreks] = useState<Trek[]>([]);
   const [treks, setTreks] = useState<Trek[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +27,8 @@ function App() {
   const [error, setError] = useState<string | null>(null);
 
   const [users, setUsers] = useState<User[]>([]);
+
+  const MAX_TREK_CARDS = 11;
 
   // useEffect(() => {
   //   //PER USO LOCALE (localhost:3000) -> fetch("http://localhost:3000/treks") 
@@ -83,42 +85,56 @@ function App() {
       <div className={styles.app}>
         <Navbar theme={theme} onToggleTheme={toggle} />
         
-        <main className={styles.main}>
-          <div className={styles.sectionHead}>
-            <h2 className={styles.sectionTitle}>Di tendenza nelle vicinanze</h2>
-            {!loading && !error && (
-              <span className={styles.sectionCount}>{treks.length} percorsi</span>
-            )}
-          </div>
+          <main className={styles.main}>
 
-          {loading && <p className={styles.message}>Caricamento percorsi...</p>}
-          {error && <p className={styles.messageError}>Impossibile caricare i percorsi: {error}</p>}
-          {!loading && !error && treks.length === 0 && (
-            <p className={styles.message}>Nessun percorso trovato nelle vicinanze.</p>
-          )}
+            <div className={styles.contentLayout}> {/* Contenitore principale */}
+              
+              
+              <section className={styles.leftColumn}> {/* COLONNA SINISTRA */}
+                
+                <div className={styles.sectionHead}>
+                  <h2 className={styles.sectionTitle}>Di tendenza nelle vicinanze</h2>
+                  {!loading && !error && (
+                    <span className={styles.sectionCount}>{treks.length} percorsi</span>
+                  )}
+                </div>
 
-          {!loading && !error && (
-            <div className={styles.cardsRow}>
-              {treks.slice(0, 3).map((trek) => (
-                <TrekCard key={trek.id} trek={trek} />
-              ))}
+                {loading && <p className={styles.message}>Caricamento percorsi...</p>}
+                {error && <p className={styles.messageError}>Impossibile caricare i percorsi: {error}</p>}
+                {!loading && !error && treks.length === 0 && (
+                  <p className={styles.message}>Nessun percorso trovato nelle vicinanze.</p>
+                )}
+
+                {!loading && !error && ( 
+                  <div className={styles.cardsRow}> 
+                    {treks.slice(0, MAX_TREK_CARDS).map((trek) => ( /* mostra massimo N card */
+                      <TrekCard key={trek.id} trek={trek} />
+                    ))}
+                  </div>
+                )}
+
+              </section>
+
+              {/* COLONNA DESTRA */}
+              <section className={styles.rightColumn}>
+                <h2>Utenti registrati</h2>
+                <div>
+                  {users.map((user) => (
+                    <div key={user._id} style={{ border: "1px solid gray", margin: "10px", padding: "10px" }}>
+                      <p><strong>Nome:</strong> {user.nome} {user.cognome}</p>
+                      <p><strong>Email:</strong> {user.email}</p>
+                      <p><strong>Nickname:</strong> {user.nickname}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
             </div>
-          )}
-        </main>
+          </main>
         
         <hr />
 
-        <h2>Utenti registrati</h2>
-
-        <div>
-          {users.map((user) => (
-            <div key={user._id} style={{ border: "1px solid gray", margin: "10px", padding: "10px" }}>
-              <p><strong>Nome:</strong> {user.nome} {user.cognome}</p>
-              <p><strong>Email:</strong> {user.email}</p>
-              <p><strong>Nickname:</strong> {user.nickname}</p>
-            </div>
-          ))}
-        </div>
+        
         
         <Footer />
       </div>

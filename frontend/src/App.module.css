@@ -1,8 +1,6 @@
 .main {
   padding: 2rem 1.5rem;
-
   display: flex;
-  gap: 1.5rem;
   flex: 1;
 }
 
@@ -57,26 +55,23 @@
 
 
 /* Sezione principale divisa in due colonne: la parte sinistra (main) occupa 3/4 dello spazio, mentre la parte destra (sidebar) occupa 1/4. La sidebar è “compatta” e rimane visibile quando si scorre la pagina, grazie alla proprietà position: sticky. */
-/* LEFT = 3/4 */
-.left {
-  flex: 3;
+
+/* contenitore principale */
+.contentLayout {
   display: flex;
-  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 1400px; /* !! per limitare la larghezza massima */
+  margin: 0 auto; /* per centrare */
+  
 }
 
-/* RIGHT = 1/4 */
-.right {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 
-  padding: 1rem;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
 
-  height: fit-content; /* sidebar “compatta” */
-  position: sticky;
-  top: 80px; /* resta visibile sotto navbar */
+.leftColumn {
+  width: 75%;
+}
+
+.rightColumn {
+  width: 25%;
 }
