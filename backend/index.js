@@ -13,11 +13,11 @@ app.use(express.json());
 
 const userRoutes = require("./routes/usersRoutes");
 const trekRoutes = require("./routes/treksRoutes");
+const activityRoutes = require("./routes/activityRoutes"); //!!!
 
 app.use("/treks", trekRoutes);
-
 app.use("/users", userRoutes);
-
+app.use("/activities", activityRoutes); //!!!
 
 
 // Connessione a MongoDB

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import TrekCard from "./components/TrekCard";
+import ActivityCard from "./components/ActivityCard"; //!!!
+
 import type { Trek } from "./types/Trek";
 // import TrekCard, { type Trek } from "./components/TrekCard";
 import Navbar from "./components/Navbar";
@@ -7,6 +9,8 @@ import Footer from "./components/Footer"; //!!!
 
 import { useTheme } from "./hooks/useTheme";
 import type { User } from "./types/User";
+import type { Activity } from "./types/Activity";
+
 // import type {Treks} from "./types/Trek";
 
 import "./index.css";
@@ -22,6 +26,8 @@ function App() {
   
   // const [treks, setTreks] = useState<Trek[]>([]);
   const [treks, setTreks] = useState<Trek[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +86,18 @@ function App() {
       });
   }, []);
 
+  useEffect(() => {
+    fetch(`${API_BASE}/activities`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Errore attività: " + res.status);
+        return res.json();
+      })
+      .then((data) => setActivities(data))
+      .catch((err: Error) => {
+        console.error("Errore fetch attività:", err);
+      });
+  }, []);
+
   return (
     <>
       <div className={styles.app}>
@@ -116,18 +134,30 @@ function App() {
               </section>
 
               {/* COLONNA DESTRA */}
-              <section className={styles.rightColumn}>
-                <h2>Utenti registrati</h2>
-                <div>
-                  {users.map((user) => (
-                    <div key={user._id} style={{ border: "1px solid gray", margin: "10px", padding: "10px" }}>
-                      <p><strong>Nome:</strong> {user.nome} {user.cognome}</p>
-                      <p><strong>Email:</strong> {user.email}</p>
-                      <p><strong>Nickname:</strong> {user.nickname}</p>
+                <section className={styles.rightColumn}>
+                  
+                  <div className={styles.sectionHead}>
+                    <h2 className={styles.sectionTitle}>Attività in programma </h2>
+                    {!loading && !error && (
+                      <span className={styles.sectionCount}>{activities.length} attività</span>
+                    )}
+                  </div>
+
+                  {loading && <p className={styles.message}>Caricamento attività...</p>}
+                  {error && <p className={styles.messageError}>Impossibile caricare le attività: {error}</p>}
+                  {!loading && !error && treks.length === 0 && (
+                    <p className={styles.message}>Nessuna attività trovata nelle vicinanze.</p>
+                  )}
+
+                  {!loading && !error && (
+                    <div className={styles.activitiesColumn}>
+                      {activities.map((activity) => (
+                        <ActivityCard key={activity.id} activity={activity} />
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </section>
+                  )}
+
+                </section>
 
             </div>
           </main>
