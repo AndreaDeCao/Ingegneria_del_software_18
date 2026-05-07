@@ -92,3 +92,58 @@ The goal is to design and develop a system that improves the hiking experience b
 
 * **Deliverable:** D4
 * **Deadline:** 07/06/2026
+
+```
+Ingegneria_del_software_18
+├─ backend
+│  ├─ .dockerignore
+│  ├─ controllers
+│  │  ├─ treksController.js
+│  │  └─ usersController.js
+│  ├─ Dockerfile
+│  ├─ index.js
+│  ├─ models
+│  │  ├─ treks.js
+│  │  └─ users.js
+│  ├─ package-lock.json
+│  └─ package.json
+├─ docker-compose.yml
+├─ frontend
+│  ├─ .dockerignore
+│  ├─ Dockerfile
+│  ├─ eslint.config.js
+│  ├─ index.html
+│  ├─ package-lock.json
+│  ├─ package.json
+│  ├─ public
+│  │  ├─ logo_ing_sw.svg
+│  │  ├─ moon.svg
+│  │  └─ sun.svg
+│  ├─ README.md
+│  ├─ src
+│  │  ├─ App.module.css
+│  │  ├─ App.tsx
+│  │  ├─ components
+│  │  │  ├─ Navbar.module.css
+│  │  │  ├─ Navbar.tsx
+│  │  │  ├─ TrekCard.module.css
+│  │  │  └─ TrekCard.tsx
+│  │  ├─ hooks
+│  │  │  └─ useTheme.ts
+│  │  ├─ index.css
+│  │  ├─ main.tsx
+│  │  └─ types
+│  │     ├─ Trek.ts
+│  │     └─ User.ts
+│  ├─ tsconfig.app.json
+│  ├─ tsconfig.json
+│  ├─ tsconfig.node.json
+│  └─ vite.config.ts
+├─ LICENSE
+├─ package-lock.json
+├─ package.json
+├─ README.md
+└─ temp
+   └─ mail_sender.js
+
+```

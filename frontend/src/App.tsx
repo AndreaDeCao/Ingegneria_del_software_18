@@ -1,121 +1,94 @@
-import { useEffect, useState } from "react";
-import TrekCard from "./components/TrekCard";
-import type { Trek } from "./types/Trek";
-// import TrekCard, { type Trek } from "./components/TrekCard";
+// import { useEffect, useState } from "react";
+// import TrekCard from "./components/TrekCard"
+
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Navbar from "./components/Navbar";
-
 import { useTheme } from "./hooks/useTheme";
-import type { User } from "./types/User";
-// import type {Treks} from "./types/Trek";
+import { AuthProvider } from "./auth/AuthProvider";
+import ProtectedRoute from "./auth/ProtectedRoute";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Treks from "./pages/Treks";
+import MyTreks from "./pages/MyTreks";
+import Friends from "./pages/Friends";
 
-import "./index.css";
-import styles from "./App.module.css";
-
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-// const API_BASE = import.meta.env.VITE_API_URL; // Se VITE_API_URL è definita, la useremo come base URL per le API. Altrimenti, se non è definita, problemi, pensare se mettere valore di default
-
-
-function App() {
-
+function AppLayout({ children }: { children: React.ReactNode }) { // AppLayout è un componente che definisce la struttura comune a tutte le pagine dell'applicazione, includendo la Navbar e gestendo il tema. Tutte le pagine (Login, Register, Treks, MyTreks, Friends) saranno renderizzate all'interno di AppLayout, che si occupa di mostrare la Navbar e applicare il tema scelto dall'utente.
   const { theme, toggle } = useTheme();
-
+  //  // const [treks, setTreks] = useState<Trek[]>([]);
   // const [treks, setTreks] = useState<Trek[]>([]);
-  const [treks, setTreks] = useState<Trek[]>([]);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
 
-  const [error, setError] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null);
 
-  const [users, setUsers] = useState<User[]>([]);
-
-  // useEffect(() => {
-  //   //PER USO LOCALE (localhost:3000) -> fetch("http://localhost:3000/treks") 
-  //   //PER USO CON DOCKER (backend:3000) -> fetch("http://backend:3000/treks")
-  //   //va solo localhost
-
-  //   // fetch("http://backend:3000/treks")
-  //   fetch("http://localhost:3000/treks")
-  //     .then((res) => res.json())
-  //     .then((data) => setTreks(data));
-  // }, []);
-  useEffect(() => {
-    // setLoading(true);
-  //   fetch(`${API_BASE}/treks`)
-  //   .then((res) => {
-  //     if (!res.ok) throw new Error("Server error: " + res.status);
-  //     return res.json();
-  //   })
-  //   .then((data) => setTreks(data))
-  //     .catch((err: Error) => {
-  //     console.error("Failed to fetch treks:", err);
-  //     setError(err.message);
-  //     })
-  //     .finally(() => setLoading(false));
-  // }, []);
-    fetch(`${API_BASE}/treks`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Errore percorsi: " + res.status);
-        return res.json();
-      })
-      .then((data) => setTreks(data))
-      .catch((err: Error) => {
-        console.error("Errore fetch percorsi:", err);
-        setError(err.message);
-      })
-      .finally(() => setLoading(false));
-    }, []);
-    
-
-  useEffect(() => {
-    fetch(`${API_BASE}/users`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Errore utenti: " + res.status);
-        return res.json();
-      })
-      .then((data) => setUsers(data))
-      .catch((err: Error) => {
-        console.error("Errore fetch utenti:", err);
-      });
-  }, []);
-
+  // const [users, setUsers] = useState<User[]>([]);
   return (
     <>
       <Navbar theme={theme} onToggleTheme={toggle} />
-
-      <main className={styles.main}>
-        <div className={styles.sectionHead}>
-          <h2 className={styles.sectionTitle}>Di tendenza nelle vicinanze</h2>
-          {!loading && !error && (
-            <span className={styles.sectionCount}>{treks.length} percorsi</span>
-          )}
-        </div>
-
-        {loading && <p className={styles.message}>Caricamento percorsi...</p>}
-        {error && <p className={styles.messageError}>Impossibile caricare i percorsi: {error}</p>}
-        {!loading && !error && treks.length === 0 && (
-          <p className={styles.message}>Nessun percorso trovato nelle vicinanze.</p>
-        )}
-
-        {!loading && !error && (
-          <div className={styles.cardsRow}>
-          {treks.map((trek) => (<TrekCard key={trek.id} trek={trek} />))}
-          </div>
-        )}
-      </main>
-
-      <hr />
-
-      <h2>Utenti registrati</h2>
-
-      <div>
-        {users.map((user) => (
-          <div key={user._id} style={{ border: "1px solid gray", margin: "10px", padding: "10px" }}>
-            <p><strong>Nome:</strong> {user.nome} {user.cognome}</p>
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Nickname:</strong> {user.nickname}</p>
-          </div>
-        ))}
-      </div>
+      {children}
     </>
   );
 }
-export default App;
+
+export default function App() {
+  return (
+    <AuthProvider> {/* AuthProvider è un componente che fornisce il contesto di autenticazione a tutta l'applicazione. Avvolgendo il BrowserRouter e tutte le rotte all'interno di AuthProvider, garantiamo che qualsiasi componente possa accedere alle informazioni sull'utente autenticato e alle funzioni di login/logout tramite il contesto. */}
+      <BrowserRouter>
+        <Routes>
+          <Route
+            path="/"     /*UGUALE A /treks   */
+            element={
+              <AppLayout>
+                <Treks />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <AppLayout>
+                <Login />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <AppLayout>
+                <Register />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/treks"
+            element={
+              <AppLayout>
+                <Treks />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/my-treks"
+            element={
+              <AppLayout>
+                <ProtectedRoute>
+                  <MyTreks />
+                </ProtectedRoute>
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/friends"
+            element={
+              <AppLayout>
+                <ProtectedRoute>
+                  <Friends />
+                </ProtectedRoute>
+              </AppLayout>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}
