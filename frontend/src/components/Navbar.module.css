@@ -1,7 +1,7 @@
 .header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   padding: 1rem 1.5rem;
   background: var(--card-bg);
   border-bottom: 0.5px solid var(--border);
@@ -29,7 +29,7 @@
   flex-shrink: 0;
 }
 
-.logoName {/* Il nome del logo è un testo che rappresenta il nome dell'app. Viene visualizzato a sinistra dell'icona del logo. */
+.logoName {/* Il nome del logo è un testo che rappresenta il nome dell'app. Viene visualizzato a destra dell'icona del logo. */
   font-family: var(--font-display);
   font-size: 20px;
   font-weight: 700;
@@ -44,7 +44,8 @@
 .nav {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  margin-left: auto
 }
 
 .navLink {
@@ -70,7 +71,7 @@
 .themeBtn {
   width: 34px;
   height: 34px;
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   border: 0.5px solid var(--border);
   /* background: var(--bg-secondary); */ /* non funziona, non so il perchè*/
   /* background: red !important; */ /* per test*/
@@ -85,4 +86,132 @@
 
 .themeBtn:hover {
   background: var(--accent-light);
+}
+
+.rightControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hamburger {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  border: 0.5px solid var(--border);
+  background: var(--card-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background 0.2s;
+  justify-content: center;
+  align-items: center;
+  margin-right: 10px;
+}
+
+.hamburger:hover{
+  background: var(--accent-light);
+}
+
+.dropdown {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: var(--card-bg);
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  gap: 4px;
+  position: absolute;
+  top: 60px;
+  left:16px;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  min-width: 180px;
+}
+
+.menuItem {
+  font-size: 16px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  padding:10px 16px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.menuItem:hover {
+  background: var(--accent-light);
+  color: var(--accent-text);
+  font-family: var(--font-body);
+}
+
+.subMenu {
+  display: flex;
+  flex-direction: column;
+  padding-left: 16px;
+  gap: 2px;
+}
+
+.subMenuItem {
+  font-size: 14px;
+  font-family: var(--font-body);
+  color: var(--text-secondary);
+  padding: 6px 16px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.subMenuItem:hover {
+  background: var(--accent-light);
+  color: var(--accent-text);
+  font-family: var(--font-body);
+}
+
+.chevron {
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid var(--text-secondary);
+  border-bottom: 2px solid var(--text-secondary);
+  transform: rotate(45deg);
+  transition: transform 0.2s;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: 0.2s;
+}
+
+.avatar:hover {
+  opacity: 0.75;
 }

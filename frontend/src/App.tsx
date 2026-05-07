@@ -105,7 +105,7 @@ function App() {
       <hr />
 
       <h2>Utenti registrati</h2>
-
+ 
       <div>
         {users.map((user) => (
           <div key={user._id} style={{ border: "1px solid gray", margin: "10px", padding: "10px" }}>

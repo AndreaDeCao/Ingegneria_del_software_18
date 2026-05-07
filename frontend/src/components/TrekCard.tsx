@@ -1,7 +1,7 @@
 import styles from "./TrekCard.module.css";
 // import type { Trek } from "../types/Trek";
 export type Trek = {
-  id: number;
+  id: string;
   name: string;
   difficulty: "Facile" | "Medio" | "Difficile";
   duration: string

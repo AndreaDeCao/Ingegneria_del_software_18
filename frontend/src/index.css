@@ -110,7 +110,7 @@ code {
   background: var(--code-bg);
 } */
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500;700&display=swap');
 
 /* ── Theme tokens ── */
 :root {
@@ -125,7 +125,7 @@ code {
   --border:          rgba(0, 0, 0, 0.09);
 
   --font-display: 'Playfair Display', serif;
-  --font-body:    'DM Sans', sans-serif;
+  --font-body: system-ui, sans-serif;
 
   --radius-sm: 8px;
   --radius-md: 12px;

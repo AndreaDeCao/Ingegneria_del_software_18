@@ -20,3 +20,21 @@ exports.createTrek = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+
+/**
+ * Restituisce un percorso in base all'id
+ * @param {string} id - id percorso
+ * @returns {object} percorso restituito
+ */
+
+exports.getTreksById = async (req, res) => {
+  try {
+    const trek = await Trek.findOne({id: parseInt(req.params.id)});
+    if(!trek){
+      return res.status(404).json({error: "Percorso non trovato"});
+    }
+    res.json(trek);
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+}
