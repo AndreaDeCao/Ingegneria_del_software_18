@@ -12,16 +12,16 @@ function ActivityCard({ activity }: ActivityCardProps) {
       <div className={styles.cardBody}>
 
         <h3 className={styles.cardTitle}>
-          {activity.titolo}
+          {activity.title}
         </h3>
 
         <p className={styles.cardDescription}>
-          {activity.descrizione}
+          {activity.description}
         </p>
 
         <div className={styles.cardMeta}>
           <span className={styles.badge}>
-            👥 {activity.nMaxPartecipanti}
+            👥 {activity.maxParticipants}
           </span>
 
           <span className={styles.badge}>

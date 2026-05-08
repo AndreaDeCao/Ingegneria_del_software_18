@@ -40,12 +40,6 @@ app.get("/treks/:id", (req, res) => {
   res.json(trek);
 });
 
-app.get("/activities/:id", (req, res) => {
-  const activity = activities.find(a => a.id === parseInt(req.params.id));
-  if (!activity) return res.status(404).json({ error: "Attività non trovata" });
-  res.json(activity);
-});
-
 app.listen(3000, () => {
   console.log("Server running on http://localhost:3000");
 });

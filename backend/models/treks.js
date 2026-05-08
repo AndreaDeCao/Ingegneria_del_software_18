@@ -8,16 +8,16 @@ const TrekSchema = new mongoose.Schema({ //fatta le prime due pagine (185 sentie
     enum: ["Facile", "Medio", "Difficile"]
   },
   description: String,
-  nPercorsoSAT: String,   // Numero percorso SAT (es: E101)
+  SatRouteNumber: String,   // Numero percorso SAT (es: E101)
 
   duration: String,       // Durata stimata in ore (es: "3 ore")
-  lunghezzaKm: Number,    // Lunghezza del trekking in km
-  dislivello: Number,     // Dislivello in metri
+  lengthKm: Number,    // Lunghezza del trekking in km
+  elevationGain: Number,     // Dislivello in metri
 
-  tracciaGPX: String,     // URL o percorso del file GPX
-  mappaOffline: String,   // URL o percorso del file mappa offline
-  puntoPartenza: String,  // Indirizzo o coordinate GPS del punto di partenza
-  puntoArrivo: String,    // Indirizzo o coordinate GPS del punto di arrivo
+  /*tracciaGPX: String,     // URL o percorso del file GPX
+  mappaOffline: String,*/   // URL o percorso del file mappa offline
+  startPoint: String,  // Indirizzo o coordinate GPS del punto di partenza
+  endPoint: String,    // Indirizzo o coordinate GPS del punto di arrivo
 
   condizioniAttuali: String,  // Condizioni meteo/percorribilità
 

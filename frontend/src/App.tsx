@@ -35,6 +35,7 @@ function App() {
   const [users, setUsers] = useState<User[]>([]);
 
   const MAX_TREK_CARDS = 11;
+  const MAX_TREK_ACTIVITIES = 5;
 
   // useEffect(() => {
   //   //PER USO LOCALE (localhost:3000) -> fetch("http://localhost:3000/treks") 
@@ -113,7 +114,7 @@ function App() {
                 <div className={styles.sectionHead}>
                   <h2 className={styles.sectionTitle}>Di tendenza nelle vicinanze</h2>
                   {!loading && !error && (
-                    <span className={styles.sectionCount}>{treks.length} percorsi</span>
+                    <span className={styles.sectionCount}>{MAX_TREK_CARDS} percorsi</span>
                   )}
                 </div>
 
@@ -139,19 +140,19 @@ function App() {
                   <div className={styles.sectionHead}>
                     <h2 className={styles.sectionTitle}>Attività in programma </h2>
                     {!loading && !error && (
-                      <span className={styles.sectionCount}>{activities.length} attività</span>
+                      <span className={styles.sectionCount}>{MAX_TREK_ACTIVITIES} attività</span>
                     )}
                   </div>
 
                   {loading && <p className={styles.message}>Caricamento attività...</p>}
                   {error && <p className={styles.messageError}>Impossibile caricare le attività: {error}</p>}
-                  {!loading && !error && treks.length === 0 && (
+                  {!loading && !error && activities.length === 0 && (
                     <p className={styles.message}>Nessuna attività trovata nelle vicinanze.</p>
                   )}
 
                   {!loading && !error && (
                     <div className={styles.activitiesColumn}>
-                      {activities.map((activity) => (
+                      {activities.slice(0, MAX_TREK_ACTIVITIES).map((activity) => ( /* mostra massimo N card */
                         <ActivityCard key={activity.id} activity={activity} />
                       ))}
                     </div>
