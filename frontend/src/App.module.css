@@ -23,6 +23,9 @@
   color: var(--text-secondary);
 }
 
+.sectionTreks {
+}
+
 .cardsRow {
   display: flex;
   gap: 14px;

@@ -112,7 +112,7 @@ function App() {
               
               <section className={styles.leftColumn}> {/* COLONNA SINISTRA */}
                 
-                <div className={styles.sectionTreks}>
+                <div className={styles.sectionTreks}> {/* SEZIONE PERCORSI */}
                   <div className={styles.sectionHead}>
                     <h2 className={styles.sectionTitle}>Di tendenza nelle vicinanze</h2>
                     {!loading && !error && (
@@ -135,13 +135,34 @@ function App() {
                   )}
                 </div>
 
-                <div className={styles.sectionDiary}>
+                <div className={styles.sectionDiary}> {/* SEZIONE DIARY */}
                   <div className={styles.sectionHead}>
                     <h2 className={styles.sectionTitle}>Diary</h2>
                     {!loading && !error && (
                       <span className={styles.sectionCount}>{MAX_DIARY_CARDS} Voci diario </span>
                     )}
                   </div>
+
+                  {loading && <p className={styles.message}>Caricamento voci diario...</p>}
+                  {error && <p className={styles.messageError}>Impossibile caricare le voci diario: {error}</p>}
+                  {!loading && !error && treks.length === 0 && ( //fix me: diaryEntries.length === 0
+                    <p className={styles.message}>Nessuna voce diario trovata.</p>
+                  )}
+                  
+                  
+                  {!loading && !error && ( 
+                    <div className={styles.cardsRow}> 
+                      {treks.slice(0, MAX_DIARY_CARDS).map((trek) => ( //fix me: 
+                        <TrekCard key={trek.id} trek={trek} /> 
+                        
+                        /*fix me: 
+                          styles.cardsRow dovrebbe essere styles.entriesRow
+                          la riga dopo dovrebbe essere diaryEntries.slice(0, MAX_DIARY_CARDS).map((entry) => ( <DiaryEntryCard key={entry.id} entry={entry} />
+                        */
+                      ))}
+                    </div>
+                  )}
+
                 </div>
 
               </section>
