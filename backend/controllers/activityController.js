@@ -1,4 +1,4 @@
-const Trek = require("../models/activities");
+const Activity = require("../models/activities");
 
 // GET tutti le attivita
 exports.getActivities = async (req, res) => {

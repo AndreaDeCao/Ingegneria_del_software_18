@@ -2,7 +2,7 @@ export type Activity = {
   id: string;
   titolo: string;
   descrizione: string;
-  dataAttivita: FunctionStringCallback;
+  //data: string;
   nMaxPartecipanti: number;
   stato: string;
 
