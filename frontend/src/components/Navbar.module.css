@@ -12,13 +12,13 @@
 }
 
 
-.logo {/* Il logo è composto da un'icona e dal nome dell'app. Viene visualizzato a sinistra nella navbar. */
+.logo {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.logoIcon {/* L'icona del logo è un quadrato colorato che rappresenta visivamente l'app. Viene visualizzato a sinistra del nome dell'app. */
+.logoIcon {
   width: 34px;
   height: 34px;
   border-radius: var(--radius-sm);
@@ -29,9 +29,9 @@
   flex-shrink: 0;
 }
 
-.logoName {/* Il nome del logo è un testo che rappresenta il nome dell'app. Viene visualizzato a destra dell'icona del logo. */
+.logoName {
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: 30px;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.3px;
@@ -49,10 +49,11 @@
 }
 
 .navLink {
-  font-size: 13px;
+  height: 34px;
+  font-size: 14px;
   color: var(--text-secondary);
   padding: 5px 14px;
-  border-radius: 20px;
+  border-radius: var(--radius-sm);
   border: none;
   background: transparent;
   transition: background 0.2s, color 0.2s;
@@ -73,7 +74,6 @@
   height: 34px;
   border-radius: var(--radius-sm);
   border: 0.5px solid var(--border);
-  /* background: var(--bg-secondary); */ /* non funziona, non so il perchè*/
   /* background: red !important; */ /* per test*/
   background: color-mix(in srgb, var(--card-bg) 60%, white);
   display: flex;
@@ -108,8 +108,6 @@
   cursor: pointer;
   color: var(--text-primary);
   transition: background 0.2s;
-  justify-content: center;
-  align-items: center;
   margin-right: 10px;
 }
 
@@ -136,7 +134,6 @@
 
 .menuItem {
   font-size: 16px;
-  font-weight: 500;
   font-family: var(--font-body);
   color: var(--text-primary);
   padding:10px 16px;
