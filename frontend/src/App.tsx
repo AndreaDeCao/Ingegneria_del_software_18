@@ -1,15 +1,24 @@
 import { useEffect, useState } from "react";
-import TrekCard from "./components/TrekCard";
-import ActivityCard from "./components/ActivityCard"; //!!!
+import { Routes, Route } from "react-router-dom";
+import { useTheme } from "./hooks/useTheme";
+
+//import TrekCard from "./components/TrekCard";
+//import ActivityCard from "./components/ActivityCard"; //!!!
 
 import type { Trek } from "./types/Trek";
+import type { User } from "./types/User";
+import type { Activity } from "./types/Activity";
 // import TrekCard, { type Trek } from "./components/TrekCard";
+
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer"; //!!!
 
-import { useTheme } from "./hooks/useTheme";
-import type { User } from "./types/User";
-import type { Activity } from "./types/Activity";
+import Home from "./pages/Home";
+import Privacy from "./pages/Privacy";
+import Termini from "./pages/Termini";
+import Contatti from "./pages/Contatti";
+
+
 
 // import type {Treks} from "./types/Trek";
 
@@ -27,16 +36,17 @@ function App() {
   // const [treks, setTreks] = useState<Trek[]>([]);
   const [treks, setTreks] = useState<Trek[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
-
-  const [loading, setLoading] = useState(true);
-
-  const [error, setError] = useState<string | null>(null);
-
   const [users, setUsers] = useState<User[]>([]);
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+
+  /*
   const MAX_TREK_CARDS = 11; //treks.length
   const MAX_ACTIVITY_CARDS = 7; //activities.length
   const MAX_DIARY_CARDS = 5; //diaryEntries.length
+  */
 
   // useEffect(() => {
   //   //PER USO LOCALE (localhost:3000) -> fetch("http://localhost:3000/treks") 
@@ -104,102 +114,25 @@ function App() {
     <>
       <div className={styles.app}>
         <Navbar theme={theme} onToggleTheme={toggle} />
-        
-          <main className={styles.main}>
+          <Routes>
+            {/* HOME */}
+            <Route
+              path="/"
+              element={
+                <Home
+                  treks={treks}
+                  activities={activities}
+                  loading={loading}
+                  error={error}
+                />
+              }
+            />
 
-            <div className={styles.contentLayout}> {/* Contenitore principale */}
-              
-              
-              <section className={styles.leftColumn}> {/* COLONNA SINISTRA */}
-                
-                <div className={styles.sectionTreks}> {/* SEZIONE PERCORSI */}
-                  <div className={styles.sectionHead}>
-                    <h2 className={styles.sectionTitle}>Di tendenza nelle vicinanze</h2>
-                    {!loading && !error && (
-                      <span className={styles.sectionCount}>{MAX_TREK_CARDS} percorsi</span>
-                    )}
-                  </div>
-
-                  {loading && <p className={styles.message}>Caricamento percorsi...</p>}
-                  {error && <p className={styles.messageError}>Impossibile caricare i percorsi: {error}</p>}
-                  {!loading && !error && treks.length === 0 && (
-                    <p className={styles.message}>Nessun percorso trovato nelle vicinanze.</p>
-                  )}
-
-                  {!loading && !error && ( 
-                    <div className={styles.cardsRow}> 
-                      {treks.slice(0, MAX_TREK_CARDS).map((trek) => ( /* mostra massimo N card */
-                        <TrekCard key={trek.id} trek={trek} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className={styles.sectionDiary}> {/* SEZIONE DIARY */}
-                  <div className={styles.sectionHead}>
-                    <h2 className={styles.sectionTitle}>Diary</h2>
-                    {!loading && !error && (
-                      <span className={styles.sectionCount}>{MAX_DIARY_CARDS} Voci diario </span>
-                    )}
-                  </div>
-
-                  {loading && <p className={styles.message}>Caricamento voci diario...</p>}
-                  {error && <p className={styles.messageError}>Impossibile caricare le voci diario: {error}</p>}
-                  {!loading && !error && treks.length === 0 && ( //fix me: diaryEntries.length === 0
-                    <p className={styles.message}>Nessuna voce diario trovata.</p>
-                  )}
-                  
-                  
-                  {!loading && !error && ( 
-                    <div className={styles.cardsRow}> 
-                      {treks.slice(0, MAX_DIARY_CARDS).map((trek) => ( //fix me: 
-                        <TrekCard key={trek.id} trek={trek} /> 
-                        
-                        /*fix me: 
-                          styles.cardsRow dovrebbe essere styles.entriesRow
-                          la riga dopo dovrebbe essere diaryEntries.slice(0, MAX_DIARY_CARDS).map((entry) => ( <DiaryEntryCard key={entry.id} entry={entry} />
-                        */
-                      ))}
-                    </div>
-                  )}
-
-                </div>
-
-              </section>
-
-              
-               <section className={styles.rightColumn}> {/* COLONNA DESTRA */}
-                 
-                 <div className={styles.sectionHead}>
-                   <h2 className={styles.sectionTitle}>Attività in programma </h2>
-                   {!loading && !error && (
-                     <span className={styles.sectionCount}>{MAX_ACTIVITY_CARDS} attività</span>
-                   )}
-                 </div>
-
-                 {loading && <p className={styles.message}>Caricamento attività...</p>}
-                 {error && <p className={styles.messageError}>Impossibile caricare le attività: {error}</p>}
-                 {!loading && !error && activities.length === 0 && (
-                   <p className={styles.message}>Nessuna attività trovata nelle vicinanze.</p>
-                 )}
-
-                 {!loading && !error && (
-                   <div className={styles.activitiesColumn}>
-                     {activities.slice(0, MAX_ACTIVITY_CARDS).map((activity) => ( /* mostra massimo N card */
-                       <ActivityCard key={activity.id} activity={activity} />
-                     ))}
-                   </div>
-                 )}
-
-               </section>
-
-            </div>
-          </main>
-        
-        <hr />
-
-        
-        
+            {/* ALTRE PAGINE */}
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/termini" element={<Termini />} />
+            <Route path="/contatti" element={<Contatti />} />
+          </Routes>
         <Footer />
       </div>
     </>

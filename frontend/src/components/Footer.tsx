@@ -1,4 +1,5 @@
 import styles from "./Footer.module.css";
+import { Link } from "react-router-dom";
 
 export default function Footer() {
   return (
@@ -11,9 +12,9 @@ export default function Footer() {
 
       {/* Parte destra: link */}
       <div className={styles.footerRight}>
-        <a href="#" className={styles.footerLink}>Privacy</a>
-        <a href="#" className={styles.footerLink}>Termini</a>
-        <a href="#" className={styles.footerLink}>Contatti</a>
+        <Link to="/privacy" className={styles.footerLink}>Privacy</Link>
+        <Link to="/termini" className={styles.footerLink}>Termini</Link>
+        <Link to="/contatti" className={styles.footerLink}>Contatti</Link>
       </div>
 
     </footer>

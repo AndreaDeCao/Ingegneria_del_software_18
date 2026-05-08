@@ -1,4 +1,5 @@
 import styles from "./Navbar.module.css";
+import { Link } from "react-router-dom";
 
 /**
  * Il componente Navbar è responsabile di visualizzare la barra di navigazione dell'applicazione, che include il logo, i link di navigazione e un pulsante per cambiare tema.
@@ -22,9 +23,10 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
         <div className={styles.logoIcon}>
           {theme === "dark" ? <LogoIcon /> : <LogoIconInverted />}
         </div>
-        <span className={styles.logoName}>
+        
+        <Link to="/" className={styles.logoName}>
           Dolo<span>Mate</span>
-        </span>
+        </Link>
       </div>
 
       <nav className={styles.nav}>
