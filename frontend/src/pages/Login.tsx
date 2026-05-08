@@ -26,7 +26,7 @@ export default function Login() {
           setSubmitting(true);
           try {
             await login({ email, password });
-            const to = location.state?.from ?? "/treks";
+            const to = location.state?.from ?? "/home";
             navigate(to, { replace: true });
           } catch (err) {
             setError(err instanceof Error ? err.message : "Errore login");
