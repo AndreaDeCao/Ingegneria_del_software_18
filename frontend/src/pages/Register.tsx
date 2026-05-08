@@ -15,6 +15,7 @@ export default function Register() {
   const [submitting, setSubmitting] = useState(false);
 
   //TODO: aggiungere validazione dei campi (es. email valida, password abbastanza complessa, ecc.)
+  //TODO: aggiungi  pwd confirm e captcha per evitare registrazioni automatiche
   //FIXME: migliorare il display degli errori
   //FIXME: migliorare il design della pagina di registrazione
   return (
