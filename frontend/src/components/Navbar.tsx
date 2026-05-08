@@ -19,14 +19,15 @@ const MoonIcon = () => ( <img src="/moon.svg" alt="Dark mode" width="16" height=
  * @param {{label: string, path: string}[]} items - Sottosezioni con path
  * @param {boolean} isOpen - Se la sezione è aperta
  * @param {function} onToggle - Funzione per aprire/chiudere sezione
+ * @param {function} onNavigate - Funzione per navigare alla pagina selezionata
  */
-function DropdownItem({label, items, isOpen, onToggle}: {
+function DropdownItem({label, items, isOpen, onToggle, onNavigate}: {
   label: string; 
   items: {label: string, path: string}[];
   isOpen: boolean;
   onToggle: () => void;
+  onNavigate: (path: string) => void; 
 }) {
-  const navigate = useNavigate();
   return (
     <div style={{width: "100%"}}>
      <button className={styles.menuItem} onClick={onToggle}>
@@ -36,7 +37,7 @@ function DropdownItem({label, items, isOpen, onToggle}: {
      {isOpen && (
       <div className={styles.subMenu}>
         {items.map((item) => (
-            <button key={item.label} className={styles.subMenuItem} onClick={() => navigate(item.path)}>
+            <button key={item.label} className={styles.subMenuItem} onClick={() => onNavigate(item.path)}>
               {item.label}
             </button>
           ))}
@@ -54,13 +55,19 @@ function DropdownItem({label, items, isOpen, onToggle}: {
 export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openItem, setOpenItem] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    setMenuOpen(false);
+    setOpenItem(null);
+  }
   return(
   <div style={{ position: "relative" }}>
     <header className={`${styles.header} ${menuOpen ? styles.menuOpenHeader : ""}`}>
       <button className={styles.hamburger} onClick={() => setMenuOpen(!menuOpen)}> 
           {menuOpen ? "✕" : "☰"}
         </button>
-      <div className={styles.logo}>
+      <div className={styles.logo} onClick={() => handleNavigate("/")} style={{ cursor: "pointer"}}>
         <div className={styles.logoIcon}>
           {theme === "dark" ? <LogoIcon /> : <LogoIconInverted />}
         </div>
@@ -76,7 +83,7 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
         <button className={styles.themeBtn} onClick={onToggleTheme}>
           {theme === "dark" ? <SunIcon /> : <MoonIcon />}
         </button>
-        <button className={styles.avatar}> OB </button>
+        <button className={styles.avatar} onClick={() => handleNavigate("/account/profilo")}> OB </button>
       </nav>
     </header>
 
@@ -85,42 +92,46 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
       <DropdownItem
         label="Account"
         items={[
-          { label: "Profilo", path: "/profilo" },
-          { label: "Sicurezza", path: "/sicurezza" },
-          { label: "Policy/Cookies", path: "/policy" },
+          { label: "Profilo", path: "/account/profilo" },
+          { label: "Sicurezza", path: "/account/sicurezza" },
+          { label: "Policy/Cookies", path: "/account/policy" },
         ]}
         isOpen={openItem === "Account"}
-        onToggle={() => setOpenItem(openItem === "Account" ? null : "Account")}/>
+        onToggle={() => setOpenItem(openItem === "Account" ? null : "Account")}
+        onNavigate={handleNavigate}/>
 
         <DropdownItem
         label="Diario"
         items={[
-          { label: "1", path: "/diario-1" },
-          { label: "2", path: "/diario-2" },
-          { label: "3", path: "/diario-3" },
+          { label: "1", path: "/diario/1" },
+          { label: "2", path: "/diario/2" },
+          { label: "3", path: "/diario/3" },
         ]}
         isOpen={openItem === "Diario"}
-        onToggle={() => setOpenItem(openItem === "Diario" ? null : "Diario")}/>
+        onToggle={() => setOpenItem(openItem === "Diario" ? null : "Diario")}
+        onNavigate={handleNavigate}/>
 
         <DropdownItem
         label="Attività"
         items={[
-          { label: "1", path: "/attivita-1" },
-          { label: "2", path: "/attivita-2" },
-          { label: "3", path: "/attivita-3" },
+          { label: "1", path: "/attivita/1" },
+          { label: "2", path: "/attivita/2" },
+          { label: "3", path: "/attivita/3" },
         ]}
-        isOpen={openItem === "Account"}
-        onToggle={() => setOpenItem(openItem === "Account" ? null : "Account")}/>
+        isOpen={openItem === "Attività"}
+        onToggle={() => setOpenItem(openItem === "Attività" ? null : "Attività")}
+        onNavigate={handleNavigate}/>
 
         <DropdownItem
         label="Versione"
         items={[
-          { label: "1", path: "/vers-1" },
-          { label: "2", path: "/vers-2" },
-          { label: "3", path: "/vers-3" },
+          { label: "1", path: "/vers/1" },
+          { label: "2", path: "/vers/2" },
+          { label: "3", path: "/vers/3" },
         ]}
-        isOpen={openItem === "Account"}
-        onToggle={() => setOpenItem(openItem === "Account" ? null : "Account")}/>
+        isOpen={openItem === "Versione"}
+        onToggle={() => setOpenItem(openItem === "Versione" ? null : "Versione")}
+        onNavigate={handleNavigate}/>
      </nav>
     )}
   </div>

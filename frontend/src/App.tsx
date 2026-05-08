@@ -2,11 +2,16 @@ import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { useTheme } from "./hooks/useTheme";
 import Navbar from "./components/Navbar";
 import Homepage from "./pages/homepage/Homepage";
-import Profilo from "./pages/Account/Profilo";
-import Sicurezza from "./pages/Account/Sicurezza";
-import PolicyAndCookies from "./pages/Account/Policy";
+import AccountPage from "./pages/account/AccountPage";
+import DiarioPage from "./pages/account/DiarioPage";
+import AttivitaPage from "./pages/account/AttivitaPage";
+import VersionePage from "./pages/account/VersionePage";
 import "./index.css"
 
+/**
+ * Layout comune a tutte le pagine (comprende Navbar)
+ * @param {React.ReactNode} children - Contenuto della pagina 
+ */
 function AppLayout({ children }: { children: React.ReactNode}) {
   const { theme, toggle } = useTheme();
   return(
@@ -17,16 +22,23 @@ function AppLayout({ children }: { children: React.ReactNode}) {
   );
 }
 
+/**
+ * Componenete principale con routing dell'app
+ * @returns {JSX.Element} App con routing
+ */
 export default function App() {
   return(
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<AppLayout><Homepage /></AppLayout>}/> 
-        <Route path="/profilo" element={<AppLayout><Profilo /></AppLayout>}/> 
-        <Route path="/sicurezza" element={<AppLayout><Sicurezza /></AppLayout>}/> 
-        <Route path="/policy" element={<AppLayout><PolicyAndCookies /></AppLayout>}/> 
-        <Route path="*" element={<Navigate to="/" replace/>}/> 
-      </Routes>
+      <AppLayout>
+        <Routes>
+          <Route path="/" element={<Homepage />}/> 
+          <Route path="/account/:sezione" element={<AccountPage />}/> 
+          <Route path="/diario/:sezione" element={<DiarioPage />} />
+          <Route path="/attivita/:sezione" element={<AttivitaPage />} />
+          <Route path="/vers/:sezione" element={<VersionePage />} />
+          <Route path="*" element={<Navigate to="/" replace/>}/> 
+        </Routes>
+      </AppLayout>
     </BrowserRouter>
   );
 }
