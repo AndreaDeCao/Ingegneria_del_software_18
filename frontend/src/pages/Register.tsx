@@ -14,6 +14,9 @@ export default function Register() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  //TODO: aggiungere validazione dei campi (es. email valida, password abbastanza complessa, ecc.)
+  //FIXME: migliorare il display degli errori
+  //FIXME: migliorare il design della pagina di registrazione
   return (
     <div style={{ padding: 24, maxWidth: 520 }}>
       <h2>Registrazione</h2>

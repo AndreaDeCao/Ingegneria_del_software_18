@@ -32,7 +32,7 @@ function AppLayout({ children }: { children: React.ReactNode }) { // AppLayout �
 export default function App() {
   return (
     <AuthProvider> {/* AuthProvider è un componente che fornisce il contesto di autenticazione a tutta l'applicazione. Avvolgendo il BrowserRouter e tutte le rotte all'interno di AuthProvider, garantiamo che qualsiasi componente possa accedere alle informazioni sull'utente autenticato e alle funzioni di login/logout tramite il contesto. */}
-      <BrowserRouter>
+      <BrowserRouter> {/* BrowserRouter è un componente che gestisce la navigazione dell'applicazione. Avvolge tutte le rotte e consente di definire i percorsi e i componenti associati a ciascun percorso. In questo caso, tutte le rotte sono definite all'interno di BrowserRouter, il che significa che la navigazione tra le pagine (Login, Register, Treks, MyTreks, Friends) sarà gestita da React Router. */}
         <Routes>
           <Route
             path="/"     /*UGUALE A /treks   */

@@ -12,6 +12,9 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  //TODO: aggiungere validazione dei campi 
+  //FIXME: migliorare il display degli errori se le credenziali non sono valide può comunque segnare sessione scaduta invece che credenziali errate
+  //FIXME: migliorare il design della pagina di login
   return (
     <div style={{ padding: 24, maxWidth: 420 }}>
       <h2>Login</h2>
