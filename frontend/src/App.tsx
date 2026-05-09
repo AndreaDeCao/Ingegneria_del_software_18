@@ -1,24 +1,51 @@
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import { useTheme } from "./hooks/useTheme";
+// import { useEffect, useState } from "react";
+// import TrekCard from "./components/TrekCard"
+
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import { useTheme } from "./hooks/useTheme";
+import { AuthProvider } from "./auth/AuthProvider";
+import ProtectedRoute from "./auth/ProtectedRoute";
+
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Treks from "./pages/Treks";
+import MyTreks from "./pages/MyTreks";
+import Friends from "./pages/Friends";
+import Home from "./pages/Home";
+import Privacy from "./pages/Privacy";
+import Termini from "./pages/Termini";
+import Contatti from "./pages/Contatti";
+
 import Homepage from "./pages/homepage/Homepage";
 import AccountPage from "./pages/account/AccountPage";
 import DiarioPage from "./pages/account/DiarioPage";
 import AttivitaPage from "./pages/account/AttivitaPage";
 import VersionePage from "./pages/account/VersionePage";
-import "./index.css"
+
+import "./index.css";
+import styles from "./App.module.css";
 
 /**
  * Layout comune a tutte le pagine (comprende Navbar)
  * @param {React.ReactNode} children - Contenuto della pagina 
  */
-function AppLayout({ children }: { children: React.ReactNode}) {
+function AppLayout({ children }: { children: React.ReactNode }) { // AppLayout è un componente che definisce la struttura comune a tutte le pagine dell'applicazione, includendo la Navbar e gestendo il tema. Tutte le pagine (Login, Register, Treks, MyTreks, Friends) saranno renderizzate all'interno di AppLayout, che si occupa di mostrare la Navbar e applicare il tema scelto dall'utente.
   const { theme, toggle } = useTheme();
-  return(
-    <>
-     <Navbar theme={theme} onToggleTheme={toggle}/>
-     {children}
-    </>
+  //  // const [treks, setTreks] = useState<Trek[]>([]);
+  // const [treks, setTreks] = useState<Trek[]>([]);
+  // const [loading, setLoading] = useState(true);
+
+  // const [error, setError] = useState<string | null>(null);
+
+  // const [users, setUsers] = useState<User[]>([]);
+   return (
+    <div className={styles.app}>
+      <Navbar theme={theme} onToggleTheme={toggle} />
+      {children}
+      <Footer />
+    </div>
   );
 }
 
@@ -27,18 +54,49 @@ function AppLayout({ children }: { children: React.ReactNode}) {
  * @returns {JSX.Element} App con routing
  */
 export default function App() {
-  return(
-    <BrowserRouter>
-      <AppLayout>
+  return (
+    <AuthProvider> {/* AuthProvider è un componente che fornisce il contesto di autenticazione a tutta l'applicazione. Avvolgendo il BrowserRouter e tutte le rotte all'interno di AuthProvider, garantiamo che qualsiasi componente possa accedere alle informazioni sull'utente autenticato e alle funzioni di login/logout tramite il contesto. */}
+      <BrowserRouter> {/* BrowserRouter è un componente che gestisce la navigazione dell'applicazione. Avvolge tutte le rotte e consente di definire i percorsi e i componenti associati a ciascun percorso. In questo caso, tutte le rotte sono definite all'interno di BrowserRouter, il che significa che la navigazione tra le pagine (Login, Register, Treks, MyTreks, Friends) sarà gestita da React Router. */}
         <Routes>
-          <Route path="/" element={<Homepage />}/> 
-          <Route path="/account/:sezione" element={<AccountPage />}/> 
-          <Route path="/diario/:sezione" element={<DiarioPage />} />
-          <Route path="/attivita/:sezione" element={<AttivitaPage />} />
-          <Route path="/vers/:sezione" element={<VersionePage />} />
-          <Route path="*" element={<Navigate to="/" replace/>}/> 
+                  {/* Landing page */}
+                  <Route path="/" element={<AppLayout><Home /></AppLayout>} />
+        
+                  {/* Auth */}
+                  <Route path="/login"    element={<AppLayout><Login /></AppLayout>} />
+                  <Route path="/register" element={<AppLayout><Register /></AppLayout>} />
+        
+                  {/* Treks — pubblica */}
+                  <Route path="/treks" element={<AppLayout><Treks /></AppLayout>} />
+        
+                  {/* Route protette — navigazione principale */}
+                  <Route path="/my-treks" element={<AppLayout><ProtectedRoute>
+                    <MyTreks />
+                  </ProtectedRoute></AppLayout>} />
+                  <Route path="/friends"  element={<AppLayout><ProtectedRoute><Friends /></ProtectedRoute></AppLayout>} />
+        
+                  {/* Route protette — menu a tendina con sezione dinamica */}
+                  <Route path="/account/:sezione"  element={<AppLayout><ProtectedRoute>
+                    <AccountPage />
+                  </ProtectedRoute></AppLayout>} />
+                  <Route path="/diario/:sezione"   element={<AppLayout><ProtectedRoute>
+                    <DiarioPage />
+                  </ProtectedRoute></AppLayout>} />
+                  <Route path="/attivita/:sezione" element={<AppLayout><ProtectedRoute>
+                    <AttivitaPage />
+                  </ProtectedRoute></AppLayout>} />
+        
+                  {/* Pubblica — versioning/changelog */}
+                  <Route path="/vers/:sezione" element={<AppLayout><VersionePage /></AppLayout>} />
+        
+                  {/* Pagine statiche */}
+                  <Route path="/privacy"  element={<AppLayout><Privacy /></AppLayout>} />
+                  <Route path="/termini"  element={<AppLayout><Termini /></AppLayout>} />
+                  <Route path="/contatti" element={<AppLayout><Contatti /></AppLayout>} />
+        
+                  {/* Fallback */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </AppLayout>
-    </BrowserRouter>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

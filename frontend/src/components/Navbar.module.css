@@ -64,6 +64,9 @@
   color: var(--accent-text);
 }
 
+/* to change */
+.active {}
+
 .navLink.active {
   background: var(--accent);
   color: #fff;

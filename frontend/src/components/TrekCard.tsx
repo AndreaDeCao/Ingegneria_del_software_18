@@ -1,14 +1,15 @@
 import styles from "./TrekCard.module.css";
 // import type { Trek } from "../types/Trek";
-export type Trek = {
-  id: string;
-  name: string;
-  difficulty: "Facile" | "Medio" | "Difficile";
-  duration: string
-  // friendCount?: number;
-  // likes?: number;
-};
+import type { Trek } from "../types/Trek";
 
+// export type Trek = {
+//   id: string;
+//   name: string;
+//   difficulty: "Facile" | "Medio" | "Difficile";
+//   duration: string
+//   // friendCount?: number;
+//   // likes?: number;
+// };
 /**
  * In questo componente, definiamo un mapping tra i valori di difficoltà e le classi CSS corrispondenti.
  * Questo ci permette di applicare stili diversi a seconda della difficoltà del trek.

@@ -1,11 +1,17 @@
 import {useState} from "react";
 import styles from "./Navbar.module.css";
-import {useNavigate} from "react-router-dom";
+import { Link } from "react-router-dom";
 
-/** Props del Navbar - tema e funzione per cambiarlo */
+
+import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthProvider";
+
+/**
+ * Il componente Navbar è responsabile di visualizzare la barra di navigazione dell'applicazione, che include il logo, i link di navigazione e un pulsante per cambiare tema.
+ */
 interface NavbarProps {
   theme: "light" | "dark";
-  onToggleTheme: () => void;
+  onToggleTheme: () => void;// Questa prop è una funzione che viene chiamata quando l'utente clicca sul pulsante per cambiare tema. Il componente genitore (App) passerà una funzione che gestisce il cambio di tema.
 }
 
 const LogoIcon = () => ( <img src="/logo_ing_sw.svg" alt="logo" width={40} height={40} /> );
@@ -53,6 +59,9 @@ function DropdownItem({label, items, isOpen, onToggle, onNavigate}: {
  * @param {function} onToggleTheme - Funzione per cambiare tema
  */
 export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
+  const { user, logout } = useAuth();
+  // const navigate = useNavigate();
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [openItem, setOpenItem] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -71,16 +80,50 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
         <div className={styles.logoIcon}>
           {theme === "dark" ? <LogoIcon /> : <LogoIconInverted />}
         </div>
-        <span className={styles.logoName}>
+        
+        <Link to="/" className={styles.logoName}>
           Dolo<span>Mate</span>
-        </span>
+        </Link>
       </div>
 
       <nav className={styles.nav}>
-        <button className={styles.navLink}>Esplora</button>
-        <button className={styles.navLink}>I miei Percorsi</button>
-        <button className={styles.navLink}>Amici</button>
-        <button className={styles.themeBtn} onClick={onToggleTheme}>
+        <NavLink
+          to="/"
+          className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+        >
+          Esplora
+        </NavLink>
+        <NavLink
+          to="/my-treks"
+          className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+        >
+          I miei Percorsi
+        </NavLink>
+        <NavLink
+          to="/friends"
+          className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+        >
+          Amici
+        </NavLink>
+
+        {!user ? (
+          <NavLink to="/login" className={styles.navLink}>
+            Login
+          </NavLink>
+        ) : (
+          <button
+            className={styles.navLink}
+            onClick={async () => {
+              await logout();
+              navigate("/", { replace: true });
+            }}
+          >
+            Logout
+          </button>
+        )}
+
+        <button className={styles.themeBtn} onClick={onToggleTheme}
+          title="Toggle theme" aria-label="Toggle dark/light mode">
           {theme === "dark" ? <SunIcon /> : <MoonIcon />}
         </button>
         <button className={styles.avatar} onClick={() => handleNavigate("/account/profilo")}> OB </button>

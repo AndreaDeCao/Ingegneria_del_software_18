@@ -1,5 +1,7 @@
 .main {
   padding: 2rem 1.5rem;
+  display: flex;
+  flex: 1;
 }
 
 .sectionHead {
@@ -19,6 +21,9 @@
 .sectionCount {
   font-size: 13px;
   color: var(--text-secondary);
+}
+
+.sectionTreks {
 }
 
 .cardsRow {
@@ -43,4 +48,42 @@
   font-size: 14px;
   color: #c0392b;
   padding: 2rem 0;
+}
+
+.app { /* per tenere il footer in fondo */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+
+/* Sezione principale divisa in due colonne: la parte sinistra (main) occupa 3/4 dello spazio, mentre la parte destra (sidebar) occupa 1/4. La sidebar è “compatta” e rimane visibile quando si scorre la pagina, grazie alla proprietà position: sticky. */
+
+/* contenitore principale */
+.contentLayout {
+  display: flex;
+  gap: 24px;
+  width: 100%;
+  max-width: 1400px; /* !! per limitare la larghezza massima */
+  margin: 0 auto; /* per centrare */
+  
+}
+
+.leftColumn {
+  width: 75%;
+}
+
+.rightColumn {
+  width: 25%;
+}
+
+.activitiesColumn { /* per scroll verticale activities */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  max-height: 80vh;
+  overflow-y: auto;
+
+  padding-right: 6px;
 }

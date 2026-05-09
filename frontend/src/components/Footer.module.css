@@ -1,0 +1,33 @@
+.footer {
+  display: flex;
+  justify-content: space-between; /* separa sinistra e destra */
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: var(--card-bg);
+  border-top: 0.5px solid var(--border);
+  margin-top: auto; /* per tenerlo in fondo */
+}
+
+/* lato sinistro */
+.footerLeft {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* lato destro */
+.footerRight {
+  display: flex;
+  gap: 12px;
+}
+
+/* link del footer */
+.footerLink {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footerLink:hover {
+  color: var(--accent);
+}
