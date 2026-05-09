@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/users");
+const {OAuth2Client } = require("google-auth-library");
 
 function getJwtSecret() {
   // const secret = process.env.JWT_SECRET; //obsoleto, non usato più, sostituito da JWT_ACCESS_SECRET e JWT_REFRESH_SECRET
@@ -197,4 +198,125 @@ exports.me = async (req, res) => {
     res.json({ user: null });
   }
 };
+
+
+/**
+ * Client OAuth2 di Google (per verificare id_token )
+ * dopo il login. Viene inizializzato con il GOOGLE_CLIENT_ID dal file .env
+ */
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+/**
+ * Reindirizza il browser dell'utente verso la pagina di login di Google.
+ * Genera un parametro `state` casuale e lo salva in un cookie httpOnly per prevenire attacchi CSRF sul callback.
+ *
+ * @route GET /api/auth/google
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ */
+exports.googleRedirect = (req, res) => {
+  const state = Math.random().toString(36).slice(2);  //Token anti CSRF casuale
+
+  //Salva state in un cookie per verificarlo nel callback
+  res.cookie("oauth_state", state, {
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: 5 * 60 * 1000,                             //5 min
+  });
+
+
+//URL autorizzazione Google coi parametri richiesti
+const url= new URL("https://accounts.google.com/o/oauth2/v2/auth");
+  url.searchParams.set("client_id", process.env.GOOGLE_CLIENT_ID);
+  url.searchParams.set("redirect_uri", process.env.GOOGLE_REDIRECT_URI);
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("scope", "openid email profile"); 
+  url.searchParams.set("state", state);
+
+  res.redirect(url.toString());
+};
+
+/**
+ * Callback chiamato da Google dopo il login dell'utente.
+ * Riceve l'autorizzazione, lo scambia con Google per ottenere
+ * l'id_token, lo verifica e trova o crea l'utente nel database.
+ * Alla fine reindirizza al frontend con l'accessToken nell'URL.
+ *
+ * @route GET /api/auth/google/callback
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ */
+exports.googleCallback = async(req, res) => {
+  try {
+    const { code, state } = req.query;
+
+    //Verifica anti-CSRF: devo avere state ricevuto = state nel cookie
+    const savedState = req.cookies?.oauth_state;
+    res.clearCookie("oauth_state");
+    if(!state || state !== savedState) {
+      return res.status(403).json({ error: "State non valido" });
+    }
+
+    //Scambia autorizzazione (code) con Google per ottenere i token
+    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code,
+        client_id:     process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri:  process.env.GOOGLE_REDIRECT_URI,
+        grant_type:    "authorization_code",
+      }),
+    });
+
+    if(!tokenRes.ok) {
+      const err = await tokenRes.text();
+      return res.status(400).json({ error: "Errore scambio token con Google: " + err });
+    }
+
+    const {id_token} = await tokenRes.json();
+
+    //Verifica validità id_token
+    const ticket = await client.verifyIdToken({
+      idToken: id_token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    //Estrae dati dello user dal payload dell'id_token
+    const payload = ticket.getPayload();
+    const {
+      sub: googleId, email,
+      given_name: nome,
+      family_name: cognome,
+    } = payload;
+
+    //Trova o crea user nel database
+    let user = await User.findOne({ googleId });
+
+    if(!user) {
+      user = await User.findOne({ email });
+
+      if(user) {
+        //Email già usata
+        user.googleId = googleId;
+        await user.save();
+      } else {
+        //Nuovo user (nickanme partendo dall'email)
+        const nickname = email.split("@")[0] + Math.random().toString(36).slice(2, 6);
+        user = await User.create({ nome, cognome, email, nickname, googleId });
+      }
+    }
+
+    //Crea access e refresh token
+    const accessToken = setAuth(res, user._id);
+
+    //Reinderizza al frontend
+    const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+    res.redirect(`${frontendUrl}/auth/callback?accessToken=${accessToken}`);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 
