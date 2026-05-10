@@ -11,5 +11,11 @@ router.post("/login", authController.login);
 router.post("/logout", authController.logout);
 router.get("/me", authenticate, authController.me);
 
+// router.get("/auth/google",          authController.googleRedirect);
+// router.get("/auth/google/callback", authController.googleCallback);
+
+router.get("/auth/github",          authController.githubRedirect);
+router.get("/auth/github/callback", authController.githubCallback);
+
 module.exports = router;
 

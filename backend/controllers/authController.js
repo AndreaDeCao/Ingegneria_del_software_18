@@ -198,3 +198,114 @@ exports.me = async (req, res) => {
   }
 };
 
+
+
+//Github OAuth2 login/registration handler
+
+// Il flusso è simile a quello di Google, ma con alcune differenze specifiche di GitHub:
+// 1. Il frontend reindirizza l'utente a /auth/github, che costruisce l'URL di autorizzazione di GitHub e reindirizza l'utente lì.
+// 2. L'utente concede i permessi su GitHub e viene reindirizzato a /auth/github/callback con un "code" temporaneo.
+// 3. Il backend scambia il "code" con GitHub per ottenere un access_token.
+// 4. Con l'access_token, il backend recupera i dati dell'utente da GitHub (compresa l'email).
+// 5. Il backend cerca un utente con quel githubId o email, lo crea se non esiste, e restituisce un token JWT al frontend.
+exports.githubRedirect = (req, res) => {
+  const state = Math.random().toString(36).slice(2);
+
+  res.cookie("oauth_state", state, {
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: 5 * 60 * 1000, // 5 minuti
+  });
+
+  const url = new URL("https://github.com/login/oauth/authorize"); // URL di autorizzazione di GitHub
+  url.searchParams.set("client_id", process.env.GITHUB_CLIENT_ID);
+  url.searchParams.set("redirect_uri", process.env.GITHUB_REDIRECT_URI);
+  url.searchParams.set("scope", "read:user user:email");            // scope minimo per leggere dati utente e email //TODO: si possono aggiungere altri scope se servono più permessi
+  url.searchParams.set("state", state);                             // parametro anti-CSRF, deve essere lo stesso che salviamo nel cookie
+
+  res.redirect(url.toString());                                     // reindirizza l'utente a GitHub per autorizzare l'applicazione
+};
+
+// Handler per il callback di GitHub dopo l'autorizzazione dell'utente
+exports.githubCallback = async (req, res) => {
+  try {
+    const { code, state } = req.query;
+
+    // Verifica anti-CSRF — stesso cookie usato da Google
+    const savedState = req.cookies?.oauth_state;
+    res.clearCookie("oauth_state"); //FIXME: controllare clearCookie, forse è clearAuth
+    if (!state || state !== savedState) {
+      return res.status(403).json({ error: "State non valido" });
+    }
+
+    // Scambia code con GitHub per ottenere access_token
+    const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",                         // senza questo GitHub risponde in plain text
+      },
+      body: new URLSearchParams({
+        code,
+        client_id:     process.env.GITHUB_CLIENT_ID,
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        redirect_uri:  process.env.GITHUB_REDIRECT_URI,
+      }),
+    });
+
+    if (!tokenRes.ok) {
+      const err = await tokenRes.text();
+      return res.status(400).json({ error: "Errore scambio token con GitHub: " + err });
+    }
+
+    const { access_token } = await tokenRes.json();
+
+    // Recupera dati utente da GitHub con l'access_token
+    const userRes = await fetch("https://api.github.com/user", {
+      headers: { Authorization: `Bearer ${access_token}` },
+    });
+    const githubUser = await userRes.json();
+
+    // GitHub non garantisce l'email nel profilo pubblico — va chiesta separatamente
+    const emailsRes = await fetch("https://api.github.com/user/emails", {
+      headers: { Authorization: `Bearer ${access_token}` }, // stessa autorizzazione del token di accesso, perché è lo stesso token
+    });
+
+    const emails = await emailsRes.json(); //ritorna un array di oggetti con le email dell'utente, ognuno con campi "email", "primary", "verified". Dobbiamo trovare quella primaria e verificata da usare come email dell'utente nel nostro sistema
+    const primaryEmail = emails.find((e) => e.primary && e.verified)?.email; //se non c'è un'email primaria e verificata, non possiamo registrare l'utente, perché ci serve un'email unica per identificare l'utente nel nostro sistema
+
+    if (!primaryEmail) {
+      return res.status(400).json({ error: "Nessuna email verificata su GitHub" });
+    }
+
+
+    const githubId = githubUser.id.toString();  // GitHub ID unico dell'utente, usato per identificare l'utente se si è registrato con GitHub OAuth2
+    const nome     = githubUser.name?.split(" ")[0] ?? githubUser.login; //se il nome completo è disponibile, prendo la prima parola come nome, altrimenti uso il login di GitHub (che è sempre disponibile) come nome
+    const cognome  = githubUser.name?.split(" ").slice(1).join(" ") ?? ""; //se il nome completo è disponibile, prendo tutto tranne la prima parola come cognome, altrimenti lascio il cognome vuoto, perché non abbiamo altre informazioni sul nome dell'utente da GitHub
+
+    
+    // Trova o crea user — stesso pattern di Google
+    let user = await User.findOne({ githubId });
+
+    if (!user) {
+      user = await User.findOne({ email: primaryEmail });
+
+      if (user) {
+        // Email già in uso — collega account GitHub
+        user.githubId = githubId;
+        await user.save();
+      } else {
+        // Nuovo utente
+        const nickname = githubUser.login + Math.random().toString(36).slice(2, 6);
+        user = await User.create({ nome, cognome, email: primaryEmail, nickname, githubId });
+      }
+    }
+
+    const accessToken = setAuth(res, user._id);
+
+    const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+    res.redirect(`${frontendUrl}/auth/callback?accessToken=${accessToken}`);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

@@ -64,6 +64,10 @@ export default function Login() {
         <button type="submit" disabled={submitting} style={{ marginTop: 16 }}>
           {submitting ? "Accesso..." : "Accedi"}
         </button>
+
+        {/* <a href={`${import.meta.env.VITE_API_URL ?? "http://localhost:3000"}/api/auth/github`}>
+          <button type="button">Accedi con GitHub</button>
+        </a> */}
       </form>
 
       <p style={{ marginTop: 16 }}>
