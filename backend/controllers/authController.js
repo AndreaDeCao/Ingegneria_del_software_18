@@ -199,13 +199,13 @@ exports.me = async (req, res) => {
 };
 
 
-const {OAuth2Client } = require("google-auth-library");
+const {OAuth2Client } = require("google-auth-library");   //FIXME: spostarlo alle prime righe del file
 
 /**
  * Client OAuth2 di Google (per verificare id_token )
  * dopo il login. Viene inizializzato con il GOOGLE_CLIENT_ID dal file .env
  */
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);  
 
 /**
  * Reindirizza il browser dell'utente verso la pagina di login di Google.
