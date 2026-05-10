@@ -66,6 +66,22 @@ export default function Login() {
         </button>
       </form>
 
+      {/* Separatore */}
+      <div style={{display: "flex", alignItems: "center", gap: 8, margin: "16px 0"}}>
+        <hr style={{ flex: 1}}/>
+        <span style={{ color: "#888", fontSize: 13}}>oppure</span>
+        <hr style={{ flex: 1}}/>
+      </div>
+
+      {/* Login con Google */}
+      <button
+        onClick={() => window.location.href = "http://localhost:3000/api/auth/google"}
+        style={{ width: "100%", padding: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer"}}>
+
+        <img src="https://www.google.com/favicon.ico" width={16} height={16} alt="Google" />
+        Accedi con Google
+      </button>
+
       <p style={{ marginTop: 16 }}>
         Non hai un account? <Link to="/register">Registrati</Link>
       </p>
