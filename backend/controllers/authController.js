@@ -1,7 +1,6 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/users");
-const {OAuth2Client } = require("google-auth-library");
 
 function getJwtSecret() {
   // const secret = process.env.JWT_SECRET; //obsoleto, non usato più, sostituito da JWT_ACCESS_SECRET e JWT_REFRESH_SECRET
@@ -200,6 +199,8 @@ exports.me = async (req, res) => {
 };
 
 
+const {OAuth2Client } = require("google-auth-library");
+
 /**
  * Client OAuth2 di Google (per verificare id_token )
  * dopo il login. Viene inizializzato con il GOOGLE_CLIENT_ID dal file .env
@@ -222,6 +223,7 @@ exports.googleRedirect = (req, res) => {
     httpOnly: true,
     sameSite: "lax",
     maxAge: 5 * 60 * 1000,                             //5 min
+    path: "/"
   });
 
 
@@ -252,6 +254,7 @@ exports.googleCallback = async(req, res) => {
 
     //Verifica anti-CSRF: devo avere state ricevuto = state nel cookie
     const savedState = req.cookies?.oauth_state;
+
     res.clearCookie("oauth_state");
     if(!state || state !== savedState) {
       return res.status(403).json({ error: "State non valido" });
@@ -285,11 +288,10 @@ exports.googleCallback = async(req, res) => {
 
     //Estrae dati dello user dal payload dell'id_token
     const payload = ticket.getPayload();
-    const {
-      sub: googleId, email,
-      given_name: nome,
-      family_name: cognome,
-    } = payload;
+    const googleId = payload.sub;
+    const email    = payload.email;
+    const nome     = payload.given_name  ?? payload.name ?? "Utente";
+    const cognome  = payload.family_name ?? "";
 
     //Trova o crea user nel database
     let user = await User.findOne({ googleId });

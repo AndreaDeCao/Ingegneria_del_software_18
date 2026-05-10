@@ -2,11 +2,11 @@ const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema({
   nome: { type: String, required: true },
-  cognome: { type: String, required: true },
+  cognome: { type: String, required: false },
   email: { type: String, unique: true, required: true },
   nickname: { type: String, unique: true, required: true },
   passwordHash: { type: String, select: false },
-  googleId: { type: String, unique: true, sparse: true},
+  googleId: { type: String, unique: true, sparse: true, required: false},
   test: { type: String, optional: true }
 }, { timestamps: true });
 
