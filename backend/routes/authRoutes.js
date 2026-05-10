@@ -17,5 +17,17 @@ router.get("/me", authenticate, authController.me);
 router.get("/auth/github",          authController.githubRedirect);
 router.get("/auth/github/callback", authController.githubCallback);
 
+/**
+ * @route GET /api/auth/google
+ * @description Reindirizza l'utente alla pagina di login di Google
+ */
+router.get("/google", authController.googleRedirect);
+
+/**
+ * @route GET /api/auth/google/callback
+ * @description Callback OAuth — Google reindirizza qui dopo login dell'utente
+ */
+router.get("/google/callback", authController.googleCallback);
+
 module.exports = router;
 

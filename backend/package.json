@@ -17,8 +17,12 @@
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "google-auth-library": "^10.6.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^9.6.1",
+    "passport": "^0.7.0",
+    "passport-google-oauth2": "^0.2.0",
     "react-router-dom": "^7.15.0"
   }
 }
