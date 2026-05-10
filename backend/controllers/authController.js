@@ -1,6 +1,8 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/users");
+const {OAuth2Client } = require("google-auth-library"); 
+
 
 function getJwtSecret() {
   // const secret = process.env.JWT_SECRET; //obsoleto, non usato più, sostituito da JWT_ACCESS_SECRET e JWT_REFRESH_SECRET
@@ -81,7 +83,7 @@ exports.register = async (req, res) => {
     //serve per configurare il numero di round di salatura per bcrypt, default 15
     const saltedRound = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) : 15; 
 
-    const { nome, cognome, email, nickname, password } = req.body ?? {};
+    const { nome, cognome, email, nickname, password, confermaPassword } = req.body ?? {};
 
     if (!nome || !cognome || !nickname || !password || !email) {
       return res.status(400).json({ error: "Campi mancanti" });
@@ -90,7 +92,11 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error: "Email non valida" });
     }
     if (typeof password !== "string" || password.length < 6 || password.length > 32 || password.includes(" ") || !password.match(/[0-9]/) || !password.match(/[a-zA-Z]/) ) {
-      return res.status(400).json({ error: "Password non valida, la password deve essere compresa tra 6 e 32 caratteri e contenere almeno un numero, una lettera maiuscola, una lettera minuscola. "});
+      return res.status(400).json({ error: "Password nons valida, la password deve essere compresa tra 6 e 32 caratteri e contenere almeno un numero, una lettera maiuscola, una lettera minuscola. "});
+    }
+    //controllo se le password coincidono
+    if (!confermaPassword || password !== confermaPassword) {
+      return res.status(400).json({ error: "Le password non coincidono" });
     }
 
     const existsEmail = await User.findOne({  email });
@@ -198,8 +204,6 @@ exports.me = async (req, res) => {
   }
 };
 
-
-const {OAuth2Client } = require("google-auth-library");   //FIXME: spostarlo alle prime righe del file
 
 /**
  * Client OAuth2 di Google (per verificare id_token )
@@ -359,7 +363,7 @@ exports.githubCallback = async (req, res) => {
 
     // Verifica anti-CSRF — stesso cookie usato da Google
     const savedState = req.cookies?.oauth_state;
-    res.clearCookie("oauth_state"); //FIXME: controllare clearCookie, forse è clearAuth
+    res.clearCookie("oauth_state"); 
     if (!state || state !== savedState) {
       return res.status(403).json({ error: "State non valido" });
     }

@@ -17,6 +17,8 @@ export type RegisterRequest = {
   email: string;
   nickname: string;
   password: string;
+  confermaPassword: string;
+  // captchaToken: string;
 };
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";

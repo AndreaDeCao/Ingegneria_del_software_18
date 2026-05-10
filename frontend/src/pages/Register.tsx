@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useRef } from "react"; //useRef serve a tenere traccia del componente HCaptcha 
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
+
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 export default function Register() {
   const { register } = useAuth();
@@ -11,8 +13,12 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [nickname, setNickname] = useState("");
   const [password, setPassword] = useState("");
+  const [confermaPassword, setConfermaPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const captchaRef = useRef<HCaptcha>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   //TODO: aggiungere validazione dei campi (es. email valida, password abbastanza complessa, ecc.)
   //TODO: aggiungi  pwd confirm e captcha per evitare registrazioni automatiche
@@ -28,8 +34,8 @@ export default function Register() {
           setError(null);
           setSubmitting(true);
           try {
-            await register({ nome, cognome, email, nickname, password });
-            navigate("/treks", { replace: true });
+            await register({ nome, cognome, email, nickname, password, confermaPassword /*, captchaToken*/ });
+            navigate("/home", { replace: true });
           } catch (err) {
             setError(err instanceof Error ? err.message : "Errore registrazione");
           } finally {
@@ -76,6 +82,32 @@ export default function Register() {
             required
           />
         </label>
+
+        <label style={{ display: "block", marginTop: 12 }}>
+          Conferma password
+          <input
+            style={{ width: "100%", padding: 8 }}
+            value={confermaPassword}
+            onChange={(e) => setConfermaPassword(e.target.value)}
+            type="password"
+            autoComplete="new-password"
+            required
+          />
+        </label>
+
+
+        {/* TODO: finire di implementare captcha, attualmente è solo un placeholder, non blocca la registrazione se non completato
+        manca: 
+                  - gestire il token del captcha e inviarlo al backend per la verifica (in authController.js)
+        OPZIONALE - gestire il caso in cui il captcha scade o viene invalidato (es. se l'utente ci mette troppo tempo a compilare il form) 
+                  - aggiungere captchaToken: string; al RegisterRequest in api.ts
+                  - aggiungere segreti in .env per hcaptcha creati da https://www.hcaptcha.com (serve registrarsi e creare un nuovo sito per ottenere sitekey e secret) */}
+        {/* <HCaptcha 
+          sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
+          onVerify={(token) => setCaptchaToken(token)}
+          onExpire={() => setCaptchaToken(null)}
+          ref={captchaRef}
+        /> */}
 
         {error && <p style={{ color: "#c0392b" }}>{error}</p>}
 
