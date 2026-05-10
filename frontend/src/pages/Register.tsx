@@ -94,7 +94,7 @@ export default function Register() {
       <button
         onClick={() => window.location.href = "http://localhost:3000/api/auth/github"}
         style={{ width: "100%", padding: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", background: "#fff", color: "#000", border: "1px solid #000", borderRadius: 6 }}>
-        <img src="../../public/GitHub_Lockup_Black.svg" width={100} height={30} alt="GitHub" />
+        <img src="./GitHub_Lockup_Black.svg" width={100} height={30} alt="GitHub" />
       </button>
 
       {/* Login con Google */}
