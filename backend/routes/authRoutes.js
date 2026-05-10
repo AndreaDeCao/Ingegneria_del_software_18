@@ -14,8 +14,8 @@ router.get("/me", authenticate, authController.me);
 // router.get("/auth/google",          authController.googleRedirect);
 // router.get("/auth/google/callback", authController.googleCallback);
 
-router.get("/auth/github",          authController.githubRedirect);
-router.get("/auth/github/callback", authController.githubCallback);
+router.get("/github",          authController.githubRedirect);
+router.get("/github/callback", authController.githubCallback);
 
 /**
  * @route GET /api/auth/google

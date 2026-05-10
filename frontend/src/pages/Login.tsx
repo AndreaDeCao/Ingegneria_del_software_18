@@ -64,10 +64,6 @@ export default function Login() {
         <button type="submit" disabled={submitting} style={{ marginTop: 16 }}>
           {submitting ? "Accesso..." : "Accedi"}
         </button>
-
-        {/* <a href={`${import.meta.env.VITE_API_URL ?? "http://localhost:3000"}/api/auth/github`}>
-          <button type="button">Accedi con GitHub</button>
-        </a> */}
       </form>
 
       {/* Separatore */}
@@ -76,6 +72,12 @@ export default function Login() {
         <span style={{ color: "#888", fontSize: 13}}>oppure</span>
         <hr style={{ flex: 1}}/>
       </div>
+
+      <button
+        onClick={() => window.location.href = "http://localhost:3000/api/auth/github"}
+        style={{ width: "100%", padding: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", background: "#fff", color: "#000", border: "1px solid #000", borderRadius: 6 }}>
+        <img src="../../public/GitHub_Lockup_Black.svg" width={100} height={30} alt="GitHub" />
+      </button>
 
       {/* Login con Google */}
       <button
