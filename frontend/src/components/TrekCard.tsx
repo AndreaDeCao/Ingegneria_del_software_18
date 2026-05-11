@@ -48,17 +48,45 @@ interface TrekCardProps {
 function TrekCard({ trek }: TrekCardProps) {
   return (
     <article className={styles.card}>
-      <div className={styles.cardImg} />
 
+      {/*Immagine*/}
+      <div className={styles.cardImg} />
+      
+      {/*Contenuto*/}
       <div className={styles.cardBody}>
-        <h3 className={styles.cardName}>{trek.name}</h3>
+        <div className={styles.cardTop}>
+          <h3 className={styles.cardName}>{trek.name}</h3>
+          {trek.SatRouteNumber && (
+            <span className={styles.satNumber}>{trek.SatRouteNumber}</span>
+          )}
+        </div>
+
+        {trek.description && (
+          <p className={styles.cardDescription}>{trek.description}</p>
+        )}
+
         <div className={styles.cardMeta}>
           <span className={`${styles.badge} ${difficultyStyle[trek.difficulty]}`}>
             {trek.difficulty}
           </span>
-          <span className={`${styles.badge} ${styles.badgeDuration}`}>
-            {trek.duration}
-          </span>
+
+          {trek.duration && (
+            <span className={`${styles.badge} ${styles.badgeDuration}`}>
+              {trek.duration}
+            </span>
+          )}
+
+          {trek.lengthKm && (
+            <span className={`${styles.badge} ${styles.badgeInfo}`}>
+              {trek.lengthKm} km
+            </span>
+          )}
+
+          {trek.elevationGain && (
+            <span className={`${styles.badge} ${styles.badgeInfo}`}>
+              {trek.elevationGain} m
+            </span>
+          )}
         </div>
       </div>
 

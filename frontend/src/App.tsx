@@ -10,7 +10,7 @@ import ProtectedRoute from "./auth/ProtectedRoute";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Treks from "./pages/Treks";
+import Treks from "./pages/Treks/Treks";
 import MyTreks from "./pages/MyTreks";
 import Friends from "./pages/Friends";
 import Home from "./pages/Home";
