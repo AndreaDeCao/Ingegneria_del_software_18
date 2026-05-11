@@ -20,7 +20,8 @@ export default function Login() {
   return (
     <div style={{ padding: 24, maxWidth: 520, left: "50%", transform: "translateX(-50%)", position: "relative", marginTop: 50}}>
      {/* <div style={{ padding: 24, position: "relative", marginTop: 40, maxWidth: 400, marginLeft: "auto", marginRight: "auto" }}> */}
-      <h2>Login</h2>
+      <h2>Form di login</h2>
+      <br />
 
       <form
         onSubmit={async (e) => {
@@ -75,7 +76,7 @@ export default function Login() {
         <span style={{ color: "#888", fontSize: 13}}>oppure</span>
         <hr style={{ flex: 1}}/>
       </div>
-
+      
       <button
         onClick={() => window.location.href = "http://localhost:3000/api/auth/github"}
         style={{ width: "100%", padding: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", background: "#fff", color: "#000", border: "1px solid #000", borderRadius: 6 }}>
@@ -90,7 +91,7 @@ export default function Login() {
         <img src="https://www.google.com/favicon.ico" width={16} height={16} alt="Google" />
         Accedi con Google
       </button> */}
-
+      <br />
       <GoogleSignInButton label="Accedi con Google" />
 
       <p style={{ marginTop: 16 }}>

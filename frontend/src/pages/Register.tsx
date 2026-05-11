@@ -4,7 +4,7 @@ import { useAuth } from "../auth/AuthProvider";
 
 import HCaptcha from "@hcaptcha/react-hcaptcha";
 
-import { useTheme } from "../hooks/useTheme";
+// import { useTheme } from "../hooks/useTheme";
 import GoogleSignInButton from "../components/GoogleSignInButton";
 
 // import styles from "./Auth.module.css";
@@ -13,7 +13,7 @@ export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const { theme } = useTheme(); 
+  // const { theme } = useTheme(); 
 
   const [nome, setNome] = useState("");
   const [cognome, setCognome] = useState("");
@@ -34,8 +34,8 @@ export default function Register() {
   return (
     // <div style={{ padding: 24, maxWidth: 520 }}>
     <div style={{ padding: 24, maxWidth: 520, left: "50%", transform: "translateX(-50%)", position: "relative"}}>
-      <h2>Registrazione</h2>
-
+      <h2>Form di registrazione</h2>
+      <br />
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -146,7 +146,7 @@ export default function Register() {
         <img src="https://www.google.com/favicon.ico" width={16} height={16} alt="Google" />
         Registrati con Google
       </button> */}
-
+      <br />
       <GoogleSignInButton label="Registrati con Google" />
 
 
