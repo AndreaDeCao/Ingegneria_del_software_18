@@ -32,7 +32,8 @@ export default function Register() {
   //FIXME: migliorare il display degli errori
   //FIXME: migliorare il design della pagina di registrazione
   return (
-    <div style={{ padding: 24, maxWidth: 520 }}>
+    // <div style={{ padding: 24, maxWidth: 520 }}>
+    <div style={{ padding: 24, maxWidth: 520, left: "50%", transform: "translateX(-50%)", position: "relative"}}>
       <h2>Registrazione</h2>
 
       <form
@@ -118,7 +119,7 @@ export default function Register() {
 
         {error && <p style={{ color: "#c0392b" }}>{error}</p>}
 
-        <button type="submit" disabled={submitting} style={{ marginTop: 16 }}>
+        <button type="submit" disabled={submitting} style={{ marginTop: 16, width: "100%", padding: 10, cursor: "pointer" , background: "#ececec", color: "#000000", border: `1px solid`, borderRadius: 6 }}>
           {submitting ? "Creazione..." : "Crea account"}
         </button>
       </form>
@@ -134,7 +135,7 @@ export default function Register() {
         onClick={() => window.location.href = "http://localhost:3000/api/auth/github"}
         style={{ width: "100%", padding: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", background: "#fff", color: "#000", border: "1px solid #000", borderRadius: 6 }}>
         
-        <img src="./GitHub_Lockup_Black.svg" width={100} height={30} alt="GitHub" />
+        <img src="./GitHub_Lockup_Black.svg" width={100} height={18} alt="GitHub" />
       </button>
 
       {/* Login con Google */}
@@ -150,7 +151,7 @@ export default function Register() {
 
 
       <p style={{ marginTop: 16 }}>
-        Hai già un account? <Link to="/login">Accedi</Link>
+        Hai già un account? <Link to="/login" style={{color: 'blue'}}>Accedi</Link>
       </p>
     </div>
   );

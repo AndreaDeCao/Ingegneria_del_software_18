@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 
+import GoogleSignInButton from "../components/GoogleSignInButton";
+
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -16,7 +18,8 @@ export default function Login() {
   //FIXME: migliorare il display degli errori se le credenziali non sono valide può comunque segnare sessione scaduta invece che credenziali errate
   //FIXME: migliorare il design della pagina di login
   return (
-    <div style={{ padding: 24, maxWidth: 420 }}>
+    <div style={{ padding: 24, maxWidth: 520, left: "50%", transform: "translateX(-50%)", position: "relative", marginTop: 50}}>
+     {/* <div style={{ padding: 24, position: "relative", marginTop: 40, maxWidth: 400, marginLeft: "auto", marginRight: "auto" }}> */}
       <h2>Login</h2>
 
       <form
@@ -61,7 +64,7 @@ export default function Login() {
 
         {error && <p style={{ color: "#c0392b" }}>{error}</p>}
 
-        <button type="submit" disabled={submitting} style={{ marginTop: 16 }}>
+        <button type="submit" disabled={submitting} style={{ marginTop: 16, width: "100%", padding: 10, cursor: "pointer" , background: "#ececec", color: "#000000", border: `1px solid`, borderRadius: 6 }}>
           {submitting ? "Accesso..." : "Accedi"}
         </button>
       </form>
@@ -76,20 +79,22 @@ export default function Login() {
       <button
         onClick={() => window.location.href = "http://localhost:3000/api/auth/github"}
         style={{ width: "100%", padding: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", background: "#fff", color: "#000", border: "1px solid #000", borderRadius: 6 }}>
-        <img src="./GitHub_Lockup_Black.svg" width={100} height={30} alt="GitHub" />
+        <img src="./GitHub_Lockup_Black.svg" width={100} height={18} alt="GitHub" />
       </button>
 
       {/* Login con Google */}
-      <button
+      {/* <button
         onClick={() => window.location.href = "http://localhost:3000/api/auth/google"}
         style={{ width: "100%", padding: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer"}}>
 
         <img src="https://www.google.com/favicon.ico" width={16} height={16} alt="Google" />
         Accedi con Google
-      </button>
+      </button> */}
+
+      <GoogleSignInButton label="Accedi con Google" />
 
       <p style={{ marginTop: 16 }}>
-        Non hai un account? <Link to="/register">Registrati</Link>
+        Non hai un account? <Link to="/register" style={{ color: 'blue' }}>Registrati</Link>
       </p>
     </div>
   );
