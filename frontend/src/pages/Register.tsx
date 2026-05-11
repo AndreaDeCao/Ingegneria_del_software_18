@@ -4,9 +4,16 @@ import { useAuth } from "../auth/AuthProvider";
 
 import HCaptcha from "@hcaptcha/react-hcaptcha";
 
+import { useTheme } from "../hooks/useTheme";
+import GoogleSignInButton from "../components/GoogleSignInButton";
+
+// import styles from "./Auth.module.css";
+
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  const { theme } = useTheme(); 
 
   const [nome, setNome] = useState("");
   const [cognome, setCognome] = useState("");
@@ -126,17 +133,21 @@ export default function Register() {
       <button
         onClick={() => window.location.href = "http://localhost:3000/api/auth/github"}
         style={{ width: "100%", padding: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", background: "#fff", color: "#000", border: "1px solid #000", borderRadius: 6 }}>
+        
         <img src="./GitHub_Lockup_Black.svg" width={100} height={30} alt="GitHub" />
       </button>
 
       {/* Login con Google */}
-      <button
+      {/* <button
         onClick={() => window.location.href = "http://localhost:3000/api/auth/google"}
-        style={{ width: "100%", padding: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer"}}>
-
+        style={{ width: "100%", padding: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer"}}
+      >
         <img src="https://www.google.com/favicon.ico" width={16} height={16} alt="Google" />
         Registrati con Google
-      </button>
+      </button> */}
+
+      <GoogleSignInButton label="Registrati con Google" />
+
 
       <p style={{ marginTop: 16 }}>
         Hai già un account? <Link to="/login">Accedi</Link>
