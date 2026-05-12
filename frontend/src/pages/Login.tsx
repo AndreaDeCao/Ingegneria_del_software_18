@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 
 import GoogleSignInButton from "../components/GoogleSignInButton";
+import TurnstileWidget from "../components/TurnstileWidget";
 
 export default function Login() {
   const { login } = useAuth();
@@ -13,6 +14,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [turnstileToken, setTurnstileToken] = useState("");
 
   //TODO: aggiungere validazione dei campi 
   //FIXME: migliorare il display degli errori se le credenziali non sono valide può comunque segnare sessione scaduta invece che credenziali errate
@@ -29,7 +32,7 @@ export default function Login() {
           setError(null);
           setSubmitting(true);
           try {
-            await login({ email, password });
+            await login({ email, password, turnstileToken }); // Passiamo anche il token del captcha alla funzione di login
             const to = location.state?.from ?? "/home";
             navigate(to, { replace: true });
           } catch (err) {
@@ -63,7 +66,11 @@ export default function Login() {
           />
         </label>
 
+        <TurnstileWidget onVerify={(token) => setTurnstileToken(token)} />
+
         {error && <p style={{ color: "#c0392b" }}>{error}</p>}
+
+        
 
         <button type="submit" disabled={submitting} style={{ marginTop: 16, width: "100%", padding: 10, cursor: "pointer" , background: "#ececec", color: "#000000", border: `1px solid`, borderRadius: 6 }}>
           {submitting ? "Accesso..." : "Accedi"}

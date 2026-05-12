@@ -9,6 +9,7 @@ export type SafeUser = {
 export type LoginRequest = {
   email: string;
   password: string;
+  turnstileToken: string; // aggiunto campo per il token del captcha di Cloudflare Turnstile
 };
 
 export type RegisterRequest = {
@@ -18,7 +19,7 @@ export type RegisterRequest = {
   nickname: string;
   password: string;
   confermaPassword: string;
-  // captchaToken: string;
+  turnstileToken: string; // aggiunto campo per il token del captcha di Cloudflare Turnstile
 };
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";

@@ -6,6 +6,7 @@ import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 // import { useTheme } from "../hooks/useTheme";
 import GoogleSignInButton from "../components/GoogleSignInButton";
+import TurnstileWidget from "../components/TurnstileWidget";
 
 // import styles from "./Auth.module.css";
 
@@ -23,6 +24,8 @@ export default function Register() {
   const [confermaPassword, setConfermaPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  
 
   const captchaRef = useRef<HCaptcha>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -42,7 +45,7 @@ export default function Register() {
           setError(null);
           setSubmitting(true);
           try {
-            await register({ nome, cognome, email, nickname, password, confermaPassword /*, captchaToken*/ });
+            await register({ nome, cognome, email, nickname, password, confermaPassword, turnstileToken });
             navigate("/home", { replace: true });
           } catch (err) {
             setError(err instanceof Error ? err.message : "Errore registrazione");
@@ -116,6 +119,8 @@ export default function Register() {
           onExpire={() => setCaptchaToken(null)}
           ref={captchaRef}
         /> */}
+
+        <TurnstileWidget onVerify={(token) => setTurnstileToken(token)} />
 
         {error && <p style={{ color: "#c0392b" }}>{error}</p>}
 
