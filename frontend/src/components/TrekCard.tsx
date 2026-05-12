@@ -13,33 +13,6 @@ const difficultyStyle: Record<Trek["difficulty"], string> = {
   Difficile:   styles.badgeHard,
 };
 
-
-/**
- * Rating percorso con stelle
- * @param {number} rating - Voto medio da 0 a 5
- */
-function StarRating({rating}: {rating: number}) {
-  return (
-    <div className={styles.stars}>
-      {[1, 2, 3, 4, 5].map((star) => (
-        <span
-          key={star}
-          className={`${styles.star} ${
-            rating >= star ? styles.starFull :
-            rating >= star - 0.5 ? styles.starHalf :
-            styles.starEmpty
-          }`}
-          >
-            ★
-          </span>
-      ))}
-      <span className={styles.ratingNum}>
-        {rating > 0 ? rating.toFixed(1) : "-"}
-      </span>
-    </div>
-  );
-}
-
 /**
  * Props del componente TrekCard
  * @param {Trek} trek - Oggetto percorso da visualizzare
@@ -47,7 +20,6 @@ function StarRating({rating}: {rating: number}) {
 interface TrekCardProps { 
   trek: Trek;
 }
-
 
 /**
  * Card percorso nella Home.
@@ -61,35 +33,34 @@ function TrekCard({ trek }: TrekCardProps) {
       {/*Immagine*/}
       <div className={styles.cardImg} />
       
-      {/*Contenuto*/}
-      <div className={styles.cardBody}>
-          <h3 className={styles.cardName}>{trek.name}</h3>
-          <div className={styles.cardMeta}>
-            <span className={`${styles.badge} ${difficultyStyle[trek.difficulty]}`}>
-            {trek.difficulty}
-          </span>
+     {/*Contenuto*/}
+<div className={styles.cardBody}>
+  <div className={styles.cardTop}>
+    <h3 className={styles.cardName}>{trek.name}</h3>
+    <span className={styles.ratingBadge}>— ★</span>
+  </div>
 
-          {trek.duration && (
-            <span className={`${styles.badge} ${styles.badgeInfo}`}>
-              {trek.duration}
-            </span>
-          )}
-
-          {trek.lengthKm && (
-            <span className={`${styles.badge} ${styles.badgeInfo}`}>
-              {trek.lengthKm} km
-            </span>
-          )}
-
-          {trek.elevationGain && (
-            <span className={`${styles.badge} ${styles.badgeInfo}`}>
-              {trek.elevationGain} m
-            </span>
-          )}
-        </div>
-
-        <StarRating rating={0}/>
-      </div>
+  <div className={styles.cardMeta}>
+    <span className={`${styles.badge} ${difficultyStyle[trek.difficulty]}`}>
+      {trek.difficulty}
+    </span>
+    {trek.duration && (
+      <span className={`${styles.badge} ${styles.badgeInfo}`}>
+        {trek.duration}
+      </span>
+    )}
+    {trek.lengthKm && (
+      <span className={`${styles.badge} ${styles.badgeInfo}`}>
+        {trek.lengthKm} km
+      </span>
+    )}
+    {trek.elevationGain && (
+      <span className={`${styles.badge} ${styles.badgeInfo}`}>
+        {trek.elevationGain} m
+      </span>
+    )}
+  </div>
+</div>
 
       {/* {(trek.friendCount || trek.likes) && (
         <div className={styles.cardFooter}>
