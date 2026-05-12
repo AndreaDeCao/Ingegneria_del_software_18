@@ -5,10 +5,18 @@ const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
+//moduli per documentazione API automatica con Swagger
+// const swaggerUi = require('swagger-ui-express');
+// const swaggerSpec = require('./swagger');
+
 const mongoose = require("mongoose");
 require("dotenv").config();
 
 const app = express();
+
+//documentazione api automatica in localhost:3000/api-docs
+// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 app.use(
   cors({
     origin: process.env.FRONTEND_URL ?? "http://localhost:5173",
