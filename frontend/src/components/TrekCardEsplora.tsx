@@ -1,5 +1,4 @@
-import styles from "./TrekCard.module.css";
-// import type { Trek } from "../types/Trek";
+import styles from "./TrekCardEsplora.module.css";
 import type { Trek } from "../types/Trek";
 
 /**
@@ -41,20 +40,13 @@ function StarRating({rating}: {rating: number}) {
 }
 
 /**
- * Props del componente TrekCard
- * @param {Trek} trek - Oggetto percorso da visualizzare
+ * Il componente TrekCard riceve un oggetto trek come prop e lo visualizza in una card.
  */
-interface TrekCardProps { 
+interface TrekCardEsploraProps { 
   trek: Trek;
 }
 
-
-/**
- * Card percorso nella Home.
- * Immagine in cima, informazioni: difficoltà, durata, km, dislivello e rating.
- * @param {Trek} trek - Oggetto percorso da visualizzare
- */
-function TrekCard({ trek }: TrekCardProps) {
+function TrekCardEsplora({ trek }: TrekCardEsploraProps) {
   return (
     <article className={styles.card}>
 
@@ -70,7 +62,7 @@ function TrekCard({ trek }: TrekCardProps) {
           </span>
 
           {trek.duration && (
-            <span className={`${styles.badge} ${styles.badgeInfo}`}>
+            <span className={`${styles.badge} ${styles.badgeDuration}`}>
               {trek.duration}
             </span>
           )}
@@ -108,4 +100,4 @@ function TrekCard({ trek }: TrekCardProps) {
   );
 }
 
-export default TrekCard;
+export default TrekCardEsplora;
