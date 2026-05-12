@@ -23,6 +23,8 @@
     "mongoose": "^9.6.1",
     "passport": "^0.7.0",
     "passport-google-oauth2": "^0.2.0",
-    "react-router-dom": "^7.15.0"
+    "react-router-dom": "^7.15.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   }
 }
