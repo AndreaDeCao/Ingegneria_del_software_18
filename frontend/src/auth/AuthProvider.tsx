@@ -45,11 +45,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // },
       // login
       login: async (req) => {
-        console.log("LOGIN REQUEST BODY:", req); //FIX ME: check
         const r = await authApi.login(req);
         setAccessToken(r.accessToken ?? null); // salva il token JWT restituito dall'API di login in memoria
-        setUser(r.user);
-          
+        setUser(r.user);      
       },
 
       // register

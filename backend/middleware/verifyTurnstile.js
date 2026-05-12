@@ -1,8 +1,6 @@
 const axios = require("axios");
 
 const verifyTurnstile = async (req, res, next) => {
-  console.log("BODY RECEIVED:", req.body);
-console.log("TOKEN:", req.body.turnstileToken);
   try {
     const token = req.body.turnstileToken;
 
