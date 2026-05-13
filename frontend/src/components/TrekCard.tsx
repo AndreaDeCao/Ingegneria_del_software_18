@@ -2,14 +2,6 @@ import styles from "./TrekCard.module.css";
 // import type { Trek } from "../types/Trek";
 import type { Trek } from "../types/Trek";
 
-// export type Trek = {
-//   id: string;
-//   name: string;
-//   difficulty: "Facile" | "Medio" | "Difficile";
-//   duration: string
-//   // friendCount?: number;
-//   // likes?: number;
-// };
 /**
  * In questo componente, definiamo un mapping tra i valori di difficoltà e le classi CSS corrispondenti.
  * Questo ci permette di applicare stili diversi a seconda della difficoltà del trek.
@@ -21,46 +13,54 @@ const difficultyStyle: Record<Trek["difficulty"], string> = {
   Difficile:   styles.badgeHard,
 };
 
-
 /**
- * Il componente TrekCard riceve un oggetto trek come prop e lo visualizza in una card.
+ * Props del componente TrekCard
+ * @param {Trek} trek - Oggetto percorso da visualizzare
  */
 interface TrekCardProps { 
   trek: Trek;
 }
 
-// function TrekCard({ trek }: { trek: Trek }) {
-//   return (
-//     <div style={{
-//       border: "1px solid gray",
-//       borderRadius: "10px",
-//       padding: "10px",
-//       width: "200px"
-//     }}>
-//       <h3>{trek.name}</h3>
-//       <p>Difficoltà: {trek.difficulty}</p>
-//       <p>Durata: {trek.duration}</p>
-//       {trek.friendCount !== undefined && <p>Amici: {trek.friendCount}</p>}
-//       {trek.likes !== undefined && <p>Like: {trek.likes}</p>}
-//     </div>
-//   );
-// }
+/**
+ * Card percorso nella Home.
+ * Immagine in cima, informazioni: difficoltà, durata, km, dislivello e rating.
+ * @param {Trek} trek - Oggetto percorso da visualizzare
+ */
 function TrekCard({ trek }: TrekCardProps) {
   return (
     <article className={styles.card}>
-      <div className={styles.cardImg} />
 
-      <div className={styles.cardBody}>
-        <h3 className={styles.cardName}>{trek.name}</h3>
-        <div className={styles.cardMeta}>
-          <span className={`${styles.badge} ${difficultyStyle[trek.difficulty]}`}>
-            {trek.difficulty}
-          </span>
-          <span className={`${styles.badge} ${styles.badgeDuration}`}>
-            {trek.duration}
-          </span>
-        </div>
-      </div>
+      {/*Immagine*/}
+      <div className={styles.cardImg} />
+      
+     {/*Contenuto*/}
+<div className={styles.cardBody}>
+  <div className={styles.cardTop}>
+    <h3 className={styles.cardName}>{trek.name}</h3>
+    <span className={styles.ratingBadge}>— ★</span>
+  </div>
+
+  <div className={styles.cardMeta}>
+    <span className={`${styles.badge} ${difficultyStyle[trek.difficulty]}`}>
+      {trek.difficulty}
+    </span>
+    {trek.duration && (
+      <span className={`${styles.badge} ${styles.badgeInfo}`}>
+        {trek.duration}
+      </span>
+    )}
+    {trek.lengthKm && (
+      <span className={`${styles.badge} ${styles.badgeInfo}`}>
+        {trek.lengthKm} km
+      </span>
+    )}
+    {trek.elevationGain && (
+      <span className={`${styles.badge} ${styles.badgeInfo}`}>
+        {trek.elevationGain} m
+      </span>
+    )}
+  </div>
+</div>
 
       {/* {(trek.friendCount || trek.likes) && (
         <div className={styles.cardFooter}>
