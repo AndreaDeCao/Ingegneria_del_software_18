@@ -98,6 +98,10 @@
   color: var(--text-primary);
 }
 
+.infoContent div {
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--border);
+}
 .sidebar {
   position: sticky;
   top: 20px;

@@ -80,7 +80,7 @@ export default function TrekDetails() {
             </span>
 
             <span className={appStyles.sectionCount}>
-              ⛰ {trek.elevationGain ?? "-"}
+              ⛰ {trek.elevationGain ?? "-"} m
             </span>
           </div>
 
@@ -100,18 +100,42 @@ export default function TrekDetails() {
             </h2>
 
             <div className={styles.infoContent}>
-              <p>
-                <strong>Partenza:</strong> {trek.startPoint}
-              </p>
+              <div>
+                <p>
+                  <strong>Partenza:</strong> {trek.startPoint}
+                </p>
 
-              <p>
-                <strong>Arrivo:</strong> {trek.endPoint}
-              </p>
+                <p>
+                  <strong>Arrivo:</strong> {trek.endPoint}
+                </p>
+                <p> 
+                  <strong>Durata:</strong> {trek.duration}
+                </p>
+              </div>
 
-              <p>
-                <strong>Condizioni:</strong>{" "}
-                {trek.condizioniAttuali || "Non disponibili"}
-              </p>
+              <div>
+                <p> 
+                  <strong>Lunghezza:</strong> {trek.lengthKm ?? "-"} km
+                </p>
+
+                <p>
+                  <strong>Quota minima:</strong> {trek.minAltitude ?? "-"} m
+                </p>
+
+                <p>
+                  <strong>Quota massima:</strong> {trek.maxAltitude ?? "-"} m
+                </p>
+
+                <p>
+                  <strong>Dislivello:</strong> {trek.elevationGain ?? "-"} m
+                </p>
+              </div>
+
+                <p>
+                  <strong>Condizioni:</strong>{" "}
+                  {trek.condizioniAttuali || "Non disponibili"}
+                </p>
+              
             </div>
           </div>
         </section>
@@ -125,10 +149,10 @@ export default function TrekDetails() {
               <h3 className={appStyles.sectionTitle}>Riepilogo</h3>
 
               <div className={styles.summaryList}>
-                <span>🟢 Difficoltà: {trek.difficulty}</span>
+                <span>🎯 Difficoltà: {trek.difficulty}</span>
                 <span>⏱ Durata: {trek.duration}</span>
                 <span>📏 Lunghezza: {trek.lengthKm ?? "-"} km</span>
-                <span>⛰ Dislivello: {trek.elevationGain ?? "-"}</span>
+                <span>⛰ Dislivello: {trek.elevationGain ?? "-"} m</span>
               </div>
             </div>
 
