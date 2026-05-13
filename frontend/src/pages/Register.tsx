@@ -2,7 +2,7 @@ import { useState, useRef } from "react"; //useRef serve a tenere traccia del co
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 
-import HCaptcha from "@hcaptcha/react-hcaptcha";
+// import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 // import { useTheme } from "../hooks/useTheme";
 import GoogleSignInButton from "../components/GoogleSignInButton";
@@ -27,8 +27,8 @@ export default function Register() {
   const [turnstileToken, setTurnstileToken] = useState("");
   
 
-  const captchaRef = useRef<HCaptcha>(null);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  // const captchaRef = useRef<HCaptcha>(null);
+  // const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   //TODO: aggiungere validazione dei campi (es. email valida, password abbastanza complessa, ecc.)
   //TODO: aggiungi  pwd confirm e captcha per evitare registrazioni automatiche
@@ -107,12 +107,6 @@ export default function Register() {
         </label>
 
 
-        {/* TODO: finire di implementare captcha, attualmente è solo un placeholder, non blocca la registrazione se non completato
-        manca: 
-                  - gestire il token del captcha e inviarlo al backend per la verifica (in authController.js)
-        OPZIONALE - gestire il caso in cui il captcha scade o viene invalidato (es. se l'utente ci mette troppo tempo a compilare il form) 
-                  - aggiungere captchaToken: string; al RegisterRequest in api.ts
-                  - aggiungere segreti in .env per hcaptcha creati da https://www.hcaptcha.com (serve registrarsi e creare un nuovo sito per ottenere sitekey e secret) */}
         {/* <HCaptcha 
           sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
           onVerify={(token) => setCaptchaToken(token)}

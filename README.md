@@ -98,34 +98,31 @@ Ingegneria_del_software_18
 ├─ backend
 │  ├─ .dockerignore
 │  ├─ controllers
+│  │  ├─ activityController.js
 │  │  ├─ authController.js
 │  │  ├─ treksController.js
 │  │  └─ usersController.js
-│  ├─ DockerFile
+│  ├─ Dockerfile
 │  ├─ index.js
 │  ├─ middleware
-│  │  └─ requireAuth.js
+│  │  ├─ requireAuth.js
+│  │  └─ verifyTurnstile.js
 │  ├─ models
+│  │  ├─ activities.js
 │  │  ├─ treks.js
-│  │  ├─ users.js
-│  │  └─ users.tsx
-│  ├─ routes
-│  │  ├─ authRoutes.js
-│  │  ├─ treksRoutes.js
-│  │  └─ usersRoutes.js
+│  │  └─ users.js
 │  ├─ package-lock.json
-│  ├─ package.json
-│  ├─ services
-│  └─ utils
+│  └─ package.json
 ├─ docker-compose.yml
 ├─ frontend
 │  ├─ .dockerignore
-│  ├─ DockerFile
+│  ├─ Dockerfile
 │  ├─ eslint.config.js
 │  ├─ index.html
 │  ├─ package-lock.json
 │  ├─ package.json
 │  ├─ public
+│  │  ├─ GitHub_Lockup_Black.svg
 │  │  ├─ logo_ing_sw.svg
 │  │  ├─ moon.svg
 │  │  └─ sun.svg
@@ -137,21 +134,45 @@ Ingegneria_del_software_18
 │  │  │  ├─ api.ts
 │  │  │  └─ AuthProvider.tsx
 │  │  ├─ components
+│  │  │  ├─ ActivityCard.module.css
+│  │  │  ├─ ActivityCard.tsx
+│  │  │  ├─ Footer.module.css
+│  │  │  ├─ Footer.tsx
+│  │  │  ├─ GoogleSignInButton.module.css
+│  │  │  ├─ GoogleSignInButton.tsx
 │  │  │  ├─ Navbar.module.css
 │  │  │  ├─ Navbar.tsx
 │  │  │  ├─ TrekCard.module.css
-│  │  │  └─ TrekCard.tsx
+│  │  │  ├─ TrekCard.tsx
+│  │  │  └─ TurnstileWidget.tsx
 │  │  ├─ hooks
 │  │  │  └─ useTheme.ts
 │  │  ├─ index.css
 │  │  ├─ main.tsx
 │  │  ├─ pages
+│  │  │  ├─ account
+│  │  │  │  ├─ AccountPage.tsx
+│  │  │  │  ├─ AttivitaPage.tsx
+│  │  │  │  ├─ DiarioPage.tsx
+│  │  │  │  └─ VersionePage.tsx
+│  │  │  ├─ AccountPage.tsx
+│  │  │  ├─ AttivitaPage.tsx
+│  │  │  ├─ AuthCallback.tsx
+│  │  │  ├─ Contatti.tsx
+│  │  │  ├─ DiarioPage.tsx
 │  │  │  ├─ Friends.tsx
+│  │  │  ├─ Home.tsx
+│  │  │  ├─ homepage
+│  │  │  │  └─ Homepage.tsx
 │  │  │  ├─ Login.tsx
 │  │  │  ├─ MyTreks.tsx
+│  │  │  ├─ Privacy.tsx
 │  │  │  ├─ Register.tsx
-│  │  │  └─ Treks.tsx
+│  │  │  ├─ Termini.tsx
+│  │  │  ├─ Treks.tsx
+│  │  │  └─ VersionePage.tsx
 │  │  └─ types
+│  │     ├─ Activity.ts
 │  │     ├─ Trek.ts
 │  │     └─ User.ts
 │  ├─ tsconfig.app.json
