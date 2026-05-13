@@ -5,4 +5,11 @@ export type Trek = {
   duration: string
   // friendCount?: number;
   // likes?: number;
+  description?: string;
+  SatRouteNumber?: string;
+  lengthKm?: number;
+  elevationGain?: string;
+  startPoint?: string;
+  endPoint?: string;
+  condizioniAttuali?: string;
 };

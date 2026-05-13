@@ -1,0 +1,261 @@
+.hero {
+  height: 280px;
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.05),
+      rgba(0, 0, 0, 0.25)
+    ),
+    linear-gradient(135deg, var(--accent-light), var(--bg-secondary));
+
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+
+  transition:
+    transform 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+.hero:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+}
+
+.heroBadge {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.pageTitle {
+  font-size: 34px;
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.badges {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.section {
+  margin-bottom: 28px;
+}
+
+.infoCard {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+
+  padding: 20px;
+  margin-bottom: 20px;
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+/*
+.infoCard:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.08);
+}
+*/
+
+.infoContent {
+  margin-top: 14px;
+
+  font-size: 14px;
+  color: var(--text-secondary);
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  line-height: 1.6;
+}
+
+.infoContent strong {
+  color: var(--text-primary);
+}
+
+.sidebar {
+  position: sticky;
+  top: 20px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+
+  padding: 20px;
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+/*
+.card:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.08);
+}
+*/
+.summaryList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  font-size: 14px;
+  color: var(--text-secondary);
+
+  margin-top: 14px;
+}
+
+.summaryList span {
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--border);
+}
+
+.summaryList span:last-child {
+  border-bottom: none;
+}
+
+.actionCard {
+  background:
+    linear-gradient(
+      135deg,
+      #2d6a4f 0%,
+      #3a7d5d 100%
+    );
+
+  color: #f8f8f6;
+
+  border-radius: var(--radius-lg);
+  padding: 22px;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease;
+}
+
+[data-theme='dark'] .actionCard {
+  background:
+    linear-gradient(
+      135deg,
+      #18392b 0%,
+      #10271d 100%
+    );
+
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/*
+.actionCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+*/
+
+.actionTitle {
+  margin-bottom: 10px;
+  font-size: 20px;
+  font-family: var(--font-display);
+  color: white;
+}
+
+.actionText {
+  font-size: 14px;
+  line-height: 1.5;
+
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.saveShareButton {
+  margin-top: 14px;
+  width: 100%;
+
+  padding: 12px 14px;
+
+  border-radius: 12px;
+  border: none;
+
+  background: var(--accent);
+  color: white;
+
+  font-weight: 700;
+  font-size: 14px;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.saveShareButton:hover {
+  transform: translateY(-3px) scale(1.015);
+
+  background: #40916c;
+
+  box-shadow:
+    0 10px 18px rgba(0, 0, 0, 0.22);
+}
+
+.saveShareButton:active {
+  transform: scale(0.98);
+}
+
+.saveShareButton:nth-child(5) {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.saveShareButton:nth-child(5):hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* //MOBILE
+
+@media (max-width: 900px) {
+  .pageTitle {
+    font-size: 28px;
+  }
+
+  .hero {
+    height: 220px;
+  }
+
+  .sidebar {
+    position: static;
+  }
+}
+*/

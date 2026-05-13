@@ -1,7 +1,7 @@
 import styles from "./TrekCard.module.css";
 // import type { Trek } from "../types/Trek";
 import type { Trek } from "../types/Trek";
-
+import { Link } from "react-router-dom";
 // export type Trek = {
 //   id: string;
 //   name: string;
@@ -47,35 +47,37 @@ interface TrekCardProps {
 // }
 function TrekCard({ trek }: TrekCardProps) {
   return (
-    <article className={styles.card}>
-      <div className={styles.cardImg} />
+    <Link to={`/treks/${trek.id}`} className={styles.cardLink}>
+      <article className={styles.card}>
+        <div className={styles.cardImg} />
 
-      <div className={styles.cardBody}>
-        <h3 className={styles.cardName}>{trek.name}</h3>
-        <div className={styles.cardMeta}>
-          <span className={`${styles.badge} ${difficultyStyle[trek.difficulty]}`}>
-            {trek.difficulty}
-          </span>
-          <span className={`${styles.badge} ${styles.badgeDuration}`}>
-            {trek.duration}
-          </span>
-        </div>
-      </div>
-
-      {/* {(trek.friendCount || trek.likes) && (
-        <div className={styles.cardFooter}>
-          {trek.friendCount && (
-            <span className={styles.friends}>
-              {trek.friendCount} friends did this
+        <div className={styles.cardBody}>
+          <h3 className={styles.cardName}>{trek.name}</h3>
+          <div className={styles.cardMeta}>
+            <span className={`${styles.badge} ${difficultyStyle[trek.difficulty]}`}>
+              {trek.difficulty}
             </span>
-          )}
-          {trek.likes && (
-            <span className={styles.likes}>♥ {trek.likes}</span>
-          )}
+            <span className={`${styles.badge} ${styles.badgeDuration}`}>
+              {trek.duration}
+            </span>
+          </div>
         </div>
-      )} */}
 
-    </article>
+        {/* {(trek.friendCount || trek.likes) && (
+          <div className={styles.cardFooter}>
+            {trek.friendCount && (
+              <span className={styles.friends}>
+                {trek.friendCount} friends did this
+              </span>
+            )}
+            {trek.likes && (
+              <span className={styles.likes}>♥ {trek.likes}</span>
+            )}
+          </div>
+        )} */}
+
+      </article>
+    </Link>
   );
 }
 

@@ -28,6 +28,7 @@ import "./index.css";
 import styles from "./App.module.css";
 
 import AuthCallback from "./pages/AuthCallback";
+import TrekDetails from "./pages/TrekDetails";
 
 /**
  * Layout comune a tutte le pagine (comprende Navbar)
@@ -62,6 +63,7 @@ export default function App() {
         <Routes>
                   {/* Landing page */}
                   <Route path="/" element={<AppLayout><Home /></AppLayout>} />
+                  <Route path="/treks/:id" element={<AppLayout><TrekDetails /></AppLayout>} />
         
                   {/* Auth */}
                   <Route path="/login"    element={<AppLayout><Login /></AppLayout>} />
