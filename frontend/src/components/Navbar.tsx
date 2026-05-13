@@ -1,9 +1,6 @@
-import {useState} from "react";
+import { useState } from "react";
 import styles from "./Navbar.module.css";
-import { Link } from "react-router-dom";
-
-
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 
 /**
@@ -88,7 +85,7 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
 
       <nav className={styles.nav}>
         <NavLink
-          to="/"
+          to="/treks"
           className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
         >
           Esplora
@@ -126,7 +123,12 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
           title="Toggle theme" aria-label="Toggle dark/light mode">
           {theme === "dark" ? <SunIcon /> : <MoonIcon />}
         </button>
-        <button className={styles.avatar} onClick={() => handleNavigate("/account/profilo")}> OB </button>
+        <button className={styles.avatar} onClick={() => handleNavigate("/account/profilo")}> 
+          <svg width={20} height={20} viewBox="0 0 24 24" fill="white">
+            <circle cx={12} cy={8} r={4}/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+        </button>
       </nav>
     </header>
 

@@ -10,7 +10,7 @@ import ProtectedRoute from "./auth/ProtectedRoute";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Treks from "./pages/Treks";
+import Treks from "./pages/Treks/Treks";
 import MyTreks from "./pages/MyTreks";
 import Friends from "./pages/Friends";
 import Home from "./pages/Home";
@@ -18,7 +18,7 @@ import Privacy from "./pages/Privacy";
 import Termini from "./pages/Termini";
 import Contatti from "./pages/Contatti";
 
-import Homepage from "./pages/homepage/Homepage";
+//import Homepage from "./pages/homepage/Homepage";
 import AccountPage from "./pages/account/AccountPage";
 import DiarioPage from "./pages/account/DiarioPage";
 import AttivitaPage from "./pages/account/AttivitaPage";
@@ -27,6 +27,8 @@ import VersionePage from "./pages/account/VersionePage";
 import "./index.css";
 import styles from "./App.module.css";
 import ScrollToTop from "./ScrollToTop";
+
+import AuthCallback from "./pages/AuthCallback";
 
 /**
  * Layout comune a tutte le pagine (comprende Navbar)
@@ -94,7 +96,10 @@ export default function App() {
                   <Route path="/privacy"  element={<AppLayout><Privacy /></AppLayout>} />
                   <Route path="/termini"  element={<AppLayout><Termini /></AppLayout>} />
                   <Route path="/contatti" element={<AppLayout><Contatti /></AppLayout>} />
-        
+                  
+                  {/* OAuth callback */}
+                  <Route path="/auth/callback" element={<AuthCallback />} />
+
                   {/* Fallback */}
                   <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
