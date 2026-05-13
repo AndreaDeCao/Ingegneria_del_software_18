@@ -65,7 +65,32 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(text || `HTTP ${res.status}`);
+
+    // Prova a estrarre un messaggio "pulito" da risposte JSON del backend tipo:
+    // { "error": "Credenziali non valide" }
+    let message: string | null = null;
+    try {
+      const trimmed = text.trim();
+      if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+        const data = JSON.parse(trimmed) as { error?: unknown; message?: unknown };
+        const candidate =
+          typeof data?.error === "string"
+            ? data.error
+            : typeof data?.message === "string"
+              ? data.message
+              : null;
+        if (candidate) message = candidate;
+      }
+    } catch {
+      // ignore JSON parse errors
+    }
+
+    if (!message) {
+      if (res.status >= 500) message = "Errore del server. Riprova più tardi.";
+      else message = text || `HTTP ${res.status}`;
+    }
+
+    throw new Error(message);
   }
 
   return (await res.json()) as T;

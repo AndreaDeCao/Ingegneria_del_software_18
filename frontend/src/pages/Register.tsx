@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"; //useRef serve a tenere traccia del componente HCaptcha 
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 
@@ -116,7 +116,21 @@ export default function Register() {
 
         <TurnstileWidget onVerify={(token) => setTurnstileToken(token)} />
 
-        {error && <p style={{ color: "#c0392b" }}>{error}</p>}
+        {error && (
+          <div
+            role="alert"
+            style={{
+              marginTop: 12,
+              padding: 12,
+              borderRadius: 8,
+              border: "1px solid #f5c6cb",
+              background: "#fdecea",
+              color: "#7a1f1f",
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         <button type="submit" disabled={submitting} style={{ marginTop: 16, width: "100%", padding: 10, cursor: "pointer" , background: "#ececec", color: "#000000", border: `1px solid`, borderRadius: 6 }}>
           {submitting ? "Creazione..." : "Crea account"}

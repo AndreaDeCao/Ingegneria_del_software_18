@@ -68,7 +68,21 @@ export default function Login() {
 
         <TurnstileWidget onVerify={(token) => setTurnstileToken(token)} />
 
-        {error && <p style={{ color: "#c0392b" }}>{error}</p>}
+        {error && (
+          <div
+            role="alert"
+            style={{
+              marginTop: 12,
+              padding: 12,
+              borderRadius: 8,
+              border: "1px solid #f5c6cb",
+              background: "#fdecea",
+              color: "#7a1f1f",
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         
 
