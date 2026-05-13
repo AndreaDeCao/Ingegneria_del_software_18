@@ -16,6 +16,12 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
 
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileKey, setTurnstileKey] = useState(0);
+
+  const resetTurnstile = () => {
+    setTurnstileToken("");
+    setTurnstileKey((k) => k + 1);
+  };
 
   //TODO: aggiungere validazione dei campi 
   //FIXME: migliorare il display degli errori se le credenziali non sono valide può comunque segnare sessione scaduta invece che credenziali errate
@@ -32,11 +38,25 @@ export default function Login() {
           setError(null);
           setSubmitting(true);
           try {
+            if (!turnstileToken) {
+              setError("Completa il CAPTCHA per continuare.");
+              setSubmitting(false);
+              return;
+            }
             await login({ email, password, turnstileToken }); // Passiamo anche il token del captcha alla funzione di login
             const to = location.state?.from ?? "/home";
             navigate(to, { replace: true });
           } catch (err) {
-            setError(err instanceof Error ? err.message : "Errore login");
+            const message = err instanceof Error ? err.message : "Errore login";
+            if (
+              message.toLowerCase().includes("captcha") ||
+              message.toLowerCase().includes("turnstile")
+            ) {
+              setError("CAPTCHA scaduto o non valido. Verifica di nuovo e riprova.");
+            } else {
+              setError(message);
+            }
+            resetTurnstile();
           } finally {
             setSubmitting(false);
           }
@@ -66,7 +86,14 @@ export default function Login() {
           />
         </label>
 
-        <TurnstileWidget onVerify={(token) => setTurnstileToken(token)} />
+        <TurnstileWidget
+          key={turnstileKey}
+          onVerify={(token) => setTurnstileToken(token)}
+          onExpire={() => {
+            setError("CAPTCHA scaduto. Verifica di nuovo per continuare.");
+            resetTurnstile();
+          }}
+        />
 
         {error && (
           <div
