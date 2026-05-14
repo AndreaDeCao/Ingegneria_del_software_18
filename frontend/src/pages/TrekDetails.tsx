@@ -36,7 +36,7 @@ export default function TrekDetails() {
         const trekData = await trekResponse.json();
         setTrek(trekData);
 
-        // METEO (usa id trek, come hai già fatto backend)
+        // METEO 
         const weatherResponse = await fetch(
           `${API_BASE}/api/weather/${trekData._id}`
         );
@@ -83,7 +83,7 @@ export default function TrekDetails() {
     const daily = weather?.weather?.["1440"];
     if (!daily) return null;
 
-    // anche qui prendiamo il primo giorno disponibile
+    // prende il primo giorno disponibile
     const values = Object.values(daily) as any[];
 
     return values[0];
@@ -112,8 +112,6 @@ export default function TrekDetails() {
     default: return "N/D";
   }
 }
-
-  //aaaaaaaaaaa aa a ajkckdsaj ASHODHOSI IDHOOIWO S S S S S SS S S S  S S
 
   if (loading) {
     return (

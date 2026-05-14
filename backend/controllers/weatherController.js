@@ -23,8 +23,6 @@ async function getWeatherByTrek(req, res) {
         error: "Percorso non trovato",
       });
     }
-    console.log("TREK ID RICEVUTO:", trekId);
-    console.log("TREK TROVATO:", trek);
 
     // 2. Coordinate trek
     const trekLat = Number(trek.coordinates.lat);
