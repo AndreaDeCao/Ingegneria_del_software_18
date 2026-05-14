@@ -88,6 +88,8 @@ export default function App() {
                   <Route path="/attivita/:sezione" element={<AppLayout><ProtectedRoute>
                     <AttivitaPage />
                   </ProtectedRoute></AppLayout>} />
+
+                  
         
                   {/* Pubblica — versioning/changelog */}
                   <Route path="/vers/:sezione" element={<AppLayout><VersionePage /></AppLayout>} />

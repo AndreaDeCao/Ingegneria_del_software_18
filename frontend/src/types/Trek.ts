@@ -5,8 +5,8 @@ export type Trek = {
   duration: string;
   description?: string;
   SatRouteNumber?: string;
-  lenghtKm?: number;
-  elevetionGain?: number;
+  lengthKm?: number;
+  elevationGain?: number;
   startPoint?: string;
   endPoint?: string;
   //currentCondition?: string;

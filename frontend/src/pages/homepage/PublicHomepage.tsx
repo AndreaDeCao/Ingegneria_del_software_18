@@ -9,7 +9,7 @@ import styles from "../../App.module.css";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
-export default function Homepage() {
+export default function PublicHomepage() {
   const [treks, setTreks] = useState<Trek[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,43 +93,6 @@ export default function Homepage() {
             )}
           </div>
 
-          {/* DIARY */}
-          <div className={styles.sectionDiary}>
-
-            <div className={styles.sectionHead}>
-              <h2 className={styles.sectionTitle}>Diary</h2>
-
-              {!loading && !error && (
-                <span className={styles.sectionCount}>
-                  {MAX_DIARY_CARDS} Voci diario
-                </span>
-              )}
-            </div>
-
-            {loading && (
-              <p className={styles.message}>Caricamento voci diario...</p>
-            )}
-
-            {error && (
-              <p className={styles.messageError}>
-                Impossibile caricare le voci diario: {error}
-              </p>
-            )}
-
-            {!loading && !error && treks.length === 0 && (
-              <p className={styles.message}>
-                Nessuna voce diario trovata.
-              </p>
-            )}
-
-            {!loading && !error && (
-              <div className={styles.cardsRow}>
-                {treks.slice(0, MAX_DIARY_CARDS).map((trek) => (
-                  <TrekCard key={trek.id} trek={trek} />
-                ))}
-              </div>
-            )}
-          </div>
 
         </section>
 

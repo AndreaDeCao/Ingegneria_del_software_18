@@ -4,6 +4,7 @@ export type SafeUser = {
   cognome: string;
   email: string;
   nickname: string;
+  role: "user" | "admin";
 };
 
 export type LoginRequest = {

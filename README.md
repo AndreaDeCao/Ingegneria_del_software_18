@@ -93,7 +93,6 @@ The goal is to design and develop a system that improves the hiking experience b
 * **Deliverable:** D4
 * **Deadline:** 07/06/2026
 
-```
 Ingegneria_del_software_18
 ├─ backend
 │  ├─ .dockerignore
@@ -105,12 +104,20 @@ Ingegneria_del_software_18
 │  ├─ Dockerfile
 │  ├─ index.js
 │  ├─ middleware
+│  │  ├─ requireAdmin.js
 │  │  ├─ requireAuth.js
 │  │  └─ verifyTurnstile.js
 │  ├─ models
 │  │  ├─ activities.js
+│  │  ├─ diary.js
 │  │  ├─ treks.js
 │  │  └─ users.js
+│  ├─ routes
+│  │  ├─ activityRoutes.js
+│  │  ├─ authRoutes.js
+│  │  ├─ diaryRoutes.js
+│  │  ├─ userRoutes.js
+│  │  └─ treksRoutes.js
 │  ├─ package-lock.json
 │  └─ package.json
 ├─ docker-compose.yml
@@ -144,6 +151,8 @@ Ingegneria_del_software_18
 │  │  │  ├─ Navbar.tsx
 │  │  │  ├─ TrekCard.module.css
 │  │  │  ├─ TrekCard.tsx
+│  │  │  ├─ TrekCardEsplora.module.css
+│  │  │  ├─ TrekCardEsplora.tsx
 │  │  │  └─ TurnstileWidget.tsx
 │  │  ├─ hooks
 │  │  │  └─ useTheme.ts
@@ -169,8 +178,12 @@ Ingegneria_del_software_18
 │  │  │  ├─ Privacy.tsx
 │  │  │  ├─ Register.tsx
 │  │  │  ├─ Termini.tsx
-│  │  │  ├─ Treks.tsx
+│  │  │  ├─ TerminiPrivacyContatti.module.css
+│  │  │  ├─ Treks
+│  │  │  │  ├─ Treks.module.css
+│  │  │  │  └─ Treks.tsx
 │  │  │  └─ VersionePage.tsx
+│  │  ├─ ScrollToTop.tsx
 │  │  └─ types
 │  │     ├─ Activity.ts
 │  │     ├─ Trek.ts

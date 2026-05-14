@@ -9,6 +9,7 @@ const UserSchema = new mongoose.Schema({
   googleId: { type: String, unique: true, sparse: true, required: false},
   githubId: { type: String, unique: true, sparse: true, required: false }, // per utenti registrati con GitHub OAuth2
   turnstileToken: { type: String, required: false }, // per memorizzare il token Turnstile, se necessario
+  role: { type: String, enum: ["user", "admin"], default: "user" },
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", UserSchema);
