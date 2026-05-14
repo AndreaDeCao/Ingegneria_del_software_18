@@ -17,46 +17,44 @@ export default function TrekDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true);
+        setWeatherLoading(true);
 
-  // Fetch meteo
-useEffect(() => {
-  async function fetchData() {
-    try {
-      setLoading(true);
-      setWeatherLoading(true);
+        // TREK
+        const trekResponse = await fetch(
+          `${API_BASE}/treks/${id}`
+        );
 
-      // TREK
-      const trekResponse = await fetch(
-        `${API_BASE}/treks/${id}`
-      );
+        if (!trekResponse.ok)
+          throw new Error("Errore caricamento trek");
 
-      if (!trekResponse.ok)
-        throw new Error("Errore caricamento trek");
+        const trekData = await trekResponse.json();
+        setTrek(trekData);
 
-      const trekData = await trekResponse.json();
-      setTrek(trekData);
+        // METEO (usa id trek, come hai già fatto backend)
+        const weatherResponse = await fetch(
+          `${API_BASE}/api/weather/${trekData._id}`
+        );
 
-      // METEO (usa id trek, come hai già fatto backend)
-      const weatherResponse = await fetch(
-        `${API_BASE}/api/weather/${trekData._id}`
-      );
+        if (!weatherResponse.ok)
+          throw new Error("Errore caricamento meteo");
 
-      if (!weatherResponse.ok)
-        throw new Error("Errore caricamento meteo");
+        const weatherData = await weatherResponse.json();
+        setWeather(weatherData);
 
-      const weatherData = await weatherResponse.json();
-      setWeather(weatherData);
-
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-      setWeatherLoading(false);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+        setWeatherLoading(false);
+      }
     }
-  }
 
-  fetchData();
-}, [id]);
+    fetchData();
+  }, [id]);
 
 
   if (loading) {
@@ -76,6 +74,10 @@ useEffect(() => {
       </main>
     );
   }
+
+  if (weatherLoading) {
+  return <p>Caricamento...</p>;
+}
 
   return (
     <main className={appStyles.main}>
@@ -169,55 +171,56 @@ useEffect(() => {
                 <strong>Condizioni:</strong>{" "}
                 {trek.condizioniAttuali || "Non disponibili"}
               </p>
-{weather && (
-  <section>
-    <h2>Meteo</h2>
-
-    {(() => {
-      const firstDay = Object.values(
-        weather.weather
-      )[0] as any;
-
-      const firstForecast = Object.values(
-        firstDay
-      )[0] as any;
-
-      return (
-        <div>
-          <p>
-            Località: {weather.meteoLocation}
-          </p>
-
-          <p>
-            Temperatura:
-            {" "}
-            {firstForecast.temperature}°C
-          </p>
-
-          <p>
-            Probabilità pioggia:
-            {" "}
-            {firstForecast.rain_probability}%
-          </p>
-
-          <p>
-            Quota neve:
-            {" "}
-            {firstForecast.snow_level} m
-          </p>
-
-          <p>
-            Vento:
-            {" "}
-            {firstForecast.wind_speed} km/h
-          </p>
-        </div>
-      );
-    })()}
-  </section>
-)}
             </div>
           </div>
+
+          {weather && (
+            <section>
+              <h2>Meteo</h2>
+
+              {(() => {
+                const firstDay = Object.values(
+                  weather.weather
+                )[0] as any;
+
+                const firstForecast = Object.values(
+                  firstDay
+                )[0] as any;
+
+                return (
+                  <div>
+                    <p>
+                      Località: {weather.meteoLocation}
+                    </p>
+
+                    <p>
+                      Temperatura:
+                      {" "}
+                      {firstForecast.temperature}°C
+                    </p>
+
+                    <p>
+                      Probabilità pioggia:
+                      {" "}
+                      {firstForecast.rain_probability}%
+                    </p>
+
+                    <p>
+                      Quota neve:
+                      {" "}
+                      {firstForecast.snow_level} m
+                    </p>
+
+                    <p>
+                      Vento:
+                      {" "}
+                      {firstForecast.wind_speed} km/h
+                    </p>
+                  </div>
+                );
+              })()}
+            </section>
+          )}
         </section>
 
         {/* RIGHT */}
