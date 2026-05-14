@@ -29,7 +29,7 @@ app.use("/treks", trekRoutes);
 app.use("/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/activities", activityRoutes); //!!!
-app.use("/diary", diaryRoutes);
+app.use("/api/diary", diaryRoutes);
 
 // Connessione a MongoDB
 mongoose.connect(process.env.MONGODB_URI, { family: 4 })  // Imposta family: 4 per forzare l'uso di IPv4

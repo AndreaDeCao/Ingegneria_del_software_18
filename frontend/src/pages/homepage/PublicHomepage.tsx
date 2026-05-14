@@ -17,7 +17,6 @@ export default function PublicHomepage() {
 
   const MAX_TREK_CARDS = 11;
   const MAX_ACTIVITY_CARDS = 7;
-  const MAX_DIARY_CARDS = 5;
 
   useEffect(() => {
     fetch(`${API_BASE}/treks`)

@@ -3,15 +3,25 @@ import TrekCard from "../../components/TrekCard";
 import ActivityCard from "../../components/ActivityCard";
 
 import type { Trek } from "../../types/Trek";
+import type { DiaryEntry } from "../../types/Diary";
 import type { Activity } from "../../types/Activity";
 
 import styles from "../../App.module.css";
+
+// Helper per fare fetch autenticata (riusa il token in memoria tramite http di api.ts)
+export async function fetchAuth<T>(path: string): Promise<T> {
+  const { http } = await import("../../auth/api"); // riusa http interno
+  return (http as (p: string) => Promise<T>)(path);
+}
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export default function Homepage() {
   const [treks, setTreks] = useState<Trek[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+
+  const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,6 +29,7 @@ export default function Homepage() {
   const MAX_ACTIVITY_CARDS = 7;
   const MAX_DIARY_CARDS = 5;
 
+  // Carica percorsi, senza token
   useEffect(() => {
     fetch(`${API_BASE}/treks`)
       .then((res) => {
@@ -33,6 +44,7 @@ export default function Homepage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Carica attività, senza token
   useEffect(() => {
     fetch(`${API_BASE}/activities`)
       .then((res) => {
@@ -43,6 +55,13 @@ export default function Homepage() {
       .catch((err: Error) => {
         console.error("Errore fetch attività:", err);
       });
+  }, []);
+
+  // Carica voci diario, con token (se l'utente è loggato)
+  useEffect(() => {
+    fetchAuth<DiaryEntry[]>(`/api/diary`)
+      .then((data) => setDiaryEntries(data))
+      .catch((err: Error) => console.error("Errore diary:", err));
   }, []);
 
   return (
@@ -95,40 +114,23 @@ export default function Homepage() {
 
           {/* DIARY */}
           <div className={styles.sectionDiary}>
-
             <div className={styles.sectionHead}>
-              <h2 className={styles.sectionTitle}>Diary</h2>
-
-              {!loading && !error && (
-                <span className={styles.sectionCount}>
-                  {MAX_DIARY_CARDS} Voci diario
-                </span>
-              )}
+              <h2 className={styles.sectionTitle}>Il tuo diario</h2>
+              <span className={styles.sectionCount}>
+                {diaryEntries.length} {diaryEntries.length === 1 ? "voce" : "voci"}
+              </span>
             </div>
-
-            {loading && (
-              <p className={styles.message}>Caricamento voci diario...</p>
+            {diaryEntries.length === 0 && (
+              <p className={styles.message}>Nessuna voce nel diario ancora.</p>
             )}
-
-            {error && (
-              <p className={styles.messageError}>
-                Impossibile caricare le voci diario: {error}
-              </p>
-            )}
-
-            {!loading && !error && treks.length === 0 && (
-              <p className={styles.message}>
-                Nessuna voce diario trovata.
-              </p>
-            )}
-
-            {!loading && !error && (
-              <div className={styles.cardsRow}>
-                {treks.slice(0, MAX_DIARY_CARDS).map((trek) => (
-                  <TrekCard key={trek.id} trek={trek} />
-                ))}
+            {diaryEntries.slice(0, MAX_DIARY_CARDS).map((entry) => (
+              <div key={entry._id}>
+                <strong>{entry.titolo}</strong>
+                <span> — {new Date(entry.data).toLocaleDateString("it-IT")}</span>
+                {entry.trekId && <span> | {entry.trekId.name}</span>}
+                {entry.valutazione && <span> ⭐ {entry.valutazione}/5</span>}
               </div>
-            )}
+            ))}
           </div>
 
         </section>

@@ -1,33 +1,38 @@
+const mongoose = require("mongoose");
 const DiaryEntry = require("../models/diary");
 
-// GET /diary --> restituisce le voci del diario dell'utente loggato
+// GET /api/diary --> restituisce le voci del diario dell'utente loggato
 const getDiary = async (req, res) => {
   try {
+    const userId = new mongoose.Types.ObjectId(req.userId); // conversione esplicita
     const entries = await DiaryEntry
-      .find({ userId: req.userId })
+      .find({ userId })
       .populate("trekId", "name difficulty duration lengthKm")
       .sort({ data: -1 })
-      .limit(100); // limita a 100 voci per evitare payload troppo grandi
+      .limit(100);
+
     res.json(entries);
   } catch (err) {
+    console.error("Errore getDiary:", err); // ← aggiungi log per vedere l'errore reale
     res.status(500).json({ error: "Errore nel recupero del diario" });
   }
 };
 
-// POST /diary --> crea una nuova voce nel diario
+
+// POST /api/diary --> crea una nuova voce nel diario
 const createEntry = async (req, res) => {
   try {
-    const { trekId, titolo, data, note, foto, valutazione, completato } = req.body;
+    const { titolo, data, note, foto, valutazione, completato, trekId } = req.body;
 
     const entry = new DiaryEntry({
       userId: req.userId,   // preso dal token, non dal body
-      trekId,
       titolo,
       data,
       note,
       foto,
       valutazione,
       completato,
+      trekId: trekId || null, // opzionale, se non fornito sarà null
     });
 
     const saved = await entry.save();
