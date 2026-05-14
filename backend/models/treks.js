@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const TrekSchema = new mongoose.Schema({ //fatta le prime due pagine (185 sentieri) della lista dei trek SAT, piu avanti si devono aggiungere le altre pagine 
+const TrekSchema = new mongoose.Schema({ //fatti circa 70 sentieri
   id: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
   difficulty: {

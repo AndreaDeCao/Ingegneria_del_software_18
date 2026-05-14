@@ -240,9 +240,10 @@ function formatDayLabelFromKey(weather: any, key: string) {
             </div>
           </div>
 
+          {/* WEATHER BOX */}
           {weather && (
             <section className={styles.weatherBox}>
-              <h2>Meteo</h2>
+              <h2 className={appStyles.sectionTitle}>Meteo</h2>
 
               {(() => {
                 const hourlyList = getHourlyList(weather);
@@ -259,7 +260,7 @@ function formatDayLabelFromKey(weather: any, key: string) {
                     
                     {/* METEO ORARIO */}
                     <div>
-                      <h3>Previsioni orarie (oggi)</h3>
+                      <h3 className={appStyles.sectionSubtitle}>Previsioni orarie (oggi)</h3>
 
                       <div className={styles.weatherTimeline}>
                         {hourlyList.slice(currentHourIndex, 8).map((item, index) => (
@@ -292,7 +293,7 @@ function formatDayLabelFromKey(weather: any, key: string) {
                     {/* METEO GIORNALIERO (trend) */}
                     
                     <div>
-                      <h3>Previsioni giornaliere</h3>
+                      <h3 className={appStyles.sectionSubtitle}>Previsioni giornaliere</h3>
 
                       <div className={styles.weatherTimeline}>
                         {dayList.map((item, index) => (
@@ -310,7 +311,7 @@ function formatDayLabelFromKey(weather: any, key: string) {
 
                             <p>🌡 Max: {item.temperature_maximum}°C</p>
                             <p>🌡 Min: {item.temperature_minimum}°C</p>
-                            <p>🌧 Pioggia totale: {item.rain_fall} mm</p>
+                            <p>🌧 Pioggia: {item.rain_fall} mm</p>
                             <p>🌧 Probabilità: {item.rain_probability}%</p>
                             <p>❄ Neve: {item.snow_level} m</p>
 
@@ -319,9 +320,6 @@ function formatDayLabelFromKey(weather: any, key: string) {
                         ))}
                       </div>
                     </div>
-
-                    
-
                   </div>
                 );
               })()}
