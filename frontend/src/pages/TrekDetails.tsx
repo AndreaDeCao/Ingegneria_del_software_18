@@ -12,9 +12,6 @@ export default function TrekDetails() {
 
   const [trek, setTrek] = useState<Trek | null>(null);
   const [weather, setWeather] = useState<any>(null);
-  const [weatherLoading, setWeatherLoading] = useState(true);
-  const [hourlyWeather, setHourlyWeather] = useState<any[]>([]);
-  const [dailyWeather, setDailyWeather] = useState<any[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +20,6 @@ export default function TrekDetails() {
     async function fetchData() {
       try {
         setLoading(true);
-        setWeatherLoading(true);
 
         // TREK
         const trekResponse = await fetch(
@@ -51,7 +47,6 @@ export default function TrekDetails() {
         setError(err.message);
       } finally {
         setLoading(false);
-        setWeatherLoading(false);
       }
     }
 
@@ -79,14 +74,17 @@ export default function TrekDetails() {
     return Math.floor(now / 3);
   }
 
-  function getDailyForecast(weather: any) {
-    const daily = weather?.weather?.["1440"];
-    if (!daily) return null;
+  function getDayList(weather: any) {
+    const day = weather?.weather?.["1440"];
+    if (!day) return [];
 
-    // prende il primo giorno disponibile
-    const values = Object.values(daily) as any[];
-
-    return values[0];
+    const list = Object.entries(day).map(([key, value]: any) => {
+      return {
+        key,
+        ...value,
+      };
+    });
+    return list;
   }
 
   function formatSlotTime(key: string) {     // ogni step = 3 ore = 180 minuti
@@ -99,6 +97,27 @@ export default function TrekDetails() {
 
     return `${startHour} - ${endHour}`;
   }
+
+function formatDayLabelFromKey(weather: any, key: string) {
+  const start = new Date(weather.weather.start);
+
+  const base = 144000000;
+  const step = 1440;
+
+  const numericKey = Number(key);
+
+  const offsetDays = (numericKey - base) / step;
+
+  const date = new Date(start);
+
+  date.setDate(date.getDate() + offsetDays);
+
+  return date.toLocaleDateString("it-IT", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+  });
+}
 
   function skyToText(code: string) {
   switch (code) {
@@ -227,10 +246,11 @@ export default function TrekDetails() {
 
               {(() => {
                 const hourlyList = getHourlyList(weather);
-                const currentIndex = getCurrentHourIndex(hourlyList);
-                const daily = getDailyForecast(weather);
+                const currentHourIndex = getCurrentHourIndex(hourlyList);
 
-                if (!hourlyList || !daily) {
+                const dayList = getDayList(weather);
+
+                if (!hourlyList || !dayList) {
                   return <p>Dati meteo non disponibili</p>;
                 }
 
@@ -242,7 +262,7 @@ export default function TrekDetails() {
                       <h3>Previsioni orarie (oggi)</h3>
 
                       <div className={styles.weatherTimeline}>
-                        {hourlyList.slice(currentIndex, 8).map((item, index) => (
+                        {hourlyList.slice(currentHourIndex, 8).map((item, index) => (
                           <div
                             key={item.key}
                             className={
@@ -270,15 +290,37 @@ export default function TrekDetails() {
                     </div>
 
                     {/* METEO GIORNALIERO (trend) */}
+                    
                     <div>
-                      <h3>Giornata</h3>
+                      <h3>Previsioni giornaliere</h3>
 
-                      <p>🌡 Max: {daily.temperature_maximum}°C</p>
-                      <p>🌡 Min: {daily.temperature_minimum}°C</p>
-                      <p>🌧 Pioggia totale: {daily.rain_fall} mm</p>
-                      <p>🌧 Probabilità: {daily.rain_probability}%</p>
-                      <p>❄ Neve: {daily.snow_level} m</p>
+                      <div className={styles.weatherTimeline}>
+                        {dayList.map((item, index) => (
+                          <div
+                            key={item.key}
+                            className={
+                              index === 0
+                                ? styles.weatherActive
+                                : styles.weatherItem
+                            }
+                          >
+                            <p>
+                              {formatDayLabelFromKey(weather, item.key)} {/*FIXME: converti in data leggibile*/}
+                            </p>
+
+                            <p>🌡 Max: {item.temperature_maximum}°C</p>
+                            <p>🌡 Min: {item.temperature_minimum}°C</p>
+                            <p>🌧 Pioggia totale: {item.rain_fall} mm</p>
+                            <p>🌧 Probabilità: {item.rain_probability}%</p>
+                            <p>❄ Neve: {item.snow_level} m</p>
+
+                            <p>☁ {skyToText(item.sky_condition)}</p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
+
+                    
 
                   </div>
                 );
