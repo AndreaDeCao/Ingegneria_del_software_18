@@ -29,6 +29,7 @@ async function getWeatherByTrek(req, res) {
     const trekLon = Number(trek.coordinates.lon);
 
     // 3. Trova località meteo più vicina
+    //FIXME: non considera l'altitudine
     let closestLocation = null;
     let minDistance = Infinity;
 
@@ -46,7 +47,7 @@ async function getWeatherByTrek(req, res) {
       }
     }
 
-    if (!closestLocation) {
+    if (!closestLocation) { 
       return res.status(404).json({
         error: "Località meteo non trovata",
       });
