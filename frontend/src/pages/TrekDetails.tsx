@@ -4,6 +4,9 @@ import { useParams } from "react-router-dom";
 import type { Trek } from "../types/Trek";
 import appStyles from "../App.module.css";
 import styles from "./TrekDetails.module.css";
+// import type { AlignCenter } from "lucide-react";
+
+import TrekMap from "../components/TrekMap";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -200,6 +203,26 @@ function formatDayLabelFromKey(weather: any, key: string) {
             </p>
           </div>
 
+          {/* integrazione mappa google-Maps
+          <div className={styles.mapContainer}>
+            <iframe
+              title="Mappa del percorso"
+              src={
+                trek.coordinates?.lat && trek.coordinates?.lon
+                  ? `https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=${trek.coordinates.lat},${trek.coordinates.lon}&zoom=13`
+                  : `https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=${encodeURIComponent(trek.name)}&zoom=12`
+              }
+              className={styles.map}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div> */}
+
+          <div className={styles.mapContainer}>
+            <TrekMap name={trek.name} coordinates={trek.coordinates} />
+          </div>
+
           {/* INFO BOX */}
           <div className={styles.infoCard}>
             <h2 className={appStyles.sectionTitle}>
@@ -273,18 +296,18 @@ function formatDayLabelFromKey(weather: any, key: string) {
                             }
                           >
                             <p>
-                              ⏰ {formatSlotTime(item.key)}
+                              <span style={{ alignSelf: "center" }}>⏰</span> {formatSlotTime(item.key)}
                             </p>
 
-                            <p>🌡 {item.temperature}°C</p>
+                            <p><span>🌡</span> {item.temperature}°C</p>
 
-                            <p>🌧 {item.rain_probability}%</p>
+                            <p><span>🌧</span> {item.rain_probability}%</p>
 
-                            <p>💨 {item.wind_speed} km/h</p>
+                            <p><span>💨</span> {item.wind_speed} km/h</p>
 
-                            <p>❄ {item.snow_level} m</p>
+                            <p><span>❄</span> {item.snow_level} m</p>
 
-                            <p>☁ {skyToText(item.sky_condition)}</p>
+                            <p><span>☁</span> {skyToText(item.sky_condition)}</p>
                           </div>
                         ))}
                       </div>
@@ -309,13 +332,13 @@ function formatDayLabelFromKey(weather: any, key: string) {
                               {formatDayLabelFromKey(weather, item.key)} {/*FIXME: converti in data leggibile*/}
                             </p>
 
-                            <p>🌡 Max: {item.temperature_maximum}°C</p>
-                            <p>🌡 Min: {item.temperature_minimum}°C</p>
-                            <p>🌧 Pioggia: {item.rain_fall} mm</p>
-                            <p>🌧 Probabilità: {item.rain_probability}%</p>
-                            <p>❄ Neve: {item.snow_level} m</p>
+                            <p><span>🌡</span> Max: {item.temperature_maximum}°C</p>
+                            <p><span>🌡</span> Min: {item.temperature_minimum}°C</p>
+                            <p><span>🌧</span> Pioggia: {item.rain_fall} mm</p>
+                            <p><span>🌧</span> Probabilità: {item.rain_probability}%</p>
+                            <p><span>❄</span> Neve: {item.snow_level} m</p>
 
-                            <p>☁ {skyToText(item.sky_condition)}</p>
+                            <p><span>☁</span> {skyToText(item.sky_condition)}</p>
                           </div>
                         ))}
                       </div>
