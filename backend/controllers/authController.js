@@ -326,10 +326,6 @@ exports.googleCallback = async(req, res) => {
 };
 
 
-
-
-
-
 //Github OAuth2 login/registration handler
 
 // Il flusso è simile a quello di Google, ma con alcune differenze specifiche di GitHub:

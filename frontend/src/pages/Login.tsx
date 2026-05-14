@@ -23,9 +23,6 @@ export default function Login() {
     setTurnstileKey((k) => k + 1);
   };
 
-  //TODO: aggiungere validazione dei campi 
-  //FIXME: migliorare il display degli errori se le credenziali non sono valide può comunque segnare sessione scaduta invece che credenziali errate
-  //FIXME: migliorare il design della pagina di login
   return (
     <div style={{ padding: 24, maxWidth: 520, left: "50%", transform: "translateX(-50%)", position: "relative", marginTop: 50}}>
      {/* <div style={{ padding: 24, position: "relative", marginTop: 40, maxWidth: 400, marginLeft: "auto", marginRight: "auto" }}> */}
