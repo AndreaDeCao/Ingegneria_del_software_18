@@ -3,6 +3,8 @@ import type { LoginRequest, RegisterRequest, SafeUser } from "./api";
 import { authApi } from "./api";
 import { setAccessToken } from "./api";
 
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
 type AuthContextValue = {
   user: SafeUser | null;
   loading: boolean;
@@ -20,12 +22,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true); 
 
   useEffect(() => {
-    authApi
-      .me()
-      .then((r) => setUser(r.user))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+    fetch(`${API_BASE}/api/auth/refresh`, { // endpoint per rinnovare l'access token usando il refresh token 
+      method: "POST",
+      credentials: "include",
+    })
+      .then((r) => {
+        // console.log("refresh status:", r.status);   //debug
+        return r.ok ? r.json() : Promise.reject(`refresh failed: ${r.status}`); // se la risposta non è ok, rifiuta la promessa con un messaggio di errore che include lo status code, in modo da poterlo vedere nei log di debug
+      })
+      .then((data) => {
+        // console.log("refresh ok, token:", data.accessToken);    //debug
+        setAccessToken(data.accessToken);
+      })
+      .catch((e) => {
+        // console.log("refresh error:", e); //debug
+        // nessun refresh token valido, utente non loggato
+      })
+      .finally(() => {
+        authApi
+          .me()
+          .then((r) => {
+            // console.log("me ok:", r.user);  //debug
+            setUser(r.user);
+          })
+          .catch((e) => {
+            // console.log("me error:", e);  //debug
+            setUser(null);
+          })
+          .finally(() => setLoading(false));
+      });
+      
   }, []);
+
 
   const value = useMemo<AuthContextValue>(
     () => ({

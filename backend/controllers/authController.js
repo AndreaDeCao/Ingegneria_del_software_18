@@ -44,10 +44,10 @@ function setAuth(res, userId) {
   // Refresh token → cookie httpOnly (invisibile a JS)
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "lax", // permette l'invio del cookie anche in richieste cross-site, ma solo se provengono da link o form (non da fetch/ajax), riducendo il rischio di CSRF mantenendo la funzionalità del refresh token
     secure: process.env.NODE_ENV === "production",
     maxAge: 60 * 60 * 1000, // 1 ora
-    path: "/auth/refresh", // cookie inviato SOLO a questo endpoint
+    path: "api/auth/refresh", // cookie inviato SOLO a questo endpoint
   });
  
   // Access token → restituito nel body, il frontend lo tiene in memoria
@@ -59,7 +59,7 @@ function clearAuth(res) {
   res.clearCookie("refresh_token", {
     httpOnly: true,
     sameSite: "lax",
-    path: "/auth/refresh",
+    path: "api/auth/refresh",
   });
 }
 
