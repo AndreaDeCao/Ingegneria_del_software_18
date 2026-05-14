@@ -2,8 +2,11 @@ const dns = require('dns');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const express = require("express");
+
+
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const weatherRoutes = require("./routes/weatherRoutes");
 
 //moduli per documentazione API automatica con Swagger
 // const swaggerUi = require('swagger-ui-express');
@@ -34,8 +37,8 @@ const activityRoutes = require("./routes/activityRoutes"); //!!!
 app.use("/treks", trekRoutes);
 app.use("/users", userRoutes);
 app.use("/api/auth", authRoutes);
-app.use("/activities", activityRoutes); //!!!
-
+app.use("/activities", activityRoutes); 
+app.use("/api/weather", weatherRoutes); 
 
 // Connessione a MongoDB
 mongoose.connect(process.env.MONGODB_URI, { family: 4 })  // Imposta family: 4 per forzare l'uso di IPv4

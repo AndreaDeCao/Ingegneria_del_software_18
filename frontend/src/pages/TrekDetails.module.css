@@ -247,6 +247,26 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+.weatherBox {
+  margin-top: 2rem;
+  padding: 1rem;
+
+  border-radius: 16px;
+
+  background-color: rgba(255,255,255,0.08);
+
+  backdrop-filter: blur(8px);
+}
+
+.weatherGrid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(180px, 1fr));
+
+  gap: 1rem;
+}
+
 /* //MOBILE
 
 @media (max-width: 900px) {

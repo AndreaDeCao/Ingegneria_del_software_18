@@ -11,19 +11,53 @@ export default function TrekDetails() {
   const { id } = useParams();
 
   const [trek, setTrek] = useState<Trek | null>(null);
+  const [weather, setWeather] = useState<any>(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch(`${API_BASE}/treks/${id}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Percorso non trovato");
-        return res.json();
-      })
-      .then((data) => setTrek(data))
-      .catch((err: Error) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [id]);
+
+  // Fetch meteo
+useEffect(() => {
+  async function fetchData() {
+    try {
+      setLoading(true);
+      setWeatherLoading(true);
+
+      // TREK
+      const trekResponse = await fetch(
+        `${API_BASE}/treks/${id}`
+      );
+
+      if (!trekResponse.ok)
+        throw new Error("Errore caricamento trek");
+
+      const trekData = await trekResponse.json();
+      setTrek(trekData);
+
+      // METEO (usa id trek, come hai già fatto backend)
+      const weatherResponse = await fetch(
+        `${API_BASE}/api/weather/${trekData._id}`
+      );
+
+      if (!weatherResponse.ok)
+        throw new Error("Errore caricamento meteo");
+
+      const weatherData = await weatherResponse.json();
+      setWeather(weatherData);
+
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+      setWeatherLoading(false);
+    }
+  }
+
+  fetchData();
+}, [id]);
+
 
   if (loading) {
     return (
@@ -108,7 +142,8 @@ export default function TrekDetails() {
                 <p>
                   <strong>Arrivo:</strong> {trek.endPoint}
                 </p>
-                <p> 
+
+                <p>
                   <strong>Durata:</strong> {trek.duration}
                 </p>
               </div>
@@ -117,7 +152,6 @@ export default function TrekDetails() {
                 <p> 
                   <strong>Lunghezza:</strong> {trek.lengthKm ?? "-"} km
                 </p>
-
                 <p>
                   <strong>Quota minima:</strong> {trek.minAltitude ?? "-"} m
                 </p>
@@ -131,11 +165,57 @@ export default function TrekDetails() {
                 </p>
               </div>
 
-                <p>
-                  <strong>Condizioni:</strong>{" "}
-                  {trek.condizioniAttuali || "Non disponibili"}
-                </p>
-              
+              <p>
+                <strong>Condizioni:</strong>{" "}
+                {trek.condizioniAttuali || "Non disponibili"}
+              </p>
+{weather && (
+  <section>
+    <h2>Meteo</h2>
+
+    {(() => {
+      const firstDay = Object.values(
+        weather.weather
+      )[0] as any;
+
+      const firstForecast = Object.values(
+        firstDay
+      )[0] as any;
+
+      return (
+        <div>
+          <p>
+            Località: {weather.meteoLocation}
+          </p>
+
+          <p>
+            Temperatura:
+            {" "}
+            {firstForecast.temperature}°C
+          </p>
+
+          <p>
+            Probabilità pioggia:
+            {" "}
+            {firstForecast.rain_probability}%
+          </p>
+
+          <p>
+            Quota neve:
+            {" "}
+            {firstForecast.snow_level} m
+          </p>
+
+          <p>
+            Vento:
+            {" "}
+            {firstForecast.wind_speed} km/h
+          </p>
+        </div>
+      );
+    })()}
+  </section>
+)}
             </div>
           </div>
         </section>

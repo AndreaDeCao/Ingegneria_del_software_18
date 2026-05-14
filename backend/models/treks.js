@@ -24,8 +24,10 @@ const TrekSchema = new mongoose.Schema({ //fatta le prime due pagine (185 sentie
   maxAltitude: Number, // Quota massima in metri
   coordinates: {                                     // Coordinate GPS
     lat: Number,
-        lon: Number,
+    lon: Number,
   },
+
+  /*meteoLocationId: String,  // ID per identificare la località meteo associata al trek*/
 
   condizioniAttuali: String,  // Condizioni meteo/percorribilità
 
