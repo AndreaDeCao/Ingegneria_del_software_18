@@ -1,11 +1,12 @@
-import { useState, useRef } from "react"; //useRef serve a tenere traccia del componente HCaptcha 
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 
-import HCaptcha from "@hcaptcha/react-hcaptcha";
+// import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 // import { useTheme } from "../hooks/useTheme";
 import GoogleSignInButton from "../components/GoogleSignInButton";
+import TurnstileWidget from "../components/TurnstileWidget";
 
 // import styles from "./Auth.module.css";
 
@@ -23,9 +24,17 @@ export default function Register() {
   const [confermaPassword, setConfermaPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileKey, setTurnstileKey] = useState(0);
 
-  const captchaRef = useRef<HCaptcha>(null);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const resetTurnstile = () => {
+    setTurnstileToken("");
+    setTurnstileKey((k) => k + 1);
+  };
+  
+
+  // const captchaRef = useRef<HCaptcha>(null);
+  // const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   //TODO: aggiungere validazione dei campi (es. email valida, password abbastanza complessa, ecc.)
   //TODO: aggiungi  pwd confirm e captcha per evitare registrazioni automatiche
@@ -42,10 +51,24 @@ export default function Register() {
           setError(null);
           setSubmitting(true);
           try {
-            await register({ nome, cognome, email, nickname, password, confermaPassword /*, captchaToken*/ });
+            if (!turnstileToken) {
+              setError("Completa il CAPTCHA per continuare.");
+              setSubmitting(false);
+              return;
+            }
+            await register({ nome, cognome, email, nickname, password, confermaPassword, turnstileToken });
             navigate("/home", { replace: true });
           } catch (err) {
-            setError(err instanceof Error ? err.message : "Errore registrazione");
+            const message = err instanceof Error ? err.message : "Errore registrazione";
+            if (
+              message.toLowerCase().includes("captcha") ||
+              message.toLowerCase().includes("turnstile")
+            ) {
+              setError("CAPTCHA scaduto o non valido. Verifica di nuovo e riprova.");
+            } else {
+              setError(message);
+            }
+            resetTurnstile();
           } finally {
             setSubmitting(false);
           }
@@ -104,12 +127,6 @@ export default function Register() {
         </label>
 
 
-        {/* TODO: finire di implementare captcha, attualmente è solo un placeholder, non blocca la registrazione se non completato
-        manca: 
-                  - gestire il token del captcha e inviarlo al backend per la verifica (in authController.js)
-        OPZIONALE - gestire il caso in cui il captcha scade o viene invalidato (es. se l'utente ci mette troppo tempo a compilare il form) 
-                  - aggiungere captchaToken: string; al RegisterRequest in api.ts
-                  - aggiungere segreti in .env per hcaptcha creati da https://www.hcaptcha.com (serve registrarsi e creare un nuovo sito per ottenere sitekey e secret) */}
         {/* <HCaptcha 
           sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
           onVerify={(token) => setCaptchaToken(token)}
@@ -117,7 +134,30 @@ export default function Register() {
           ref={captchaRef}
         /> */}
 
-        {error && <p style={{ color: "#c0392b" }}>{error}</p>}
+        <TurnstileWidget
+          key={turnstileKey}
+          onVerify={(token) => setTurnstileToken(token)}
+          onExpire={() => {
+            setError("CAPTCHA scaduto. Verifica di nuovo per continuare.");
+            resetTurnstile();
+          }}
+        />
+
+        {error && (
+          <div
+            role="alert"
+            style={{
+              marginTop: 12,
+              padding: 12,
+              borderRadius: 8,
+              border: "1px solid #f5c6cb",
+              background: "#fdecea",
+              color: "#7a1f1f",
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         <button type="submit" disabled={submitting} style={{ marginTop: 16, width: "100%", padding: 10, cursor: "pointer" , background: "#ececec", color: "#000000", border: `1px solid`, borderRadius: 6 }}>
           {submitting ? "Creazione..." : "Crea account"}

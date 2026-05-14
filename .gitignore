@@ -145,3 +145,5 @@ vite.config.ts.timestamp-*
 .idea/
 
 .vite/
+
+.42c/

@@ -92,7 +92,7 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error: "Email non valida" });
     }
     if (typeof password !== "string" || password.length < 6 || password.length > 32 || password.includes(" ") || !password.match(/[0-9]/) || !password.match(/[a-zA-Z]/) ) {
-      return res.status(400).json({ error: "Password nons valida, la password deve essere compresa tra 6 e 32 caratteri e contenere almeno un numero, una lettera maiuscola, una lettera minuscola. "});
+      return res.status(400).json({ error: "Password non valida, la password deve essere compresa tra 6 e 32 caratteri e contenere almeno un numero, una lettera maiuscola, una lettera minuscola. "});
     }
     //controllo se le password coincidono
     if (!confermaPassword || password !== confermaPassword) {

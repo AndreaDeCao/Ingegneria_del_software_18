@@ -85,7 +85,7 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
 
       <nav className={styles.nav}>
         <NavLink
-          to="/"
+          to="/treks"
           className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
         >
           Esplora
