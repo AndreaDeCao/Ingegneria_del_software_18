@@ -13,6 +13,8 @@ export default function TrekDetails() {
   const [trek, setTrek] = useState<Trek | null>(null);
   const [weather, setWeather] = useState<any>(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
+  const [hourlyWeather, setHourlyWeather] = useState<any[]>([]);
+  const [dailyWeather, setDailyWeather] = useState<any[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +58,62 @@ export default function TrekDetails() {
     fetchData();
   }, [id]);
 
+  function getHourlyList(weather: any) {
+    const hourly = weather?.weather?.["180"];
+    if (!hourly) return [];
+
+    const list = Object.entries(hourly).map(([key, value]: any) => {
+      return {
+        key,
+        ...value,
+      };
+    });
+
+    return list;
+  }
+
+  function getCurrentHourIndex(list: any[]) {
+    const now = new Date().getHours();
+
+    // approssimazione: ogni slot ≈ 3 ore
+    return Math.floor(now / 3);
+  }
+
+  function getDailyForecast(weather: any) {
+    const daily = weather?.weather?.["1440"];
+    if (!daily) return null;
+
+    // anche qui prendiamo il primo giorno disponibile
+    const values = Object.values(daily) as any[];
+
+    return values[0];
+  }
+
+  function formatSlotTime(key: string) {     // ogni step = 3 ore = 180 minuti
+    // prendi solo la parte numerica finale
+    const totalMinutes = parseInt(key.slice(-4)); // es: 0180, 0360
+    const hours = Math.floor(totalMinutes / 60);
+
+    const startHour = hours.toString().padStart(2, "0") + ":" + "00";
+    const endHour = ((hours + 2) % 24).toString().padStart(2, "0") + ":" + "59";
+
+    return `${startHour} - ${endHour}`;
+  }
+
+  function skyToText(code: string) {
+  switch (code) {
+    case "A": return "Sereno";
+    case "B": return "Poco nuvoloso";
+    case "C": return "Nuvoloso";
+    case "D": return "Molto nuvoloso";
+    case "F": return "Pioggia";
+    case "H": return "Temporale";
+    case "J": return "Variabile";
+    default: return "N/D";
+  }
+}
+
+  //aaaaaaaaaaa aa a ajkckdsaj ASHODHOSI IDHOOIWO S S S S S SS S S S  S S
 
   if (loading) {
     return (
@@ -74,10 +132,6 @@ export default function TrekDetails() {
       </main>
     );
   }
-
-  if (weatherLoading) {
-  return <p>Caricamento...</p>;
-}
 
   return (
     <main className={appStyles.main}>
@@ -166,56 +220,68 @@ export default function TrekDetails() {
                   <strong>Dislivello:</strong> {trek.elevationGain ?? "-"} m
                 </p>
               </div>
-
-              <p>
-                <strong>Condizioni:</strong>{" "}
-                {trek.condizioniAttuali || "Non disponibili"}
-              </p>
             </div>
           </div>
 
           {weather && (
-            <section>
+            <section className={styles.weatherBox}>
               <h2>Meteo</h2>
 
               {(() => {
-                const firstDay = Object.values(
-                  weather.weather
-                )[0] as any;
+                const hourlyList = getHourlyList(weather);
+                const currentIndex = getCurrentHourIndex(hourlyList);
+                const daily = getDailyForecast(weather);
 
-                const firstForecast = Object.values(
-                  firstDay
-                )[0] as any;
+                if (!hourlyList || !daily) {
+                  return <p>Dati meteo non disponibili</p>;
+                }
 
                 return (
-                  <div>
-                    <p>
-                      Località: {weather.meteoLocation}
-                    </p>
+                  <div className={styles.weatherGrid}>
+                    
+                    {/* METEO ORARIO */}
+                    <div>
+                      <h3>Previsioni orarie (oggi)</h3>
 
-                    <p>
-                      Temperatura:
-                      {" "}
-                      {firstForecast.temperature}°C
-                    </p>
+                      <div className={styles.weatherTimeline}>
+                        {hourlyList.slice(currentIndex, 8).map((item, index) => (
+                          <div
+                            key={item.key}
+                            className={
+                              index === 0
+                                ? styles.weatherActive
+                                : styles.weatherItem
+                            }
+                          >
+                            <p>
+                              ⏰ {formatSlotTime(item.key)}
+                            </p>
 
-                    <p>
-                      Probabilità pioggia:
-                      {" "}
-                      {firstForecast.rain_probability}%
-                    </p>
+                            <p>🌡 {item.temperature}°C</p>
 
-                    <p>
-                      Quota neve:
-                      {" "}
-                      {firstForecast.snow_level} m
-                    </p>
+                            <p>🌧 {item.rain_probability}%</p>
 
-                    <p>
-                      Vento:
-                      {" "}
-                      {firstForecast.wind_speed} km/h
-                    </p>
+                            <p>💨 {item.wind_speed} km/h</p>
+
+                            <p>❄ {item.snow_level} m</p>
+
+                            <p>☁ {skyToText(item.sky_condition)}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* METEO GIORNALIERO (trend) */}
+                    <div>
+                      <h3>Giornata</h3>
+
+                      <p>🌡 Max: {daily.temperature_maximum}°C</p>
+                      <p>🌡 Min: {daily.temperature_minimum}°C</p>
+                      <p>🌧 Pioggia totale: {daily.rain_fall} mm</p>
+                      <p>🌧 Probabilità: {daily.rain_probability}%</p>
+                      <p>❄ Neve: {daily.snow_level} m</p>
+                    </div>
+
                   </div>
                 );
               })()}

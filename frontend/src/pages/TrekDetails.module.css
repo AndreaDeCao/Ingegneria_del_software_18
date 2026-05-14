@@ -267,6 +267,103 @@
   gap: 1rem;
 }
 
+.weatherTimeline {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  max-height: 520ùpx; 
+  overflow-y: auto;
+
+  padding-right: 6px;
+  margin-top: 1rem;
+
+  scroll-snap-type: y mandatory;
+}
+
+
+.weatherTimeline::-webkit-scrollbar {
+  width: 6px;
+}
+
+.weatherTimeline::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.weatherTimeline::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.12);
+  border-radius: 999px;
+}
+
+.weatherItem,
+.weatherActive {
+  width: 165px;
+
+  padding: 14px;
+  border-radius: 16px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    opacity 0.2s ease;
+
+  scroll-snap-align: start;
+}
+
+.weatherItem p,
+.weatherActive p{
+  margin: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* CARD NORMALE */
+
+.weatherItem {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* CARD ATTIVA */
+
+.weatherActive {
+  background: rgba(0,150,255,0.18);
+
+  border: 1px solid rgba(0,150,255,0.55);
+
+  box-shadow:
+    0 10px 24px rgba(0,150,255,0.12);
+
+  transform: scale(1.02);
+}
+
+.weatherActive p:first-child {
+  color: #7dd3fc;
+  font-weight: 700;
+}
+
+
+/* HEADER BOX */
+
+.weatherBox h3 {
+  margin-bottom: 1rem;
+
+  font-size: 20px;
+  font-family: var(--font-display);
+
+  color: var(--text-primary);
+}
+
 /* //MOBILE
 
 @media (max-width: 900px) {
