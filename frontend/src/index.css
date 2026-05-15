@@ -162,6 +162,10 @@ body {
 button {
   font-family: var(--font-body);
   cursor: pointer;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 a {
