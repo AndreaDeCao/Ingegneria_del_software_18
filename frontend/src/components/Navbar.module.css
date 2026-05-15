@@ -177,6 +177,9 @@
   text-align: left;
   cursor: pointer;
   transition: background 0.2s;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
 }
 
 .subMenuItem:hover {
