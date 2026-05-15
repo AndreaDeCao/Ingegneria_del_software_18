@@ -148,9 +148,8 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
         <DropdownItem
         label="Diario"
         items={[
-          { label: "1", path: "/diario/1" },
-          { label: "2", path: "/diario/2" },
-          { label: "3", path: "/diario/3" },
+          { label: "Visualizza Diario", path: "/diario/visualizza-diario" },
+          { label: "Crea Nuova Voce Diario", path: "/diario/crea-nuova-voce-diario" },
         ]}
         isOpen={openItem === "Diario"}
         onToggle={() => setOpenItem(openItem === "Diario" ? null : "Diario")}
@@ -159,9 +158,8 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
         <DropdownItem
         label="Attività"
         items={[
-          { label: "1", path: "/attivita/1" },
-          { label: "2", path: "/attivita/2" },
-          { label: "3", path: "/attivita/3" },
+          { label: "Visualizza Attività", path: "/attivita/visualizza-attivita" },
+          { label: "Crea Nuova Attività", path: "/attivita/crea-nuova-attivita" },
         ]}
         isOpen={openItem === "Attività"}
         onToggle={() => setOpenItem(openItem === "Attività" ? null : "Attività")}
@@ -170,9 +168,7 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
         <DropdownItem
         label="Versione"
         items={[
-          { label: "1", path: "/vers/1" },
-          { label: "2", path: "/vers/2" },
-          { label: "3", path: "/vers/3" },
+          { label: "Versione corrente", path: "/vers/corrente" }
         ]}
         isOpen={openItem === "Versione"}
         onToggle={() => setOpenItem(openItem === "Versione" ? null : "Versione")}
