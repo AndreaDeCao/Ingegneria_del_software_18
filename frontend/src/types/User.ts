@@ -4,4 +4,5 @@ export type User = {
   cognome: string;
   email: string;
   nickname: string;
+  role: "user" | "admin";
 };

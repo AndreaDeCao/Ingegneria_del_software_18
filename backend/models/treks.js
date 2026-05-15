@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
-const TrekSchema = new mongoose.Schema({ //fatta le prime due pagine (185 sentieri) della lista dei trek SAT, piu avanti si devono aggiungere le altre pagine 
-  id: Number,
+const TrekSchema = new mongoose.Schema({ //fatti circa 70 sentieri
+  id: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
   difficulty: {
     type: String,
@@ -12,12 +12,22 @@ const TrekSchema = new mongoose.Schema({ //fatta le prime due pagine (185 sentie
 
   duration: String,       // Durata stimata in ore (es: "3 ore")
   lengthKm: Number,    // Lunghezza del trekking in km
-  elevationGain: Number,     // Dislivello in metri
+  elevationGain: String,     // Dislivello in metri
 
   /*tracciaGPX: String,     // URL o percorso del file GPX
   mappaOffline: String,*/   // URL o percorso del file mappa offline
+  comuni: [{ type: String }],
   startPoint: String,  // Indirizzo o coordinate GPS del punto di partenza
   endPoint: String,    // Indirizzo o coordinate GPS del punto di arrivo
+  
+  minAltitude: Number, // Quota minima in metri
+  maxAltitude: Number, // Quota massima in metri
+  coordinates: {                                     // Coordinate GPS
+    lat: Number,
+    lon: Number,
+  },
+
+  /*meteoLocationId: String,  // ID per identificare la località meteo associata al trek*/
 
   condizioniAttuali: String,  // Condizioni meteo/percorribilità
 

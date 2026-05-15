@@ -25,6 +25,7 @@ module.exports = function authenticate(req, res, next) {
   try {
     const payload = jwt.verify(token, getJwtSecret());
     req.userId = payload.sub;
+    req.userRole = payload.role ?? "user"; // se vuoi gestire i ruoli, puoi includere il ruolo nel payload del token e leggerlo qui
     next();
   } catch (err) {
     if (err.name === "TokenExpiredError") {

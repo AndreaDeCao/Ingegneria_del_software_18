@@ -2,14 +2,25 @@ const dns = require('dns');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const express = require("express");
+
+
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const weatherRoutes = require("./routes/weatherRoutes");
+
+//moduli per documentazione API automatica con Swagger
+// const swaggerUi = require('swagger-ui-express');
+// const swaggerSpec = require('./swagger');
 
 const mongoose = require("mongoose");
 require("dotenv").config();
 
 const app = express();
 mongoose.set("sanitizeFilter", true);
+
+//documentazione api automatica in localhost:3000/api-docs
+// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 app.use(
   cors({
     origin: process.env.FRONTEND_URL ?? "http://localhost:5173",
@@ -46,12 +57,15 @@ const userRoutes = require("./routes/usersRoutes");
 const trekRoutes = require("./routes/treksRoutes");
 const authRoutes = require("./routes/authRoutes");
 const activityRoutes = require("./routes/activityRoutes"); //!!!
+const diaryRoutes = require("./routes/diaryRoutes");
+
 
 app.use("/treks", trekRoutes);
 app.use("/users", userRoutes);
 app.use("/api/auth", authRoutes);
-app.use("/activities", activityRoutes); //!!!
-
+app.use("/activities", activityRoutes); 
+app.use("/api/weather", weatherRoutes); 
+app.use("/api/diary", diaryRoutes);
 
 // Connessione a MongoDB
 mongoose.connect(process.env.MONGODB_URI, { family: 4 })  // Imposta family: 4 per forzare l'uso di IPv4

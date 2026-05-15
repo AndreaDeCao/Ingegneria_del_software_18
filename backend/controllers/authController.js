@@ -25,13 +25,18 @@ function safeUser(userDoc) {
     cognome: userDoc.cognome,
     email: userDoc.email,
     nickname: userDoc.nickname,
+    role: userDoc.role,
   };
 }
 
 // Setta il refresh token in un cookie httpOnly e restituisce l'access token nel body
-function setAuth(res, userId) {
+function setAuth(res, userId, role="user") {
   const accessToken = jwt.sign(
-    { sub: userId.toString() },
+    { 
+      sub: userId.toString() ,
+      // role: userDoc.role
+      role
+    },
     getJwtSecret(),
     { expiresIn: "15m" }
   );
@@ -39,7 +44,7 @@ function setAuth(res, userId) {
   const refreshToken = jwt.sign(
     { sub: userId.toString() },
     getJwtRefreshSecret(),
-    { expiresIn: "1h" }
+    { expiresIn: "15m" }
   );
  
   // Refresh token → cookie httpOnly (invisibile a JS)
@@ -115,8 +120,26 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error: "Le password non coincidono" });
     }
 
-    const existsEmail = await User.findOne({  email });
-    if (existsEmail) return res.status(409).json({ error: "Email già in uso" });
+    // Cerca utente con quella email
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      if (existingUser.googleId ) {
+        if (existingUser.githubId) {
+          // Account creato con entrambi i metodi — suggerisci login con uno dei due
+          return res.status(409).json({ error: "Esiste già un account registrato con google e github, accedi con uno dei due o scegli un'email diversa" });
+        }
+        // Account creato con Google — suggerisci login con Google
+        return res.status(409).json({ error: "Esiste già un account registrato con Google con questa email, accedi con Google o scegli un'email diversa" });
+      }
+      if (existingUser.githubId) {
+        // Account creato con GitHub — suggerisci login con GitHub
+        return res.status(409).json({ error: "Esiste già un account registrato con GitHub con questa email, accedi con GitHub o scegli un'email diversa" });
+      }
+      // Account classico email/password
+      return res.status(409).json({ error: "Email già registrata." });
+    }
+
     // exists = await User.findOne({ $or: [{ email }, { nickname }] });
     // exists = false;
     const existsNickname = await User.findOne({ nickname });
@@ -127,7 +150,7 @@ exports.register = async (req, res) => {
 
     // const token = jwt.sign({ sub: user._id.toString() }, getJwtSecret(), { expiresIn: "1h" });
     // setAuthCookie(res, token); 
-    const accessToken = setAuth(res, user._id);
+    const accessToken = setAuth(res, user._id, user.role);
 
     res.status(201).json({ user: safeUser(user), accessToken }); 
 
