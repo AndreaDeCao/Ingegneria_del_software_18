@@ -137,9 +137,9 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
       <DropdownItem
         label="Account"
         items={[
-          { label: "Profilo", path: "/account/profilo" },
-          { label: "Sicurezza", path: "/account/sicurezza" },
-          { label: "Policy/Cookies", path: "/account/policy" },
+          { label: "Profilo", path: "/account/profile" },
+          { label: "Sicurezza", path: "/account/security" },
+          { label: "Policy/Cookies", path: "/termini" },
         ]}
         isOpen={openItem === "Account"}
         onToggle={() => setOpenItem(openItem === "Account" ? null : "Account")}
@@ -173,6 +173,7 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
         isOpen={openItem === "Versione"}
         onToggle={() => setOpenItem(openItem === "Versione" ? null : "Versione")}
         onNavigate={handleNavigate}/>
+        
      </nav>
     )}
   </div>

@@ -20,6 +20,7 @@ import Contatti from "./pages/Contatti";
 
 //import Homepage from "./pages/homepage/Homepage";
 import AccountPage from "./pages/account/AccountPage";
+import ProfilePage from "./pages/account/ProfilePage";
 import DiarioPage from "./pages/account/DiarioPage";
 import AttivitaPage from "./pages/account/AttivitaPage";
 import VersionePage from "./pages/account/VersionePage";
@@ -30,6 +31,7 @@ import ScrollToTop from "./ScrollToTop";
 
 import AuthCallback from "./pages/AuthCallback";
 import TrekDetails from "./pages/TrekDetails";
+import SecurityPage from "./pages/account/SecurityPage";
 
 /**
  * Layout comune a tutte le pagine (comprende Navbar)
@@ -81,9 +83,29 @@ export default function App() {
                   <Route path="/friends"  element={<AppLayout><ProtectedRoute><Friends /></ProtectedRoute></AppLayout>} />
         
                   {/* Route protette — menu a tendina con sezione dinamica */}
-                  <Route path="/account/:sezione"  element={<AppLayout><ProtectedRoute>
-                    <AccountPage />
+                  {/*}
+                  <Route path="/account/profile" element={<ProfilePage />} />
+                  <Route path="/account/security" element={<SecurityPage />} />
+
+                  <Route path="/diario/visualizza" element={<VisualizzaDiarioPage />} />
+                  <Route path="/diario/crea" element={<CreaVoceDiarioPage />} />
+
+                  <Route path="/attivita/visualizza" element={<VisualizzaAttivitaPage />} />
+                  <Route path="/attivita/crea" element={<CreaAttivitaPage />} />
+
+                  <Route path="/versione/corrente" element={<VersioneCorrentePage />} /> */}
+
+                  <Route path="/profile/profilo"  element={<AppLayout><ProtectedRoute> 
+                    <ProfilePage />
                   </ProtectedRoute></AppLayout>} />
+
+                  <Route path="/profile/termini"  element={<AppLayout><Termini /></AppLayout>} />
+
+                  <Route path="/profile/security"  element={<AppLayout><ProtectedRoute> 
+                    <SecurityPage />
+                  </ProtectedRoute></AppLayout>} />
+
+                
                   <Route path="/diario/:sezione"   element={<AppLayout><ProtectedRoute>
                     <DiarioPage />
                   </ProtectedRoute></AppLayout>} />
