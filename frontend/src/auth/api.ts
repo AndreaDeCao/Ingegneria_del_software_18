@@ -4,6 +4,7 @@ export type SafeUser = {
   cognome: string;
   email: string;
   nickname: string;
+  role: "user" | "admin";
 };
 
 export type LoginRequest = {
@@ -29,7 +30,7 @@ export const setAccessToken = (t: string | null) => { accessToken = t; }; // Fun
 
 
 // Funzione helper per fare richieste HTTP al backend, gestendo automaticamente i cookie e gli errori
-async function http<T>(path: string, init?: RequestInit): Promise<T> {
+export async function http<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     credentials: "include",
     headers: {
