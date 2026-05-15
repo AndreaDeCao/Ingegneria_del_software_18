@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth } from "../../auth/AuthProvider";
 
 // import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 // import { useTheme } from "../hooks/useTheme";
-import GoogleSignInButton from "../components/GoogleSignInButton";
-import TurnstileWidget from "../components/TurnstileWidget";
+import GoogleSignInButton from "../../components/GoogleSignInButton";
+import TurnstileWidget from "../../components/TurnstileWidget";
 
 // import styles from "./Auth.module.css";
 

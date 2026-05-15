@@ -8,30 +8,45 @@ import { useTheme } from "./hooks/useTheme";
 import { AuthProvider } from "./auth/AuthProvider";
 import ProtectedRoute from "./auth/ProtectedRoute";
 
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
+import AuthCallback from "./pages/auth/AuthCallback";
+
 import Treks from "./pages/Treks/Treks";
-import MyTreks from "./pages/MyTreks";
+import MyTreks from "./pages/Treks/MyTreks";
+import TrekDetails from "./pages/Treks/TrekDetails";
+
 import Friends from "./pages/Friends";
 import Home from "./pages/Home";
-import Privacy from "./pages/Privacy";
-import Termini from "./pages/Termini";
-import Contatti from "./pages/Contatti";
+
+import Privacy from "./pages/informativa/Privacy";
+import Termini from "./pages/informativa/Termini";
+import Contatti from "./pages/informativa/Contatti";
+
+
+import ProfilePage from "./pages/account/ProfilePage";
+import SecurityPage from "./pages/account/SecurityPage";
+import PolicyPage from "./pages/account/PolicyPage";
+
+import VisualizzaDiarioPage from "./pages/diario/VisualizzaDiarioPage";
+import CreaVoceDiarioPage from "./pages/diario/CreaVoceDiarioPage";
+
+import VisualizzaAttivitaPage from "./pages/attivita/VisualizzaAttivitaPage";
+import CreaAttivitaPage from "./pages/attivita/CreaAttivitaPage";
+
+import VersioneCorrentePage from "./pages/versione/VersioneCorrentePage";
+
 
 //import Homepage from "./pages/homepage/Homepage";
-import AccountPage from "./pages/account/AccountPage";
-import ProfilePage from "./pages/account/ProfilePage";
-import DiarioPage from "./pages/account/DiarioPage";
-import AttivitaPage from "./pages/account/AttivitaPage";
-import VersionePage from "./pages/account/VersionePage";
+//import AccountPage from "./pages/account/AccountPage";
 
 import "./index.css";
 import styles from "./App.module.css";
 import ScrollToTop from "./ScrollToTop";
 
-import AuthCallback from "./pages/AuthCallback";
-import TrekDetails from "./pages/TrekDetails";
-import SecurityPage from "./pages/account/SecurityPage";
+
+
 
 /**
  * Layout comune a tutte le pagine (comprende Navbar)
@@ -83,18 +98,21 @@ export default function App() {
                   <Route path="/friends"  element={<AppLayout><ProtectedRoute><Friends /></ProtectedRoute></AppLayout>} />
         
                   {/* Route protette — menu a tendina con sezione dinamica */}
-                  {/*}
-                  <Route path="/account/profile" element={<ProfilePage />} />
-                  <Route path="/account/security" element={<SecurityPage />} />
+                  
+                  <Route path="/account/profile" element={<AppLayout><ProtectedRoute><ProfilePage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/account/security" element={<AppLayout><ProtectedRoute><SecurityPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/account/policy" element={<AppLayout><ProtectedRoute><PolicyPage /></ProtectedRoute></AppLayout>} />
+                  {/*<Route path="informativa/termini"  element={<AppLayout><Termini /></AppLayout>} />*/} {/* FIX ME: policy e termini stessa cosa? (fix anche in navbar.tsx) */}
 
-                  <Route path="/diario/visualizza" element={<VisualizzaDiarioPage />} />
-                  <Route path="/diario/crea" element={<CreaVoceDiarioPage />} />
+                  <Route path="/diario/visualizza" element={<AppLayout><ProtectedRoute><VisualizzaDiarioPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/diario/crea" element={<AppLayout><ProtectedRoute><CreaVoceDiarioPage /></ProtectedRoute></AppLayout>} />
 
-                  <Route path="/attivita/visualizza" element={<VisualizzaAttivitaPage />} />
-                  <Route path="/attivita/crea" element={<CreaAttivitaPage />} />
+                  <Route path="/attivita/visualizza" element={<AppLayout><ProtectedRoute><VisualizzaAttivitaPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/attivita/crea" element={<AppLayout><ProtectedRoute><CreaAttivitaPage /></ProtectedRoute></AppLayout>} />
 
-                  <Route path="/versione/corrente" element={<VersioneCorrentePage />} /> */}
+                  <Route path="/versione/corrente" element={<AppLayout><VersioneCorrentePage /></AppLayout>} />
 
+                {/*
                   <Route path="/profile/profilo"  element={<AppLayout><ProtectedRoute> 
                     <ProfilePage />
                   </ProtectedRoute></AppLayout>} />
@@ -112,11 +130,8 @@ export default function App() {
                   <Route path="/attivita/:sezione" element={<AppLayout><ProtectedRoute>
                     <AttivitaPage />
                   </ProtectedRoute></AppLayout>} />
-
-                  
-        
-                  {/* Pubblica — versioning/changelog */}
                   <Route path="/vers/:sezione" element={<AppLayout><VersionePage /></AppLayout>} />
+                  */}
         
                   {/* Pagine statiche */}
                   <Route path="/privacy"  element={<AppLayout><Privacy /></AppLayout>} />
