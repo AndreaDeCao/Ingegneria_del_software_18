@@ -13,6 +13,7 @@ router.post("/refresh", requireCsrf, authController.refresh); // endpoint per ri
 router.post("/register", verifyTurnstile, authController.register);
 router.post("/login", verifyTurnstile, authController.login);
 router.post("/logout", requireCsrf, authController.logout);
+router.get("/verify-email/:token", authController.verifyEmail);
 router.get("/me", authenticate, authController.me);
 
 router.get("/github",          authController.githubRedirect);

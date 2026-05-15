@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/users");
 const {OAuth2Client } = require("google-auth-library"); 
 const crypto = require("crypto");
+const {sendVerificationEmail} = require("../services/emailService");
 
 
 function getJwtSecret() {
@@ -145,15 +146,21 @@ exports.register = async (req, res) => {
     const existsNickname = await User.findOne({ nickname });
     if (existsNickname) return res.status(409).json({ error: "Nickname già in uso" });
 
+    // genera roken di verifica email
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);  //24 ore
+
     const passwordHash = await bcrypt.hash(password, saltedRound);
-    const user = await User.create({ nome, cognome, email, nickname, passwordHash });
+    const user = await User.create({ nome, cognome, email, nickname, passwordHash,
+      emailVerified: false,
+      emailVerificationToken: verificationToken,
+      emailVerificationExpires: verificationExpires,
+    });
 
-    // const token = jwt.sign({ sub: user._id.toString() }, getJwtSecret(), { expiresIn: "1h" });
-    // setAuthCookie(res, token); 
-    const accessToken = setAuth(res, user._id, user.role);
+    // manda email di verifica
+    await sendVerificationEmail(email, verificationToken);
 
-    res.status(201).json({ user: safeUser(user), accessToken }); 
-
+    res.status(201).json({ message: "Registrazione completata! Controlla la tua email per verificare l'account." });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -183,6 +190,10 @@ exports.login = async (req, res) => {
     // const token = jwt.sign({ sub: user._id.toString(), name: user.nome }, getJwtSecret(), { expiresIn: "1h" });
     // setAuthCookie(res, token); //vecchuia versione con cookie
     // setAuth(res, token); 
+
+    if (!user.emailVerified) {
+      return res.status(403).json({ error: "Devi verificare la tua email prima di accedere. Controlla la tua casella di posta."});
+    }
 
     const accessToken = setAuth(res, user._id); //nuova versione con refresh token nei cookie e access token nell'header Authorization
 
@@ -240,6 +251,44 @@ exports.me = async (req, res) => {
     res.json({ user: safeUser(user) });
   } catch {
     res.json({ user: null });
+  }
+};
+
+
+/**
+ * Verifica l'email dell'utente tramite il token ricevuto per email.
+ * Se il token è valido e non scaduto, imposta emailVerified a true
+ * e reindirizza l'utente al frontend sulla pagina di login.
+ *
+ * @route GET /api/auth/verify-email/:token
+ * @param {import("express").Request} req - req.params.token: token di verifica
+ * @param {import("express").Response} res
+ */
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.params;
+    if (!token) return res.status(400).json({ error: "Token mancante" });
+
+    const user = await User.findOne({ emailVerificationToken: token }).select("+emailVerificationToken +emailVerificationExpires");
+
+    if (!user) {
+      return res.status(400).json({ error: "Token non valido" });
+    }
+    if (user.emailVerificationExpires < new Date()) {
+      return res.status(400).json({ error: "Link di verifica è scaduto. Registrati nuovamente." });
+    }
+
+    user.emailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
+
+    //Reinderizza al frontend con messaggo di successo
+    const frontendUrl = process.env.FRONTEND_URL ??"http://localhost:5173";
+    res.redirect(`${frontendUrl}/login?verified=true`);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message })
   }
 };
 

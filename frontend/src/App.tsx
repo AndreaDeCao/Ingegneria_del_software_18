@@ -19,11 +19,11 @@ import Termini from "./pages/Termini";
 import Contatti from "./pages/Contatti";
 
 //import Homepage from "./pages/homepage/Homepage";
-import AccountPage from "./pages/account/AccountPage";
+//import AccountPage from "./pages/account/AccountPage";
 import ProfilePage from "./pages/account/ProfilePage";
-import DiarioPage from "./pages/account/DiarioPage";
-import AttivitaPage from "./pages/account/AttivitaPage";
-import VersionePage from "./pages/account/VersionePage";
+//import DiarioPage from "./pages/account/DiarioPage";
+//import AttivitaPage from "./pages/account/AttivitaPage";
+//import VersionePage from "./pages/account/VersionePage";
 
 import "./index.css";
 import styles from "./App.module.css";
@@ -106,7 +106,7 @@ export default function App() {
                   </ProtectedRoute></AppLayout>} />
 
                 
-                  <Route path="/diario/:sezione"   element={<AppLayout><ProtectedRoute>
+                  {/*<Route path="/diario/:sezione"   element={<AppLayout><ProtectedRoute>
                     <DiarioPage />
                   </ProtectedRoute></AppLayout>} />
                   <Route path="/attivita/:sezione" element={<AppLayout><ProtectedRoute>
@@ -116,7 +116,7 @@ export default function App() {
                   
         
                   {/* Pubblica — versioning/changelog */}
-                  <Route path="/vers/:sezione" element={<AppLayout><VersionePage /></AppLayout>} />
+                  {/*<Route path="/vers/:sezione" element={<AppLayout><VersionePage /></AppLayout>} />
         
                   {/* Pagine statiche */}
                   <Route path="/privacy"  element={<AppLayout><Privacy /></AppLayout>} />
