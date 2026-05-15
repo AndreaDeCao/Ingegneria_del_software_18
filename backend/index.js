@@ -16,6 +16,7 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 
 const app = express();
+mongoose.set("sanitizeFilter", true);
 
 //documentazione api automatica in localhost:3000/api-docs
 // app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -24,10 +25,33 @@ app.use(
   cors({
     origin: process.env.FRONTEND_URL ?? "http://localhost:5173",
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
   })
 ); // permette richieste dal frontend
 app.use(express.json());
 app.use(cookieParser());
+
+// Sanitizzazione input (NoSQL injection): rimuove chiavi con '$' o '.' da body/query/params
+function sanitizeKeys(value) {
+  if (!value || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map(sanitizeKeys);
+
+  for (const key of Object.keys(value)) {
+    if (key.startsWith("$") || key.includes(".")) {
+      delete value[key];
+      continue;
+    }
+    value[key] = sanitizeKeys(value[key]);
+  }
+  return value;
+}
+app.use((req, _res, next) => {
+  sanitizeKeys(req.body);
+  sanitizeKeys(req.query);
+  sanitizeKeys(req.params);
+  next();
+});
 
 const userRoutes = require("./routes/usersRoutes");
 const trekRoutes = require("./routes/treksRoutes");
@@ -66,4 +90,3 @@ mongoose.connect(process.env.MONGODB_URI, { family: 4 })  // Imposta family: 4 p
 app.listen(3000, () => {
   console.log("Server running on http://localhost:3000");
 });
-

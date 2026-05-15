@@ -1,7 +1,8 @@
-const bcrypt = require("bcryptjs");
+﻿const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/users");
 const {OAuth2Client } = require("google-auth-library"); 
+const crypto = require("crypto");
 
 
 function getJwtSecret() {
@@ -49,10 +50,10 @@ function setAuth(res, userId, role="user") {
   // Refresh token → cookie httpOnly (invisibile a JS)
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "lax", // permette l'invio del cookie anche in richieste cross-site, ma solo se provengono da link o form (non da fetch/ajax), riducendo il rischio di CSRF mantenendo la funzionalità del refresh token
     secure: process.env.NODE_ENV === "production",
     maxAge: 60 * 60 * 1000, // 1 ora
-    path: "/auth/refresh", // cookie inviato SOLO a questo endpoint
+    path: "/api/auth/refresh", // cookie inviato SOLO a questo endpoint
   });
  
   // Access token → restituito nel body, il frontend lo tiene in memoria
@@ -64,9 +65,24 @@ function clearAuth(res) {
   res.clearCookie("refresh_token", {
     httpOnly: true,
     sameSite: "lax",
-    path: "/auth/refresh",
+    path: "/api/auth/refresh",
   });
 }
+
+// Endpoint per ottenere CSRF token (double submit cookie)
+exports.csrf = (req, res) => {
+  const csrfToken = crypto.randomBytes(32).toString("hex");
+
+  res.cookie("csrf_token", csrfToken, {
+    httpOnly: false, // deve essere leggibile dal frontend
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 2 * 60 * 60 * 1000, // 2 ore
+    path: "/",
+  });
+
+  res.status(200).json({ csrfToken });
+};
 
 //vecchia versione con cookie, sostituida con setAuth e clearAuth che usano refresh token nei cookie e access token nell'header Authorization, ibrido
 // function setAuthCookie(res, token) {
@@ -347,10 +363,6 @@ exports.googleCallback = async(req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-
-
-
 
 
 //Github OAuth2 login/registration handler

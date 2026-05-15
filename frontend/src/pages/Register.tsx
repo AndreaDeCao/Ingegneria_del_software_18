@@ -36,10 +36,6 @@ export default function Register() {
   // const captchaRef = useRef<HCaptcha>(null);
   // const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
-  //TODO: aggiungere validazione dei campi (es. email valida, password abbastanza complessa, ecc.)
-  //TODO: aggiungi  pwd confirm e captcha per evitare registrazioni automatiche
-  //FIXME: migliorare il display degli errori
-  //FIXME: migliorare il design della pagina di registrazione
   return (
     // <div style={{ padding: 24, maxWidth: 520 }}>
     <div style={{ padding: 24, maxWidth: 520, left: "50%", transform: "translateX(-50%)", position: "relative"}}>
