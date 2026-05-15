@@ -1,0 +1,721 @@
+openapi: 3.0.0
+info:
+  title: DoloMate API
+  version: 1.0.0
+  description: |
+    API documentation per il progetto **DoloMate** — gestione di treks, attività,
+    utenti e autenticazione via JWT + OAuth (Google, GitHub).
+
+    ## Autenticazione
+    La maggior parte degli endpoint protetti richiede un `accessToken` JWT nell'header:
+    ```
+    Authorization: Bearer <accessToken>
+    ```
+    Il token si ottiene tramite `/api/auth/login`, `/api/auth/register` o i flussi OAuth.
+    Per rinnovarlo senza re-login usare `/api/auth/refresh` (legge il cookie `refresh_token` httpOnly).
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+# ---------------------------------------------------------------------------
+# Security schemes
+# ---------------------------------------------------------------------------
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # -------------------------------------------------------------------------
+  # Reusable schemas
+  # -------------------------------------------------------------------------
+  schemas:
+
+    Error:
+      type: object
+      description: Risposta di errore generica.
+      properties:
+        error:
+          type: string
+          example: "Messaggio di errore descrittivo"
+
+    SafeUser:
+      type: object
+      description: Dati pubblici dell'utente (senza password e ID OAuth).
+      properties:
+        _id:
+          type: string
+          example: "664a1f2e8b3c4d5e6f7a8b9c"
+        nome:
+          type: string
+          example: "Mario"
+        cognome:
+          type: string
+          nullable: true
+          example: "Rossi"
+        email:
+          type: string
+          format: email
+          example: "mario.rossi@example.com"
+        nickname:
+          type: string
+          example: "mario_r"
+
+    AuthResponse:
+      type: object
+      description: Risposta restituita dopo login o registrazione.
+      properties:
+        user:
+          $ref: '#/components/schemas/SafeUser'
+        accessToken:
+          type: string
+          description: JWT da usare come Bearer token nelle richieste protette.
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    User:
+      type: object
+      description: Modello completo dell'utente (uso interno/CRUD diretto).
+      properties:
+        _id:
+          type: string
+          example: "664a1f2e8b3c4d5e6f7a8b9c"
+        nome:
+          type: string
+          example: "Mario"
+        cognome:
+          type: string
+          nullable: true
+          example: "Rossi"
+        email:
+          type: string
+          format: email
+          example: "mario.rossi@example.com"
+        nickname:
+          type: string
+          example: "mario_r"
+        passwordHash:
+          type: string
+          description: Hash bcrypt della password. Non esporre mai in risposta.
+          example: "$2b$10$..."
+        googleId:
+          type: string
+          nullable: true
+          description: ID Google dell'utente (presente solo se registrato via OAuth Google).
+          example: "109876543210987654321"
+        githubId:
+          type: string
+          nullable: true
+          description: ID GitHub dell'utente (presente solo se registrato via OAuth GitHub).
+          example: "12345678"
+
+    Trek:
+      type: object
+      description: Percorso/trek nelle Dolomiti.
+      required:
+        - name
+        - difficulty
+      properties:
+        _id:
+          type: string
+          example: "664b2c3d9e4f5a6b7c8d9e0f"
+        id:
+          type: number
+          description: ID numerico progressivo (campo separato da `_id` MongoDB).
+          example: 42
+        name:
+          type: string
+          example: "Sentiero delle Odle"
+        difficulty:
+          type: string
+          enum: [Facile, Medio, Difficile]
+          example: "Medio"
+        description:
+          type: string
+          nullable: true
+          example: "Percorso panoramico con vista sulle Odle."
+        SatRouteNumber:
+          type: string
+          nullable: true
+          description: Numero di percorso SAT (Società Alpinisti Tridentini).
+          example: "3A"
+        duration:
+          type: string
+          nullable: true
+          description: Durata stimata (formato libero, es. "3h 30min").
+          example: "3h 30min"
+        lengthKm:
+          type: number
+          nullable: true
+          example: 12.5
+        elevationGain:
+          type: number
+          nullable: true
+          description: Dislivello positivo in metri.
+          example: 650
+        startPoint:
+          type: string
+          nullable: true
+          example: "Malga Zannes"
+        endPoint:
+          type: string
+          nullable: true
+          example: "Rifugio Genova"
+        condizioniAttuali:
+          type: string
+          nullable: true
+          description: Aggiornamento manuale sulle condizioni del sentiero.
+          example: "Sentiero aperto, neve residua sopra i 2000m."
+        createdBy:
+          type: string
+          nullable: true
+          description: _id dell'utente che ha creato il trek.
+          example: "664a1f2e8b3c4d5e6f7a8b9c"
+
+    Activity:
+      type: object
+      description: Attività/escursione organizzata da un utente su un trek.
+      required:
+        - title
+        - activityDate
+        - status
+      properties:
+        _id:
+          type: string
+          example: "664c3d4e0f1a2b3c4d5e6f7a"
+        id:
+          type: number
+          description: ID numerico progressivo.
+          example: 7
+        title:
+          type: string
+          example: "Escursione alle Odle - Giugno 2025"
+        description:
+          type: string
+          nullable: true
+          example: "Uscita di gruppo con pranzo al sacco al rifugio."
+        activityDate:
+          type: string
+          format: date-time
+          example: "2025-06-15T08:00:00Z"
+        maxParticipants:
+          type: number
+          nullable: true
+          example: 10
+        status:
+          type: string
+          enum: [Aperto, Chiuso, Annullato]
+          example: "Aperto"
+        organizerID:
+          type: string
+          nullable: true
+          description: _id dell'utente organizzatore.
+          example: "664a1f2e8b3c4d5e6f7a8b9c"
+        trekID:
+          type: string
+          nullable: true
+          description: _id del trek associato.
+          example: "664b2c3d9e4f5a6b7c8d9e0f"
+
+# ---------------------------------------------------------------------------
+# Tags
+# ---------------------------------------------------------------------------
+tags:
+  - name: Auth
+    description: |
+      Autenticazione locale (JWT) e OAuth (Google, GitHub).
+      Il flusso standard è: **register** o **login** → ricevi `accessToken` + cookie `refresh_token` → usa `accessToken` nelle richieste protette → rinnova con `/api/auth/refresh`.
+  - name: Treks
+    description: Gestione dei percorsi/trek nelle Dolomiti.
+  - name: Activities
+    description: Gestione delle attività/escursioni organizzate dagli utenti.
+  - name: Users
+    description: CRUD diretto sugli utenti (uso amministrativo).
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+paths:
+
+  # ==========================================================================
+  # AUTH
+  # ==========================================================================
+
+  /api/auth/register:
+    post:
+      summary: Registra un nuovo utente
+      description: |
+        Crea un nuovo account con email e password.
+        Restituisce i dati pubblici dell'utente e un `accessToken` JWT.
+        Imposta automaticamente il cookie httpOnly `refresh_token`.
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nome, email, nickname, password, confermaPassword]
+              properties:
+                nome:
+                  type: string
+                  example: "Mario"
+                cognome:
+                  type: string
+                  nullable: true
+                  example: "Rossi"
+                email:
+                  type: string
+                  format: email
+                  example: "mario.rossi@example.com"
+                nickname:
+                  type: string
+                  example: "mario_r"
+                password:
+                  type: string
+                  format: password
+                  example: "Password123!"
+                confermaPassword:
+                  type: string
+                  format: password
+                  example: "Password123!"
+      responses:
+        '201':
+          description: Utente registrato con successo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Dati mancanti, formato non valido o le password non coincidono.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Email o nickname già in uso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/login:
+    post:
+      summary: Login utente
+      description: |
+        Autentica un utente con email e password.
+        Restituisce `accessToken` e imposta il cookie httpOnly `refresh_token`.
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "mario.rossi@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "Password123!"
+      responses:
+        '200':
+          description: Login effettuato con successo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Email o password mancanti nel body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Credenziali non valide.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/logout:
+    post:
+      summary: Logout utente
+      description: Invalida il cookie `refresh_token` lato server e lo rimuove dal client.
+      tags: [Auth]
+      responses:
+        '200':
+          description: Logout effettuato con successo.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+
+  /api/auth/refresh:
+    post:
+      summary: Rinnova l'access token
+      description: |
+        Legge il cookie httpOnly `refresh_token` (impostato al login) e restituisce
+        un nuovo `accessToken` senza richiedere le credenziali.
+        Usare quando l'`accessToken` è scaduto.
+
+        > **Nota:** nel router la route è montata come `POST /auth/refresh`
+        > sotto il prefisso `/api/auth`, quindi il path completo è `/api/auth/refresh`.
+      tags: [Auth]
+      responses:
+        '200':
+          description: Nuovo access token generato.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '401':
+          description: Refresh token mancante, non valido o scaduto.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/me:
+    get:
+      summary: Dati dell'utente autenticato
+      description: Restituisce i dati pubblici dell'utente associato all'`accessToken`.
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dati utente (versione safe, senza password).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/SafeUser'
+        '401':
+          description: Token mancante, non valido o scaduto.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/google:
+    get:
+      summary: Avvia il flusso OAuth con Google
+      description: |
+        Reindirizza il browser dell'utente alla pagina di consenso di Google.
+        Al termine, Google chiama il callback `/api/auth/google/callback`.
+      tags: [Auth]
+      responses:
+        '302':
+          description: Redirect verso Google OAuth.
+
+  /api/auth/google/callback:
+    get:
+      summary: Callback OAuth Google
+      description: |
+        Google reindirizza qui dopo che l'utente ha completato il consenso.
+        Il server scambia il codice con i token Google, crea o recupera l'utente,
+        e reindirizza il browser verso il frontend con l'`accessToken` come query param.
+      tags: [Auth]
+      parameters:
+        - in: query
+          name: code
+          required: true
+          schema:
+            type: string
+          description: Codice di autorizzazione restituito da Google.
+        - in: query
+          name: state
+          required: true
+          schema:
+            type: string
+          description: Valore anti-CSRF generato al momento del redirect iniziale.
+      responses:
+        '302':
+          description: Redirect verso il frontend con `accessToken` come query param.
+        '400':
+          description: Errore nello scambio del codice o dati utente non validi.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Il parametro `state` non corrisponde (protezione anti-CSRF).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/github:
+    get:
+      summary: Avvia il flusso OAuth con GitHub
+      description: |
+        Reindirizza il browser dell'utente alla pagina di consenso di GitHub.
+        Al termine, GitHub chiama il callback `/api/auth/github/callback`.
+      tags: [Auth]
+      responses:
+        '302':
+          description: Redirect verso GitHub OAuth.
+
+  /api/auth/github/callback:
+    get:
+      summary: Callback OAuth GitHub
+      description: |
+        GitHub reindirizza qui dopo che l'utente ha completato il consenso.
+        Il server scambia il codice con i token GitHub, crea o recupera l'utente,
+        e reindirizza il browser verso il frontend con l'`accessToken` come query param.
+      tags: [Auth]
+      parameters:
+        - in: query
+          name: code
+          required: true
+          schema:
+            type: string
+          description: Codice di autorizzazione restituito da GitHub.
+        - in: query
+          name: state
+          required: true
+          schema:
+            type: string
+          description: Valore anti-CSRF generato al momento del redirect iniziale.
+      responses:
+        '302':
+          description: Redirect verso il frontend con `accessToken` come query param.
+        '400':
+          description: Errore nello scambio del codice o dati utente non validi.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Il parametro `state` non corrisponde (protezione anti-CSRF).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ==========================================================================
+  # TREKS
+  # ==========================================================================
+
+  /treks:
+    get:
+      summary: Ottieni tutti i treks (pubblica)
+      description: Restituisce la lista completa dei percorsi. Non richiede autenticazione.
+      tags: [Treks]
+      responses:
+        '200':
+          description: Lista dei treks.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Trek'
+        '500':
+          description: Errore interno del server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Crea un nuovo trek
+      description: Inserisce un nuovo percorso nel database.
+      tags: [Treks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Trek'
+      responses:
+        '201':
+          description: Trek creato con successo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trek'
+        '400':
+          description: Dati non validi o campi obbligatori mancanti.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /treks/{id}:
+    get:
+      summary: Ottieni un trek per ID numerico
+      description: |
+        Cerca il trek tramite il campo numerico `id` (non il campo `_id` di MongoDB).
+      tags: [Treks]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID numerico del trek (campo `id` nel DB).
+          example: 42
+      responses:
+        '200':
+          description: Trek trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trek'
+        '404':
+          description: Nessun trek trovato con l'ID specificato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Errore interno del server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /treks/protected:
+    get:
+      summary: Ottieni tutti i treks (protetta)
+      description: |
+        Identica a `GET /treks` ma richiede autenticazione JWT.
+        Utile per endpoint futuri con contenuti personalizzati per utente.
+      tags: [Treks]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista dei treks.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Trek'
+        '401':
+          description: Token mancante o non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ==========================================================================
+  # ACTIVITIES
+  # ==========================================================================
+
+  /activities:
+    get:
+      summary: Ottieni tutte le attività
+      description: Restituisce la lista di tutte le attività/escursioni create dagli utenti.
+      tags: [Activities]
+      responses:
+        '200':
+          description: Lista delle attività.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Activity'
+        '500':
+          description: Errore interno del server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Crea una nuova attività
+      description: Crea un'attività/escursione associata a un trek e a un organizzatore.
+      tags: [Activities]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Activity'
+      responses:
+        '201':
+          description: Attività creata con successo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '400':
+          description: Dati non validi o campi obbligatori mancanti.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ==========================================================================
+  # USERS
+  # ==========================================================================
+
+  /users:
+    get:
+      summary: Ottieni tutti gli utenti
+      description: |
+        Restituisce la lista completa degli utenti registrati.
+        > Questo endpoint espone dati sensibili (`passwordHash`). Limitare l'accesso in produzione.
+      tags: [Users]
+      responses:
+        '200':
+          description: Lista utenti.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '500':
+          description: Errore interno del server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Crea un utente (CRUD diretto)
+      description: |
+        Inserisce un utente direttamente nel database passando `passwordHash` già calcolato.
+        **Non è la registrazione standard**: per creare un account utente usare `/api/auth/register`.
+        Questo endpoint è riservato a operazioni amministrative.
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: Utente creato con successo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Dati non validi o campi obbligatori mancanti.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

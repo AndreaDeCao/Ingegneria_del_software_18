@@ -26,8 +26,10 @@ import VersionePage from "./pages/account/VersionePage";
 
 import "./index.css";
 import styles from "./App.module.css";
+import ScrollToTop from "./ScrollToTop";
 
 import AuthCallback from "./pages/AuthCallback";
+import TrekDetails from "./pages/TrekDetails";
 
 /**
  * Layout comune a tutte le pagine (comprende Navbar)
@@ -59,9 +61,11 @@ export default function App() {
   return (
     <AuthProvider> {/* AuthProvider è un componente che fornisce il contesto di autenticazione a tutta l'applicazione. Avvolgendo il BrowserRouter e tutte le rotte all'interno di AuthProvider, garantiamo che qualsiasi componente possa accedere alle informazioni sull'utente autenticato e alle funzioni di login/logout tramite il contesto. */}
       <BrowserRouter> {/* BrowserRouter è un componente che gestisce la navigazione dell'applicazione. Avvolge tutte le rotte e consente di definire i percorsi e i componenti associati a ciascun percorso. In questo caso, tutte le rotte sono definite all'interno di BrowserRouter, il che significa che la navigazione tra le pagine (Login, Register, Treks, MyTreks, Friends) sarà gestita da React Router. */}
-        <Routes>
+        <ScrollToTop />
+                <Routes>
                   {/* Landing page */}
                   <Route path="/" element={<AppLayout><Home /></AppLayout>} />
+                  <Route path="/treks/:id" element={<AppLayout><TrekDetails /></AppLayout>} />
         
                   {/* Auth */}
                   <Route path="/login"    element={<AppLayout><Login /></AppLayout>} />
@@ -86,6 +90,8 @@ export default function App() {
                   <Route path="/attivita/:sezione" element={<AppLayout><ProtectedRoute>
                     <AttivitaPage />
                   </ProtectedRoute></AppLayout>} />
+
+                  
         
                   {/* Pubblica — versioning/changelog */}
                   <Route path="/vers/:sezione" element={<AppLayout><VersionePage /></AppLayout>} />

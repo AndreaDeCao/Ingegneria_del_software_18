@@ -119,3 +119,9 @@
   font-weight: 500;
 }
 
+
+.cardLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}

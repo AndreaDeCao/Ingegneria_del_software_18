@@ -12,8 +12,17 @@
 }
 
 .sectionTitle {
+  padding: 2px 8px;
   font-family: var(--font-display);
   font-size: 22px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.sectionSubtitle {
+  padding: 2px 8px;
+  font-family: var(--font-display);
+  font-size: 18px;
   font-weight: 500;
   color: var(--text-primary);
 }

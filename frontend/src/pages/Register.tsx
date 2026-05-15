@@ -2,36 +2,69 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 
+// import HCaptcha from "@hcaptcha/react-hcaptcha";
+
+// import { useTheme } from "../hooks/useTheme";
+import GoogleSignInButton from "../components/GoogleSignInButton";
+import TurnstileWidget from "../components/TurnstileWidget";
+
+// import styles from "./Auth.module.css";
+
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  // const { theme } = useTheme(); 
 
   const [nome, setNome] = useState("");
   const [cognome, setCognome] = useState("");
   const [email, setEmail] = useState("");
   const [nickname, setNickname] = useState("");
   const [password, setPassword] = useState("");
+  const [confermaPassword, setConfermaPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileKey, setTurnstileKey] = useState(0);
 
-  //TODO: aggiungere validazione dei campi (es. email valida, password abbastanza complessa, ecc.)
-  //TODO: aggiungi  pwd confirm e captcha per evitare registrazioni automatiche
-  //FIXME: migliorare il display degli errori
-  //FIXME: migliorare il design della pagina di registrazione
+  const resetTurnstile = () => {
+    setTurnstileToken("");
+    setTurnstileKey((k) => k + 1);
+  };
+  
+
+  // const captchaRef = useRef<HCaptcha>(null);
+  // const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+
   return (
-    <div style={{ padding: 24, maxWidth: 520 }}>
-      <h2>Registrazione</h2>
-
+    // <div style={{ padding: 24, maxWidth: 520 }}>
+    <div style={{ padding: 24, maxWidth: 520, left: "50%", transform: "translateX(-50%)", position: "relative"}}>
+      <h2>Form di registrazione</h2>
+      <br />
       <form
         onSubmit={async (e) => {
           e.preventDefault();
           setError(null);
           setSubmitting(true);
           try {
-            await register({ nome, cognome, email, nickname, password });
-            navigate("/treks", { replace: true });
+            if (!turnstileToken) {
+              setError("Completa il CAPTCHA per continuare.");
+              setSubmitting(false);
+              return;
+            }
+            await register({ nome, cognome, email, nickname, password, confermaPassword, turnstileToken });
+            navigate("/home", { replace: true });
           } catch (err) {
-            setError(err instanceof Error ? err.message : "Errore registrazione");
+            const message = err instanceof Error ? err.message : "Errore registrazione";
+            if (
+              message.toLowerCase().includes("captcha") ||
+              message.toLowerCase().includes("turnstile")
+            ) {
+              setError("CAPTCHA scaduto o non valido. Verifica di nuovo e riprova.");
+            } else {
+              setError(message);
+            }
+            resetTurnstile();
           } finally {
             setSubmitting(false);
           }
@@ -77,9 +110,52 @@ export default function Register() {
           />
         </label>
 
-        {error && <p style={{ color: "#c0392b" }}>{error}</p>}
+        <label style={{ display: "block", marginTop: 12 }}>
+          Conferma password
+          <input
+            style={{ width: "100%", padding: 8 }}
+            value={confermaPassword}
+            onChange={(e) => setConfermaPassword(e.target.value)}
+            type="password"
+            autoComplete="new-password"
+            required
+          />
+        </label>
 
-        <button type="submit" disabled={submitting} style={{ marginTop: 16 }}>
+
+        {/* <HCaptcha 
+          sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
+          onVerify={(token) => setCaptchaToken(token)}
+          onExpire={() => setCaptchaToken(null)}
+          ref={captchaRef}
+        /> */}
+
+        <TurnstileWidget
+          key={turnstileKey}
+          onVerify={(token) => setTurnstileToken(token)}
+          onExpire={() => {
+            setError("CAPTCHA scaduto. Verifica di nuovo per continuare.");
+            resetTurnstile();
+          }}
+        />
+
+        {error && (
+          <div
+            role="alert"
+            style={{
+              marginTop: 12,
+              padding: 12,
+              borderRadius: 8,
+              border: "1px solid #f5c6cb",
+              background: "#fdecea",
+              color: "#7a1f1f",
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        <button type="submit" disabled={submitting} style={{ marginTop: 16, width: "100%", padding: 10, cursor: "pointer" , background: "#ececec", color: "#000000", border: `1px solid`, borderRadius: 6 }}>
           {submitting ? "Creazione..." : "Crea account"}
         </button>
       </form>
@@ -94,20 +170,24 @@ export default function Register() {
       <button
         onClick={() => window.location.href = "http://localhost:3000/api/auth/github"}
         style={{ width: "100%", padding: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", background: "#fff", color: "#000", border: "1px solid #000", borderRadius: 6 }}>
-        <img src="./GitHub_Lockup_Black.svg" width={100} height={30} alt="GitHub" />
+        
+        <img src="./GitHub_Lockup_Black.svg" width={100} height={18} alt="GitHub" />
       </button>
 
       {/* Login con Google */}
-      <button
+      {/* <button
         onClick={() => window.location.href = "http://localhost:3000/api/auth/google"}
-        style={{ width: "100%", padding: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer"}}>
-
+        style={{ width: "100%", padding: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer"}}
+      >
         <img src="https://www.google.com/favicon.ico" width={16} height={16} alt="Google" />
         Registrati con Google
-      </button>
+      </button> */}
+      <br />
+      <GoogleSignInButton label="Registrati con Google" />
+
 
       <p style={{ marginTop: 16 }}>
-        Hai già un account? <Link to="/login">Accedi</Link>
+        Hai già un account? <Link to="/login" style={{color: 'blue'}}>Accedi</Link>
       </p>
     </div>
   );
