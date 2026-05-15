@@ -27,6 +27,27 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 let accessToken: string | null = null; // Variabile globale per memorizzare il token JWT
 export const setAccessToken = (t: string | null) => { accessToken = t; }; // Funzione per aggiornare il token JWT memorizzato
 
+let csrfToken: string | null = null;
+export const setCsrfToken = (t: string | null) => { csrfToken = t; };
+
+async function ensureCsrfToken(): Promise<string> {
+  if (csrfToken) return csrfToken;
+
+  const res = await fetch(`${API_BASE}/api/auth/csrf`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Impossibile ottenere CSRF token");
+  const data = (await res.json()) as { csrfToken?: unknown };
+  if (typeof data.csrfToken !== "string" || !data.csrfToken) {
+    throw new Error("CSRF token non valido");
+  }
+
+  csrfToken = data.csrfToken;
+  return csrfToken;
+}
+
 
 // Funzione helper per fare richieste HTTP al backend, gestendo automaticamente i cookie e gli errori
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
@@ -35,6 +56,7 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
     headers: {
       "Content-Type": "application/json", 
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}), // Se accessToken è presente, aggiungiamo l'header Authorization con il token JWT
+      ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
       ...(init?.headers ?? {}),// Includiamo eventuali header aggiuntivi passati tramite init
     },
     ...init,
@@ -46,9 +68,11 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
   // if (res.status === 401 && !path.includes("/auth/refresh")) { //problema con login
   // if (res.status === 401 && !path.includes("/auth/refresh") && !path.includes("/auth/login")) { possibile problema con registrazione
   if (res.status === 401 && !isAuthEndpoint) { //no problemi con refresh, login e register
+    const token = await ensureCsrfToken().catch(() => null);
     const refreshed = await fetch(`${API_BASE}/api/auth/refresh`, {
       method: "POST",
       credentials: "include",
+      headers: token ? { "X-CSRF-Token": token } : undefined,
     });
 
     if (refreshed.ok) {
@@ -111,6 +135,8 @@ export const authApi = {
     http<AuthAPI<SafeUser>>("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
   register: (body: RegisterRequest) =>
     http<AuthAPI<SafeUser>>("/api/auth/register", { method: "POST", body: JSON.stringify(body) }),
-  logout: () => http<AuthAPI<SafeUser>>("/api/auth/logout", { method: "POST" }),
+  logout: async () => {
+    const token = await ensureCsrfToken();
+    return http<AuthAPI<SafeUser>>("/api/auth/logout", { method: "POST", headers: { "X-CSRF-Token": token } });
+  },
 };
-
