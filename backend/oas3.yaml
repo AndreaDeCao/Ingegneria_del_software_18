@@ -1,10 +1,10 @@
 openapi: 3.0.0
 info:
   title: DoloMate API
-  version: 1.0.0
+  version: 2.0.0
   description: |
     API documentation per il progetto **DoloMate** — gestione di treks, attività,
-    utenti e autenticazione via JWT + OAuth (Google, GitHub).
+    diario personale, meteo e autenticazione via JWT + OAuth (Google, GitHub).
 
     ## Autenticazione
     La maggior parte degli endpoint protetti richiede un `accessToken` JWT nell'header:
@@ -13,6 +13,46 @@ info:
     ```
     Il token si ottiene tramite `/api/auth/login`, `/api/auth/register` o i flussi OAuth.
     Per rinnovarlo senza re-login usare `/api/auth/refresh` (legge il cookie `refresh_token` httpOnly).
+
+    ## Protezione CSRF
+    Gli endpoint sensibili (logout, refresh) richiedono il double-submit cookie:
+    1. Chiamare `GET /api/auth/csrf` per ricevere il cookie `csrf_token` e il valore JSON `{ csrfToken }`.
+    2. Inviare il valore nell'header `X-CSRF-Token` ad ogni richiesta protetta da CSRF.
+
+    ## Cloudflare Turnstile (CAPTCHA)
+    Gli endpoint `/api/auth/register` e `/api/auth/login` richiedono un campo `turnstileToken`
+    nel body, ottenuto dal widget Cloudflare Turnstile nel frontend.
+
+    ## Ruoli utente
+    - `user` — utente standard (default)
+    - `admin` — accesso aggiuntivo a operazioni privilegiate (es. creazione trek)
+    
+    ## Prefissi route
+    | Modulo     | Prefisso        |
+    |------------|-----------------|
+    | Auth       | /api/auth       |
+    | Treks      | /api/treks      |
+    | Activities | /api/activities |
+    | Diary      | /api/diary      |
+    | Weather    | /api/weather    |
+    | Users      | /api/users      |
+  
+    ## Codici di errore comuni
+    | Codice | Significato                        |
+    |--------|------------------------------------|
+    | 400    | Body mancante o non valido         |
+    | 401    | Token JWT mancante/scaduto         |
+    | 403    | Permessi insufficienti o CSRF      |
+    | 404    | Risorsa non trovata                |
+    | 409    | Conflitto (email/nickname duplicati)|
+    | 500    | Errore interno del server          |
+  
+    ## Variabili d'ambiente richieste
+    - `JWT_ACCESS_SECRET` — secret per firmare gli access token
+    - `JWT_REFRESH_SECRET` — secret per i refresh token
+    - `TURNSTILE_SECRET_KEY` — chiave Cloudflare Turnstile (backend)
+    - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — OAuth Google
+    - `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` — OAuth GitHub
 
 servers:
   - url: http://localhost:3000
@@ -43,7 +83,7 @@ components:
 
     SafeUser:
       type: object
-      description: Dati pubblici dell'utente (senza password e ID OAuth).
+      description: Dati pubblici dell'utente (senza campi sensibili).
       properties:
         _id:
           type: string
@@ -61,7 +101,14 @@ components:
           example: "mario.rossi@example.com"
         nickname:
           type: string
-          example: "mario_r"
+          example: "marioR"
+        role:
+          type: string
+          enum: [user, admin]
+          example: "user"
+        emailVerified:
+          type: boolean
+          example: false
 
     AuthResponse:
       type: object
@@ -94,21 +141,40 @@ components:
           example: "mario.rossi@example.com"
         nickname:
           type: string
-          example: "mario_r"
+          example: "marioR"
         passwordHash:
           type: string
-          description: Hash bcrypt della password. Non esporre mai in risposta.
+          description: Hash bcrypt della password. Non esposto nelle risposte (select:false).
           example: "$2b$10$..."
         googleId:
           type: string
           nullable: true
-          description: ID Google dell'utente (presente solo se registrato via OAuth Google).
+          description: ID Google (presente solo se registrato via OAuth Google).
           example: "109876543210987654321"
         githubId:
           type: string
           nullable: true
-          description: ID GitHub dell'utente (presente solo se registrato via OAuth GitHub).
+          description: ID GitHub (presente solo se registrato via OAuth GitHub).
           example: "12345678"
+        role:
+          type: string
+          enum: [user, admin]
+          default: user
+          description: Ruolo dell'utente nel sistema.
+          example: "user"
+        emailVerified:
+          type: boolean
+          default: false
+          description: true dopo che l'utente ha cliccato il link di verifica email.
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-06-01T14:22:00Z"
 
     Trek:
       type: object
@@ -122,7 +188,7 @@ components:
           example: "664b2c3d9e4f5a6b7c8d9e0f"
         id:
           type: number
-          description: ID numerico progressivo (campo separato da `_id` MongoDB).
+          description: ID numerico progressivo univoco (campo separato da `_id` MongoDB).
           example: 42
         name:
           type: string
@@ -138,22 +204,22 @@ components:
         SatRouteNumber:
           type: string
           nullable: true
-          description: Numero di percorso SAT (Società Alpinisti Tridentini).
+          description: Numero di percorso SAT (Società Alpinisti Tridentini), es. "E101".
           example: "3A"
         duration:
           type: string
           nullable: true
-          description: Durata stimata (formato libero, es. "3h 30min").
+          description: Durata stimata (formato libero, es. "3 ore").
           example: "3h 30min"
         lengthKm:
           type: number
           nullable: true
           example: 12.5
         elevationGain:
-          type: number
+          type: string
           nullable: true
-          description: Dislivello positivo in metri.
-          example: 650
+          description: Dislivello positivo (formato stringa, es. "650 m").
+          example: "650 m"
         startPoint:
           type: string
           nullable: true
@@ -162,6 +228,32 @@ components:
           type: string
           nullable: true
           example: "Rifugio Genova"
+        comuni:
+          type: array
+          items:
+            type: string
+          description: Comuni attraversati dal percorso.
+          example: ["Funes", "Val di Funes"]
+        minAltitude:
+          type: number
+          nullable: true
+          description: Quota minima in metri.
+          example: 1350
+        maxAltitude:
+          type: number
+          nullable: true
+          description: Quota massima in metri.
+          example: 2500
+        coordinates:
+          type: object
+          description: Coordinate GPS del punto di riferimento del trek.
+          properties:
+            lat:
+              type: number
+              example: 46.6171
+            lon:
+              type: number
+              example: 11.7570
         condizioniAttuali:
           type: string
           nullable: true
@@ -170,7 +262,7 @@ components:
         createdBy:
           type: string
           nullable: true
-          description: _id dell'utente che ha creato il trek.
+          description: _id dell'utente (admin) che ha creato il trek.
           example: "664a1f2e8b3c4d5e6f7a8b9c"
 
     Activity:
@@ -210,13 +302,89 @@ components:
         organizerID:
           type: string
           nullable: true
-          description: _id dell'utente organizzatore.
+          description: _id dell'utente organizzatore (ref User).
           example: "664a1f2e8b3c4d5e6f7a8b9c"
         trekID:
           type: string
           nullable: true
-          description: _id del trek associato.
+          description: _id del trek associato (ref Trek).
           example: "664b2c3d9e4f5a6b7c8d9e0f"
+
+    DiaryEntry:
+      type: object
+      description: Voce del diario personale dell'utente relativa a un'escursione.
+      required:
+        - titolo
+        - data
+      properties:
+        _id:
+          type: string
+          example: "664d4e5f1a2b3c4d5e6f7a8b"
+        userId:
+          type: string
+          description: _id dell'utente proprietario della voce (impostato dal token, non dal body).
+          example: "664a1f2e8b3c4d5e6f7a8b9c"
+        trekId:
+          type: string
+          nullable: true
+          description: _id del trek associato (opzionale, ref Trek).
+          example: "664b2c3d9e4f5a6b7c8d9e0f"
+        titolo:
+          type: string
+          example: "Prima volta alle Odle"
+        data:
+          type: string
+          format: date-time
+          example: "2025-06-15T08:00:00Z"
+        note:
+          type: string
+          nullable: true
+          example: "Giornata fantastica, cielo limpido e aria fresca."
+        foto:
+          type: array
+          items:
+            type: string
+          description: Array di URL o percorsi delle foto.
+          example: ["https://example.com/foto1.jpg"]
+        valutazione:
+          type: number
+          minimum: 1
+          maximum: 5
+          nullable: true
+          description: Valutazione dell'escursione da 1 a 5.
+          example: 5
+        completato:
+          type: boolean
+          default: true
+          description: Indica se l'escursione è stata completata.
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-06-15T20:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-06-15T21:00:00Z"
+
+    WeatherResponse:
+      type: object
+      description: Risposta meteo per un trek, con dati dalla stazione più vicina.
+      properties:
+        trek:
+          type: string
+          description: Nome del trek richiesto.
+          example: "Sentiero delle Odle"
+        meteoLocation:
+          type: string
+          description: Nome della stazione meteo più vicina alle coordinate del trek.
+          example: "Bressanone"
+        weather:
+          type: object
+          description: |
+            Dati meteo grezzi restituiti dal provider esterno (struttura variabile
+            in base alla fonte configurata in `meteoLocations.json`).
+          additionalProperties: true
 
 # ---------------------------------------------------------------------------
 # Tags
@@ -225,11 +393,31 @@ tags:
   - name: Auth
     description: |
       Autenticazione locale (JWT) e OAuth (Google, GitHub).
-      Il flusso standard è: **register** o **login** → ricevi `accessToken` + cookie `refresh_token` → usa `accessToken` nelle richieste protette → rinnova con `/api/auth/refresh`.
+
+      Flusso standard:
+      1. `GET /api/auth/csrf` → ottieni `csrfToken` (cookie + JSON)
+      2. `POST /api/auth/register` o `POST /api/auth/login` → ricevi `accessToken` + cookie `refresh_token`
+      3. Usa `accessToken` nell'header `Authorization: Bearer <token>` per le richieste protette
+      4. Rinnova con `POST /api/auth/refresh` (invia header `X-CSRF-Token`)
+
   - name: Treks
-    description: Gestione dei percorsi/trek nelle Dolomiti.
+    description: |
+      Gestione dei percorsi/trek nelle Dolomiti.
+      La creazione è riservata agli utenti con ruolo `admin`.
+
   - name: Activities
     description: Gestione delle attività/escursioni organizzate dagli utenti.
+
+  - name: Diary
+    description: |
+      Diario personale dell'utente. Ogni voce può essere associata a un trek.
+      Tutti gli endpoint richiedono autenticazione JWT.
+
+  - name: Weather
+    description: |
+      Meteo in tempo reale per un trek. Il sistema trova automaticamente
+      la stazione meteo più vicina alle coordinate del trek.
+
   - name: Users
     description: CRUD diretto sugli utenti (uso amministrativo).
 
@@ -242,13 +430,36 @@ paths:
   # AUTH
   # ==========================================================================
 
+  /api/auth/csrf:
+    get:
+      summary: Ottieni il token CSRF
+      description: |
+        Imposta il cookie `csrf_token` (NON httpOnly, leggibile dal frontend)
+        e restituisce lo stesso valore nel body JSON.
+        Da chiamare prima di qualsiasi endpoint che richiede `X-CSRF-Token`
+        (logout, refresh).
+      tags: [Auth]
+      responses:
+        '200':
+          description: Token CSRF generato.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  csrfToken:
+                    type: string
+                    example: "a1b2c3d4e5f6..."
+
   /api/auth/register:
     post:
       summary: Registra un nuovo utente
       description: |
         Crea un nuovo account con email e password.
-        Restituisce i dati pubblici dell'utente e un `accessToken` JWT.
-        Imposta automaticamente il cookie httpOnly `refresh_token`.
+        Richiede la verifica Cloudflare Turnstile (`turnstileToken` nel body).
+        **Non** restituisce `accessToken` né dati utente: l'account è creato ma non attivo finché
+        l'utente non clicca il link di verifica ricevuto via email (`emailVerified: false`).
+        Vincoli password: 6–32 caratteri, almeno una lettera e un numero, nessuno spazio.
       tags: [Auth]
       requestBody:
         required: true
@@ -256,7 +467,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [nome, email, nickname, password, confermaPassword]
+              required: [nome, email, nickname, password, confermaPassword, turnstileToken]
               properties:
                 nome:
                   type: string
@@ -271,7 +482,7 @@ paths:
                   example: "mario.rossi@example.com"
                 nickname:
                   type: string
-                  example: "mario_r"
+                  example: "marioR"
                 password:
                   type: string
                   format: password
@@ -280,21 +491,44 @@ paths:
                   type: string
                   format: password
                   example: "Password123!"
+                turnstileToken:
+                  type: string
+                  description: Token ottenuto dal widget Cloudflare Turnstile nel frontend.
+                  example: "xxxxxx..."
       responses:
         '201':
-          description: Utente registrato con successo.
+          description: Utente registrato con successo. Inviata email di verifica.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Registrazione completata! Controlla la tua email per verificare l'account."
         '400':
-          description: Dati mancanti, formato non valido o le password non coincidono.
+          description: |
+            Campi mancanti, email non valida, password non conforme alle regole
+            (6–32 caratteri, almeno lettera e numero, nessuno spazio),
+            password e confermaPassword non coincidenti, o Turnstile token mancante.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: CAPTCHA Turnstile non valido.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '409':
-          description: Email o nickname già in uso.
+          description: Email o nickname già in uso (con suggerimento sul metodo di login se account OAuth).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Errore interno del server.
           content:
             application/json:
               schema:
@@ -305,7 +539,10 @@ paths:
       summary: Login utente
       description: |
         Autentica un utente con email e password.
-        Restituisce `accessToken` e imposta il cookie httpOnly `refresh_token`.
+        Richiede la verifica Cloudflare Turnstile (`turnstileToken` nel body).
+        Restituisce `accessToken` nel body e imposta il cookie httpOnly `refresh_token` (path `/api/auth/refresh`, durata 1h).
+        L'`accessToken` ha durata 15 minuti.
+        Il login è bloccato se l'email non è ancora verificata (403).
       tags: [Auth]
       requestBody:
         required: true
@@ -313,7 +550,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [email, password]
+              required: [email, password, turnstileToken]
               properties:
                 email:
                   type: string
@@ -323,6 +560,10 @@ paths:
                   type: string
                   format: password
                   example: "Password123!"
+                turnstileToken:
+                  type: string
+                  description: Token ottenuto dal widget Cloudflare Turnstile nel frontend.
+                  example: "0.xxxxxx..."
       responses:
         '200':
           description: Login effettuato con successo.
@@ -331,13 +572,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
         '400':
-          description: Email o password mancanti nel body.
+          description: Email, password o Turnstile token mancanti nel body.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '401':
-          description: Credenziali non valide.
+          description: Credenziali non valide (utente non trovato, password errata, o account senza passwordHash perché creato via OAuth).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: |
+            CAPTCHA Turnstile non valido, oppure email non ancora verificata
+            (`emailVerified: false` — l'utente deve cliccare il link ricevuto via email).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Errore interno del server.
           content:
             application/json:
               schema:
@@ -346,8 +601,17 @@ paths:
   /api/auth/logout:
     post:
       summary: Logout utente
-      description: Invalida il cookie `refresh_token` lato server e lo rimuove dal client.
+      description: |
+        Invalida il cookie `refresh_token` lato server e lo rimuove dal client.
+        Richiede l'header `X-CSRF-Token` (ottenuto da `GET /api/auth/csrf`).
       tags: [Auth]
+      parameters:
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema:
+            type: string
+          description: Token CSRF ottenuto da GET /api/auth/csrf.
       responses:
         '200':
           description: Logout effettuato con successo.
@@ -359,18 +623,29 @@ paths:
                   ok:
                     type: boolean
                     example: true
+        '403':
+          description: CSRF token mancante o non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/auth/refresh:
     post:
       summary: Rinnova l'access token
       description: |
-        Legge il cookie httpOnly `refresh_token` (impostato al login) e restituisce
-        un nuovo `accessToken` senza richiedere le credenziali.
+        Legge il cookie httpOnly `refresh_token` (impostato al login, path `/api/auth/refresh`)
+        e restituisce un nuovo `accessToken` (durata 15 minuti) senza richiedere le credenziali.
+        Richiede l'header `X-CSRF-Token` (verificato dal middleware prima di arrivare al controller).
         Usare quando l'`accessToken` è scaduto.
-
-        > **Nota:** nel router la route è montata come `POST /auth/refresh`
-        > sotto il prefisso `/api/auth`, quindi il path completo è `/api/auth/refresh`.
       tags: [Auth]
+      parameters:
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema:
+            type: string
+          description: Token CSRF ottenuto da GET /api/auth/csrf.
       responses:
         '200':
           description: Nuovo access token generato.
@@ -383,7 +658,13 @@ paths:
                     type: string
                     example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
         '401':
-          description: Refresh token mancante, non valido o scaduto.
+          description: Refresh token mancante nel cookie, non valido o scaduto.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: CSRF token mancante o non valido (bloccato dal middleware, prima del controller).
           content:
             application/json:
               schema:
@@ -392,22 +673,55 @@ paths:
   /api/auth/me:
     get:
       summary: Dati dell'utente autenticato
-      description: Restituisce i dati pubblici dell'utente associato all'`accessToken`.
+      description: |
+        Restituisce i dati pubblici dell'utente associato all'`accessToken`.
+        **Risponde sempre 200**: se il token è assente, non valido o l'utente non esiste,
+        restituisce `{ user: null }` invece di un errore.
       tags: [Auth]
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Dati utente (versione safe, senza password).
+          description: |
+            Dati utente (versione safe, senza campi sensibili).
+            Se il token è mancante/non valido restituisce `{ user: null }`.
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   user:
-                    $ref: '#/components/schemas/SafeUser'
-        '401':
-          description: Token mancante, non valido o scaduto.
+                    nullable: true
+                    allOf:
+                      - $ref: '#/components/schemas/SafeUser'
+
+  /api/auth/verify-email/{token}:
+    get:
+      summary: Verifica email utente
+      description: |
+        L'utente clicca il link ricevuto via email; il server valida il token,
+        imposta `emailVerified: true`, invalida il token di verifica e
+        **reindirizza al frontend** su `/login?verified=true`.
+        Il token scade dopo 24 ore dalla registrazione.
+      tags: [Auth]
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+          description: Token di verifica email (hex 32 byte) inviato via email al momento della registrazione.
+      responses:
+        '302':
+          description: Email verificata con successo — redirect al frontend su `/login?verified=true`.
+        '400':
+          description: Token mancante, non trovato nel DB, o scaduto (dopo 24h).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Errore interno del server.
           content:
             application/json:
               schema:
@@ -513,7 +827,7 @@ paths:
   # TREKS
   # ==========================================================================
 
-  /treks:
+  /api/treks:
     get:
       summary: Ottieni tutti i treks (pubblica)
       description: Restituisce la lista completa dei percorsi. Non richiede autenticazione.
@@ -535,9 +849,14 @@ paths:
                 $ref: '#/components/schemas/Error'
 
     post:
-      summary: Crea un nuovo trek
-      description: Inserisce un nuovo percorso nel database.
+      summary: Crea un nuovo trek (solo admin)
+      description: |
+        Inserisce un nuovo percorso nel database.
+        Richiede autenticazione JWT e ruolo `admin`.
+        Gli utenti standard riceveranno un errore 403.
       tags: [Treks]
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -557,8 +876,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '401':
+          description: Token mancante o non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Accesso riservato agli amministratori.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /treks/{id}:
+  /api/treks/{id}:
     get:
       summary: Ottieni un trek per ID numerico
       description: |
@@ -570,7 +901,7 @@ paths:
           required: true
           schema:
             type: integer
-          description: ID numerico del trek (campo `id` nel DB).
+          description: ID numerico del trek (campo `id` nel DB, non `_id`).
           example: 42
       responses:
         '200':
@@ -592,36 +923,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /treks/protected:
-    get:
-      summary: Ottieni tutti i treks (protetta)
-      description: |
-        Identica a `GET /treks` ma richiede autenticazione JWT.
-        Utile per endpoint futuri con contenuti personalizzati per utente.
-      tags: [Treks]
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Lista dei treks.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Trek'
-        '401':
-          description: Token mancante o non valido.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
   # ==========================================================================
   # ACTIVITIES
   # ==========================================================================
 
-  /activities:
+  /api/activities:
     get:
       summary: Ottieni tutte le attività
       description: Restituisce la lista di tutte le attività/escursioni create dagli utenti.
@@ -667,15 +973,177 @@ paths:
                 $ref: '#/components/schemas/Error'
 
   # ==========================================================================
+  # DIARY
+  # ==========================================================================
+
+  /api/diary:
+    get:
+      summary: Ottieni il diario dell'utente autenticato
+      description: |
+        Restituisce tutte le voci del diario dell'utente loggato, ordinate per data
+        decrescente (max 100 voci). Il campo `trekId` viene popolato con `name`,
+        `difficulty`, `duration` e `lengthKm` del trek associato.
+        Richiede autenticazione JWT.
+      tags: [Diary]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista delle voci del diario.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiaryEntry'
+        '401':
+          description: Token mancante o non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Errore interno del server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Crea una nuova voce nel diario
+      description: |
+        Aggiunge una voce al diario personale dell'utente autenticato.
+        Il campo `userId` viene impostato automaticamente dal token JWT — non va incluso nel body.
+        Il campo `trekId` è opzionale.
+        Richiede autenticazione JWT.
+      tags: [Diary]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [titolo, data]
+              properties:
+                titolo:
+                  type: string
+                  example: "Prima volta alle Odle"
+                data:
+                  type: string
+                  format: date-time
+                  example: "2025-06-15T08:00:00Z"
+                note:
+                  type: string
+                  nullable: true
+                  example: "Giornata fantastica, cielo limpido."
+                foto:
+                  type: array
+                  items:
+                    type: string
+                  description: Array di URL o percorsi delle foto.
+                  example: ["https://example.com/foto1.jpg"]
+                valutazione:
+                  type: number
+                  minimum: 1
+                  maximum: 5
+                  nullable: true
+                  example: 5
+                completato:
+                  type: boolean
+                  default: true
+                  example: true
+                trekId:
+                  type: string
+                  nullable: true
+                  description: _id MongoDB del trek associato (opzionale).
+                  example: "664b2c3d9e4f5a6b7c8d9e0f"
+      responses:
+        '201':
+          description: Voce del diario creata con successo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiaryEntry'
+        '400':
+          description: Dati non validi o campi obbligatori mancanti (ValidationError).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Token mancante o non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Errore interno del server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ==========================================================================
+  # WEATHER
+  # ==========================================================================
+
+  /api/weather/{trekId}:
+    get:
+      summary: Ottieni il meteo per un trek
+      description: |
+        Recupera i dati meteo in tempo reale per il trek specificato.
+        Il sistema:
+        1. Carica il trek dal DB tramite `_id` MongoDB.
+        2. Legge le coordinate (`coordinates.lat`, `coordinates.lon`) del trek.
+        3. Trova la stazione meteo più vicina dall'elenco in `meteoLocations.json`
+           usando la distanza euclidea sulle coordinate.
+        4. Scarica e restituisce i dati meteo dalla URL della stazione.
+
+        > **Nota:** la ricerca della stazione più vicina non considera l'altitudine.
+      tags: [Weather]
+      parameters:
+        - in: path
+          name: trekId
+          required: true
+          schema:
+            type: string
+          description: |
+            `_id` MongoDB del trek (NON il campo numerico `id`).
+          example: "664b2c3d9e4f5a6b7c8d9e0f"
+      responses:
+        '200':
+          description: Dati meteo recuperati con successo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeatherResponse'
+        '404':
+          description: Trek non trovato oppure nessuna stazione meteo disponibile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Errore interno del server o errore nella chiamata al provider meteo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ==========================================================================
   # USERS
   # ==========================================================================
 
-  /users:
+  /api/users:
     get:
       summary: Ottieni tutti gli utenti
       description: |
         Restituisce la lista completa degli utenti registrati.
-        > Questo endpoint espone dati sensibili (`passwordHash`). Limitare l'accesso in produzione.
+        > **Attenzione:** questo endpoint è a uso amministrativo.
+        > I campi sensibili (`passwordHash`, `emailVerificationToken`, ecc.) sono esclusi
+        > grazie a `select: false` nel modello Mongoose, limitarne l'accesso in produzione.
       tags: [Users]
       responses:
         '200':
@@ -694,7 +1162,7 @@ paths:
                 $ref: '#/components/schemas/Error'
 
     post:
-      summary: Crea un utente (CRUD diretto)
+      summary: Crea un utente (CRUD diretto — solo admin)
       description: |
         Inserisce un utente direttamente nel database passando `passwordHash` già calcolato.
         **Non è la registrazione standard**: per creare un account utente usare `/api/auth/register`.

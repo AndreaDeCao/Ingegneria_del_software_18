@@ -93,34 +93,44 @@ The goal is to design and develop a system that improves the hiking experience b
 * **Deliverable:** D4
 * **Deadline:** 07/06/2026
 
+```
 Ingegneria_del_software_18
 ├─ backend
 │  ├─ .dockerignore
 │  ├─ controllers
 │  │  ├─ activityController.js
 │  │  ├─ authController.js
-│  │  ├─ treksController.js
 │  │  ├─ diaryController.js
-│  │  └─ usersController.js
+│  │  ├─ treksController.js
+│  │  ├─ usersController.js
+│  │  └─ weatherController.js
+│  ├─ data
+│  │  └─ meteoLocations.json
 │  ├─ Dockerfile
 │  ├─ index.js
 │  ├─ middleware
 │  │  ├─ requireAdmin.js
 │  │  ├─ requireAuth.js
+│  │  ├─ requireCsrf.js
 │  │  └─ verifyTurnstile.js
-│  ├─ models
-│  │  ├─ activities.js
-│  │  ├─ diary.js
-│  │  ├─ treks.js
-│  │  └─ users.js
 │  ├─ routes
 │  │  ├─ activityRoutes.js
 │  │  ├─ authRoutes.js
 │  │  ├─ diaryRoutes.js
 │  │  ├─ userRoutes.js
+│  │  ├─ weatherRoutes.js
 │  │  └─ treksRoutes.js
+│  ├─ models
+│  │  ├─ activities.js
+│  │  ├─ diary.js
+│  │  ├─ treks.js
+│  │  └─ users.js
+│  ├─ oas3.yaml
 │  ├─ package-lock.json
-│  └─ package.json
+│  ├─ package.json
+│  ├─ services
+│  │  └─ emailService.js
+│  └─ swagger.js
 ├─ docker-compose.yml
 ├─ frontend
 │  ├─ .dockerignore
@@ -140,7 +150,7 @@ Ingegneria_del_software_18
 │  │  ├─ App.tsx
 │  │  ├─ auth
 │  │  │  ├─ api.ts
-│  │  │  ├─ ProtectedRoutes.tsx
+│  │  │  ├─ ProtectedRoute.ts
 │  │  │  └─ AuthProvider.tsx
 │  │  ├─ components
 │  │  │  ├─ ActivityCard.module.css
@@ -155,6 +165,7 @@ Ingegneria_del_software_18
 │  │  │  ├─ TrekCard.tsx
 │  │  │  ├─ TrekCardEsplora.module.css
 │  │  │  ├─ TrekCardEsplora.tsx
+│  │  │  ├─ TrekMap.tsx
 │  │  │  └─ TurnstileWidget.tsx
 │  │  ├─ hooks
 │  │  │  └─ useTheme.ts
@@ -163,37 +174,43 @@ Ingegneria_del_software_18
 │  │  ├─ pages
 │  │  │  ├─ account
 │  │  │  │  ├─ AccountPage.tsx
-│  │  │  │  ├─ AttivitaPage.tsx
-│  │  │  │  ├─ DiarioPage.tsx
-│  │  │  │  └─ VersionePage.tsx
-│  │  │  ├─ homepage
-│  │  │  │  ├─ AdminhomePage.tsx
-│  │  │  │  ├─ Homepage.tsx
-│  │  │  │  └─ PublicHomepage.tsx
-│  │  │  ├─ AccountPage.tsx
-│  │  │  ├─ AttivitaPage.tsx
-│  │  │  ├─ AuthCallback.tsx
-│  │  │  ├─ Contatti.tsx
-│  │  │  ├─ DiarioPage.tsx
+│  │  │  │  ├─ PolicyPage.tsx
+│  │  │  │  ├─ ProfilePage.tsx
+│  │  │  │  └─ SecurityPage.tsx
+│  │  │  ├─ attivita
+│  │  │  │  ├─ CreaAttivitaPage.tsx
+│  │  │  │  └─ VisualizzaAttivitaPage.tsx
+│  │  │  ├─ auth
+│  │  │  │  ├─ AuthCallback.tsx
+│  │  │  │  ├─ Login.tsx
+│  │  │  │  └─ Register.tsx
+│  │  │  ├─ diario
+│  │  │  │  ├─ CreaVoceDiarioPage.tsx
+│  │  │  │  └─ VisualizzaDiarioPage.tsx
 │  │  │  ├─ Friends.tsx
 │  │  │  ├─ Home.tsx
 │  │  │  ├─ homepage
-│  │  │  │  └─ Homepage.tsx
-│  │  │  ├─ Login.tsx
-│  │  │  ├─ MyTreks.tsx
-│  │  │  ├─ Privacy.tsx
-│  │  │  ├─ Register.tsx
-│  │  │  ├─ Termini.tsx
-│  │  │  ├─ TerminiPrivacyContatti.module.css
+│  │  │  │  ├─ AdminHomepage.tsx
+│  │  │  │  ├─ Homepage.tsx
+│  │  │  │  └─ PublicHomepage.tsx
+│  │  │  ├─ informativa
+│  │  │  │  ├─ Contatti.tsx
+│  │  │  │  ├─ Privacy.tsx
+│  │  │  │  ├─ Termini.tsx
+│  │  │  │  └─ TerminiPrivacyContatti.module.css
 │  │  │  ├─ Treks
+│  │  │  │  ├─ MyTreks.tsx
+│  │  │  │  ├─ TrekDetails.module.css
+│  │  │  │  ├─ TrekDetails.tsx
 │  │  │  │  ├─ Treks.module.css
 │  │  │  │  └─ Treks.tsx
-│  │  │  └─ VersionePage.tsx
+│  │  │  └─ versione
+│  │  │     └─ VersioneCorrentePage.tsx
 │  │  ├─ ScrollToTop.tsx
 │  │  └─ types
 │  │     ├─ Activity.ts
-│  │     ├─ Trek.ts
 │  │     ├─ Diary.ts
+│  │     ├─ Trek.ts
 │  │     └─ User.ts
 │  ├─ tsconfig.app.json
 │  ├─ tsconfig.json
@@ -203,5 +220,4 @@ Ingegneria_del_software_18
 ├─ package-lock.json
 ├─ package.json
 └─ README.md
-
 ```
