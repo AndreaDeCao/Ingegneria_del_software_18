@@ -1,6 +1,11 @@
-import { useParams } from "react-router-dom";
 
 export default function AccountPage() {
-  const { sezione } = useParams();
-  return <main><h2>Account — {sezione}</h2></main>;
-}
+   return (
+    <main style={{ padding: 24 }}>
+      <h2> Account </h2>
+      <br />
+      <p>Pagina protetta: raggiungibile solo dopo login.</p>
+      <br />
+      <p>Work in progress.</p>
+    </main>
+);}

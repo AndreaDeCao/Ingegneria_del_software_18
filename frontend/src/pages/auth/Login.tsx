@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth } from "../../auth/AuthProvider";
 
-import GoogleSignInButton from "../components/GoogleSignInButton";
+import GoogleSignInButton from "../../components/GoogleSignInButton";
+import TurnstileWidget from "../../components/TurnstileWidget";
 
 export default function Login() {
   const { login } = useAuth();
@@ -14,9 +15,14 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  //TODO: aggiungere validazione dei campi 
-  //FIXME: migliorare il display degli errori se le credenziali non sono valide può comunque segnare sessione scaduta invece che credenziali errate
-  //FIXME: migliorare il design della pagina di login
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileKey, setTurnstileKey] = useState(0);
+
+  const resetTurnstile = () => {
+    setTurnstileToken("");
+    setTurnstileKey((k) => k + 1);
+  };
+
   return (
     <div style={{ padding: 24, maxWidth: 520, left: "50%", transform: "translateX(-50%)", position: "relative", marginTop: 50}}>
      {/* <div style={{ padding: 24, position: "relative", marginTop: 40, maxWidth: 400, marginLeft: "auto", marginRight: "auto" }}> */}
@@ -29,11 +35,25 @@ export default function Login() {
           setError(null);
           setSubmitting(true);
           try {
-            await login({ email, password });
+            if (!turnstileToken) {
+              setError("Completa il CAPTCHA per continuare.");
+              setSubmitting(false);
+              return;
+            }
+            await login({ email, password, turnstileToken }); // Passiamo anche il token del captcha alla funzione di login
             const to = location.state?.from ?? "/home";
             navigate(to, { replace: true });
           } catch (err) {
-            setError(err instanceof Error ? err.message : "Errore login");
+            const message = err instanceof Error ? err.message : "Errore login";
+            if (
+              message.toLowerCase().includes("captcha") ||
+              message.toLowerCase().includes("turnstile")
+            ) {
+              setError("CAPTCHA scaduto o non valido. Verifica di nuovo e riprova.");
+            } else {
+              setError(message);
+            }
+            resetTurnstile();
           } finally {
             setSubmitting(false);
           }
@@ -63,7 +83,32 @@ export default function Login() {
           />
         </label>
 
-        {error && <p style={{ color: "#c0392b" }}>{error}</p>}
+        <TurnstileWidget
+          key={turnstileKey}
+          onVerify={(token) => setTurnstileToken(token)}
+          onExpire={() => {
+            setError("CAPTCHA scaduto. Verifica di nuovo per continuare.");
+            resetTurnstile();
+          }}
+        />
+
+        {error && (
+          <div
+            role="alert"
+            style={{
+              marginTop: 12,
+              padding: 12,
+              borderRadius: 8,
+              border: "1px solid #f5c6cb",
+              background: "#fdecea",
+              color: "#7a1f1f",
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        
 
         <button type="submit" disabled={submitting} style={{ marginTop: 16, width: "100%", padding: 10, cursor: "pointer" , background: "#ececec", color: "#000000", border: `1px solid`, borderRadius: 6 }}>
           {submitting ? "Accesso..." : "Accedi"}

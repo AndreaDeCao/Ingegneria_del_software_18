@@ -4,11 +4,13 @@ export type SafeUser = {
   cognome: string;
   email: string;
   nickname: string;
+  role: "user" | "admin";
 };
 
 export type LoginRequest = {
   email: string;
   password: string;
+  turnstileToken: string; // aggiunto campo per il token del captcha di Cloudflare Turnstile
 };
 
 export type RegisterRequest = {
@@ -18,7 +20,7 @@ export type RegisterRequest = {
   nickname: string;
   password: string;
   confermaPassword: string;
-  // captchaToken: string;
+  turnstileToken: string; // aggiunto campo per il token del captcha di Cloudflare Turnstile
 };
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
@@ -26,14 +28,36 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 let accessToken: string | null = null; // Variabile globale per memorizzare il token JWT
 export const setAccessToken = (t: string | null) => { accessToken = t; }; // Funzione per aggiornare il token JWT memorizzato
 
+let csrfToken: string | null = null;
+export const setCsrfToken = (t: string | null) => { csrfToken = t; };
+
+async function ensureCsrfToken(): Promise<string> {
+  if (csrfToken) return csrfToken;
+
+  const res = await fetch(`${API_BASE}/api/auth/csrf`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Impossibile ottenere CSRF token");
+  const data = (await res.json()) as { csrfToken?: unknown };
+  if (typeof data.csrfToken !== "string" || !data.csrfToken) {
+    throw new Error("CSRF token non valido");
+  }
+
+  csrfToken = data.csrfToken;
+  return csrfToken;
+}
+
 
 // Funzione helper per fare richieste HTTP al backend, gestendo automaticamente i cookie e gli errori
-async function http<T>(path: string, init?: RequestInit): Promise<T> {
+export async function http<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json", 
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}), // Se accessToken è presente, aggiungiamo l'header Authorization con il token JWT
+      ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
       ...(init?.headers ?? {}),// Includiamo eventuali header aggiuntivi passati tramite init
     },
     ...init,
@@ -45,9 +69,11 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
   // if (res.status === 401 && !path.includes("/auth/refresh")) { //problema con login
   // if (res.status === 401 && !path.includes("/auth/refresh") && !path.includes("/auth/login")) { possibile problema con registrazione
   if (res.status === 401 && !isAuthEndpoint) { //no problemi con refresh, login e register
+    const token = await ensureCsrfToken().catch(() => null);
     const refreshed = await fetch(`${API_BASE}/api/auth/refresh`, {
       method: "POST",
       credentials: "include",
+      headers: token ? { "X-CSRF-Token": token } : undefined,
     });
 
     if (refreshed.ok) {
@@ -64,7 +90,32 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(text || `HTTP ${res.status}`);
+
+    // Prova a estrarre un messaggio "pulito" da risposte JSON del backend tipo:
+    // { "error": "Credenziali non valide" }
+    let message: string | null = null;
+    try {
+      const trimmed = text.trim();
+      if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+        const data = JSON.parse(trimmed) as { error?: unknown; message?: unknown };
+        const candidate =
+          typeof data?.error === "string"
+            ? data.error
+            : typeof data?.message === "string"
+              ? data.message
+              : null;
+        if (candidate) message = candidate;
+      }
+    } catch {
+      // ignore JSON parse errors
+    }
+
+    if (!message) {
+      if (res.status >= 500) message = "Errore del server. Riprova più tardi.";
+      else message = text || `HTTP ${res.status}`;
+    }
+
+    throw new Error(message);
   }
 
   return (await res.json()) as T;
@@ -85,6 +136,8 @@ export const authApi = {
     http<AuthAPI<SafeUser>>("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
   register: (body: RegisterRequest) =>
     http<AuthAPI<SafeUser>>("/api/auth/register", { method: "POST", body: JSON.stringify(body) }),
-  logout: () => http<AuthAPI<SafeUser>>("/api/auth/logout", { method: "POST" }),
+  logout: async () => {
+    const token = await ensureCsrfToken();
+    return http<AuthAPI<SafeUser>>("/api/auth/logout", { method: "POST", headers: { "X-CSRF-Token": token } });
+  },
 };
-

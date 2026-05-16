@@ -88,44 +88,49 @@ The goal is to design and develop a system that improves the hiking experience b
 ***
 
 * **Deliverable:** D3
-* **Deadline:** 15/05/2026
+* **Deadline:** 17/05/2026
 
 * **Deliverable:** D4
 * **Deadline:** 07/06/2026
 
-```
 Ingegneria_del_software_18
 ├─ backend
 │  ├─ .dockerignore
 │  ├─ controllers
+│  │  ├─ activityController.js
 │  │  ├─ authController.js
 │  │  ├─ treksController.js
+│  │  ├─ diaryController.js
 │  │  └─ usersController.js
-│  ├─ DockerFile
+│  ├─ Dockerfile
 │  ├─ index.js
 │  ├─ middleware
-│  │  └─ requireAuth.js
+│  │  ├─ requireAdmin.js
+│  │  ├─ requireAuth.js
+│  │  └─ verifyTurnstile.js
 │  ├─ models
+│  │  ├─ activities.js
+│  │  ├─ diary.js
 │  │  ├─ treks.js
-│  │  ├─ users.js
-│  │  └─ users.tsx
+│  │  └─ users.js
 │  ├─ routes
+│  │  ├─ activityRoutes.js
 │  │  ├─ authRoutes.js
-│  │  ├─ treksRoutes.js
-│  │  └─ usersRoutes.js
+│  │  ├─ diaryRoutes.js
+│  │  ├─ userRoutes.js
+│  │  └─ treksRoutes.js
 │  ├─ package-lock.json
-│  ├─ package.json
-│  ├─ services
-│  └─ utils
+│  └─ package.json
 ├─ docker-compose.yml
 ├─ frontend
 │  ├─ .dockerignore
-│  ├─ DockerFile
+│  ├─ Dockerfile
 │  ├─ eslint.config.js
 │  ├─ index.html
 │  ├─ package-lock.json
 │  ├─ package.json
 │  ├─ public
+│  │  ├─ GitHub_Lockup_Black.svg
 │  │  ├─ logo_ing_sw.svg
 │  │  ├─ moon.svg
 │  │  └─ sun.svg
@@ -135,24 +140,60 @@ Ingegneria_del_software_18
 │  │  ├─ App.tsx
 │  │  ├─ auth
 │  │  │  ├─ api.ts
+│  │  │  ├─ ProtectedRoutes.tsx
 │  │  │  └─ AuthProvider.tsx
 │  │  ├─ components
+│  │  │  ├─ ActivityCard.module.css
+│  │  │  ├─ ActivityCard.tsx
+│  │  │  ├─ Footer.module.css
+│  │  │  ├─ Footer.tsx
+│  │  │  ├─ GoogleSignInButton.module.css
+│  │  │  ├─ GoogleSignInButton.tsx
 │  │  │  ├─ Navbar.module.css
 │  │  │  ├─ Navbar.tsx
 │  │  │  ├─ TrekCard.module.css
-│  │  │  └─ TrekCard.tsx
+│  │  │  ├─ TrekCard.tsx
+│  │  │  ├─ TrekCardEsplora.module.css
+│  │  │  ├─ TrekCardEsplora.tsx
+│  │  │  └─ TurnstileWidget.tsx
 │  │  ├─ hooks
 │  │  │  └─ useTheme.ts
 │  │  ├─ index.css
 │  │  ├─ main.tsx
 │  │  ├─ pages
+│  │  │  ├─ account
+│  │  │  │  ├─ AccountPage.tsx
+│  │  │  │  ├─ AttivitaPage.tsx
+│  │  │  │  ├─ DiarioPage.tsx
+│  │  │  │  └─ VersionePage.tsx
+│  │  │  ├─ homepage
+│  │  │  │  ├─ AdminhomePage.tsx
+│  │  │  │  ├─ Homepage.tsx
+│  │  │  │  └─ PublicHomepage.tsx
+│  │  │  ├─ AccountPage.tsx
+│  │  │  ├─ AttivitaPage.tsx
+│  │  │  ├─ AuthCallback.tsx
+│  │  │  ├─ Contatti.tsx
+│  │  │  ├─ DiarioPage.tsx
 │  │  │  ├─ Friends.tsx
+│  │  │  ├─ Home.tsx
+│  │  │  ├─ homepage
+│  │  │  │  └─ Homepage.tsx
 │  │  │  ├─ Login.tsx
 │  │  │  ├─ MyTreks.tsx
+│  │  │  ├─ Privacy.tsx
 │  │  │  ├─ Register.tsx
-│  │  │  └─ Treks.tsx
+│  │  │  ├─ Termini.tsx
+│  │  │  ├─ TerminiPrivacyContatti.module.css
+│  │  │  ├─ Treks
+│  │  │  │  ├─ Treks.module.css
+│  │  │  │  └─ Treks.tsx
+│  │  │  └─ VersionePage.tsx
+│  │  ├─ ScrollToTop.tsx
 │  │  └─ types
+│  │     ├─ Activity.ts
 │  │     ├─ Trek.ts
+│  │     ├─ Diary.ts
 │  │     └─ User.ts
 │  ├─ tsconfig.app.json
 │  ├─ tsconfig.json
@@ -161,8 +202,6 @@ Ingegneria_del_software_18
 ├─ LICENSE
 ├─ package-lock.json
 ├─ package.json
-├─ README.md
-└─ temp
-   └─ mail_sender.js
+└─ README.md
 
 ```

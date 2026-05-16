@@ -1,50 +1,36 @@
 import { useEffect, useState } from "react";
 import TrekCard from "../../components/TrekCard";
-import type { Trek } from "../../types/Trek";
-// import TrekCard, { type Trek } from "./components/TrekCard";
-import type { User } from "../../types/User";
-// import type {Treks} from "./types/Trek";
+import ActivityCard from "../../components/ActivityCard";
 
-import "../../index.css";
+import type { Trek } from "../../types/Trek";
+import type { DiaryEntry } from "../../types/Diary";
+import type { Activity } from "../../types/Activity";
+
 import styles from "../../App.module.css";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-// const API_BASE = import.meta.env.VITE_API_URL; // Se VITE_API_URL è definita, la useremo come base URL per le API. Altrimenti, se non è definita, problemi, pensare se mettere valore di default
+// Helper per fare fetch autenticata (riusa il token in memoria tramite http di api.ts)
+export async function fetchAuth<T>(path: string): Promise<T> {
+  const { http } = await import("../../auth/api"); // riusa http interno
+  return (http as (p: string) => Promise<T>)(path);
+}
 
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export default function Homepage() {
-  // const [treks, setTreks] = useState<Trek[]>([]);
   const [treks, setTreks] = useState<Trek[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [activities, setActivities] = useState<Activity[]>([]);
 
+  const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
+
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [users, setUsers] = useState<User[]>([]);
+  const MAX_TREK_CARDS = 11;
+  const MAX_ACTIVITY_CARDS = 7;
+  const MAX_DIARY_CARDS = 5;
 
-  // useEffect(() => {
-  //   //PER USO LOCALE (localhost:3000) -> fetch("http://localhost:3000/treks") 
-  //   //PER USO CON DOCKER (backend:3000) -> fetch("http://backend:3000/treks")
-  //   //va solo localhost
-
-  //   // fetch("http://backend:3000/treks")
-  //   fetch("http://localhost:3000/treks")
-  //     .then((res) => res.json())
-  //     .then((data) => setTreks(data));
-  // }, []);
+  // Carica percorsi, senza token
   useEffect(() => {
-    // setLoading(true);
-  //   fetch(`${API_BASE}/treks`)
-  //   .then((res) => {
-  //     if (!res.ok) throw new Error("Server error: " + res.status);
-  //     return res.json();
-  //   })
-  //   .then((data) => setTreks(data))
-  //     .catch((err: Error) => {
-  //     console.error("Failed to fetch treks:", err);
-  //     setError(err.message);
-  //     })
-  //     .finally(() => setLoading(false));
-  // }, []);
     fetch(`${API_BASE}/treks`)
       .then((res) => {
         if (!res.ok) throw new Error("Errore percorsi: " + res.status);
@@ -56,57 +42,145 @@ export default function Homepage() {
         setError(err.message);
       })
       .finally(() => setLoading(false));
-    }, []);
-    
+  }, []);
 
+  // Carica attività, senza token
   useEffect(() => {
-    fetch(`${API_BASE}/users`)
+    fetch(`${API_BASE}/activities`)
       .then((res) => {
-        if (!res.ok) throw new Error("Errore utenti: " + res.status);
+        if (!res.ok) throw new Error("Errore attività: " + res.status);
         return res.json();
       })
-      .then((data) => setUsers(data))
+      .then((data) => setActivities(data))
       .catch((err: Error) => {
-        console.error("Errore fetch utenti:", err);
+        console.error("Errore fetch attività:", err);
       });
   }, []);
 
+  // Carica voci diario, con token (se l'utente è loggato)
+  useEffect(() => {
+    fetchAuth<DiaryEntry[]>(`/api/diary`)
+      .then((data) => setDiaryEntries(data))
+      .catch((err: Error) => console.error("Errore diary:", err));
+  }, []);
+
   return (
-    <>
-      <main className={styles.main}>
-        <div className={styles.sectionHead}>
-          <h2 className={styles.sectionTitle}>Di tendenza nelle vicinanze</h2>
-          {!loading && !error && (
-            <span className={styles.sectionCount}>{treks.length} percorsi</span>
+    <main className={styles.main}>
+
+      <div className={styles.contentLayout}>
+
+        {/* COLONNA SINISTRA */}
+        <section className={styles.leftColumn}>
+
+          {/* TREKS */}
+          <div className={styles.sectionTreks}>
+
+            <div className={styles.sectionHead}>
+              <h2 className={styles.sectionTitle}>
+                Di tendenza nelle vicinanze
+              </h2>
+
+              {!loading && !error && (
+                <span className={styles.sectionCount}>
+                  {MAX_TREK_CARDS} percorsi
+                </span>
+              )}
+            </div>
+
+            {loading && (
+              <p className={styles.message}>Caricamento percorsi...</p>
+            )}
+
+            {error && (
+              <p className={styles.messageError}>
+                Impossibile caricare i percorsi: {error}
+              </p>
+            )}
+
+            {!loading && !error && treks.length === 0 && (
+              <p className={styles.message}>
+                Nessun percorso trovato nelle vicinanze.
+              </p>
+            )}
+
+            {!loading && !error && (
+              <div className={styles.cardsRow}>
+                {treks.slice(0, MAX_TREK_CARDS).map((trek) => (
+                  <TrekCard key={trek.id} trek={trek} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* DIARY */}
+          <div className={styles.sectionDiary}>
+            <div className={styles.sectionHead}>
+              <h2 className={styles.sectionTitle}>Il tuo diario</h2>
+              <span className={styles.sectionCount}>
+                {diaryEntries.length} {diaryEntries.length === 1 ? "voce" : "voci"}
+              </span>
+            </div>
+            {diaryEntries.length === 0 && (
+              <p className={styles.message}>Nessuna voce nel diario ancora.</p>
+            )}
+            {diaryEntries.slice(0, MAX_DIARY_CARDS).map((entry) => (
+              <div key={entry._id}>
+                <strong>{entry.titolo}</strong>
+                <span> — {new Date(entry.data).toLocaleDateString("it-IT")}</span>
+                {entry.trekId && <span> | {entry.trekId.name}</span>}
+                {entry.valutazione && <span> ⭐ {entry.valutazione}/5</span>}
+              </div>
+            ))}
+          </div>
+
+        </section>
+
+        {/* COLONNA DESTRA */}
+        <section className={styles.rightColumn}>
+
+          <div className={styles.sectionHead}>
+            <h2 className={styles.sectionTitle}>
+              Attività in programma
+            </h2>
+
+            {!loading && !error && (
+              <span className={styles.sectionCount}>
+                {MAX_ACTIVITY_CARDS} attività
+              </span>
+            )}
+          </div>
+
+          {loading && (
+            <p className={styles.message}>Caricamento attività...</p>
           )}
-        </div>
 
-        {loading && <p className={styles.message}>Caricamento percorsi...</p>}
-        {error && <p className={styles.messageError}>Impossibile caricare i percorsi: {error}</p>}
-        {!loading && !error && treks.length === 0 && (
-          <p className={styles.message}>Nessun percorso trovato nelle vicinanze.</p>
-        )}
+          {error && (
+            <p className={styles.messageError}>
+              Impossibile caricare le attività: {error}
+            </p>
+          )}
 
-        {!loading && !error && (
-          <div className={styles.cardsRow}>
-          {treks.map((trek) => (<TrekCard key={trek.id} trek={trek} />))}
-          </div>
-        )}
-      </main>
+          {!loading && !error && activities.length === 0 && (
+            <p className={styles.message}>
+              Nessuna attività trovata nelle vicinanze.
+            </p>
+          )}
 
-      <hr />
+          {!loading && !error && (
+            <div className={styles.activitiesColumn}>
+              {activities.slice(0, MAX_ACTIVITY_CARDS).map((activity) => (
+                <ActivityCard
+                  key={activity.id}
+                  activity={activity}
+                />
+              ))}
+            </div>
+          )}
 
-      <h2>Utenti registrati</h2>
- 
-      <div>
-        {users.map((user) => (
-          <div key={user._id} style={{ border: "1px solid gray", margin: "10px", padding: "10px" }}>
-            <p><strong>Nome:</strong> {user.nome} {user.cognome}</p>
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Nickname:</strong> {user.nickname}</p>
-          </div>
-        ))}
+        </section>
+
       </div>
-    </>
+
+    </main>
   );
 }

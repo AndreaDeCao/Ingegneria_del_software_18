@@ -85,7 +85,7 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
 
       <nav className={styles.nav}>
         <NavLink
-          to="/"
+          to="/treks"
           className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
         >
           Esplora
@@ -123,7 +123,7 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
           title="Toggle theme" aria-label="Toggle dark/light mode">
           {theme === "dark" ? <SunIcon /> : <MoonIcon />}
         </button>
-        <button className={styles.avatar} onClick={() => handleNavigate("/account/profilo")}> 
+        <button className={styles.avatar} onClick={() => handleNavigate("/account/profile")}> 
           <svg width={20} height={20} viewBox="0 0 24 24" fill="white">
             <circle cx={12} cy={8} r={4}/>
             <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
@@ -137,9 +137,10 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
       <DropdownItem
         label="Account"
         items={[
-          { label: "Profilo", path: "/account/profilo" },
-          { label: "Sicurezza", path: "/account/sicurezza" },
+          { label: "Profilo", path: "/account/profile" },
+          { label: "Sicurezza", path: "/account/security" },
           { label: "Policy/Cookies", path: "/account/policy" },
+          //{ label: "Policy/Cookies", path: "./termini" }, //FIXME: policy e termini stessa cosa? (fix anche in app.tsx)
         ]}
         isOpen={openItem === "Account"}
         onToggle={() => setOpenItem(openItem === "Account" ? null : "Account")}
@@ -148,9 +149,8 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
         <DropdownItem
         label="Diario"
         items={[
-          { label: "1", path: "/diario/1" },
-          { label: "2", path: "/diario/2" },
-          { label: "3", path: "/diario/3" },
+          { label: "Visualizza Diario", path: "/diario/visualizza" },
+          { label: "Crea Nuova Voce Diario", path: "/diario/crea" },
         ]}
         isOpen={openItem === "Diario"}
         onToggle={() => setOpenItem(openItem === "Diario" ? null : "Diario")}
@@ -159,9 +159,8 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
         <DropdownItem
         label="Attività"
         items={[
-          { label: "1", path: "/attivita/1" },
-          { label: "2", path: "/attivita/2" },
-          { label: "3", path: "/attivita/3" },
+          { label: "Visualizza Attività", path: "/attivita/visualizza" },
+          { label: "Crea Nuova Attività", path: "/attivita/crea" },
         ]}
         isOpen={openItem === "Attività"}
         onToggle={() => setOpenItem(openItem === "Attività" ? null : "Attività")}
@@ -170,13 +169,12 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
         <DropdownItem
         label="Versione"
         items={[
-          { label: "1", path: "/vers/1" },
-          { label: "2", path: "/vers/2" },
-          { label: "3", path: "/vers/3" },
+          { label: "Versione corrente", path: "/versione/corrente" }
         ]}
         isOpen={openItem === "Versione"}
         onToggle={() => setOpenItem(openItem === "Versione" ? null : "Versione")}
         onNavigate={handleNavigate}/>
+        
      </nav>
     )}
   </div>

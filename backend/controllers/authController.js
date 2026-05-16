@@ -1,7 +1,9 @@
-const bcrypt = require("bcryptjs");
+﻿const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/users");
 const {OAuth2Client } = require("google-auth-library"); 
+const crypto = require("crypto");
+const {sendVerificationEmail} = require("../services/emailService");
 
 
 function getJwtSecret() {
@@ -24,13 +26,18 @@ function safeUser(userDoc) {
     cognome: userDoc.cognome,
     email: userDoc.email,
     nickname: userDoc.nickname,
+    role: userDoc.role,
   };
 }
 
 // Setta il refresh token in un cookie httpOnly e restituisce l'access token nel body
-function setAuth(res, userId) {
+function setAuth(res, userId, role="user") {
   const accessToken = jwt.sign(
-    { sub: userId.toString() },
+    { 
+      sub: userId.toString() ,
+      // role: userDoc.role
+      role
+    },
     getJwtSecret(),
     { expiresIn: "15m" }
   );
@@ -38,16 +45,16 @@ function setAuth(res, userId) {
   const refreshToken = jwt.sign(
     { sub: userId.toString() },
     getJwtRefreshSecret(),
-    { expiresIn: "1h" }
+    { expiresIn: "15m" }
   );
  
   // Refresh token → cookie httpOnly (invisibile a JS)
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "lax", // permette l'invio del cookie anche in richieste cross-site, ma solo se provengono da link o form (non da fetch/ajax), riducendo il rischio di CSRF mantenendo la funzionalità del refresh token
     secure: process.env.NODE_ENV === "production",
     maxAge: 60 * 60 * 1000, // 1 ora
-    path: "/auth/refresh", // cookie inviato SOLO a questo endpoint
+    path: "/api/auth/refresh", // cookie inviato SOLO a questo endpoint
   });
  
   // Access token → restituito nel body, il frontend lo tiene in memoria
@@ -59,9 +66,24 @@ function clearAuth(res) {
   res.clearCookie("refresh_token", {
     httpOnly: true,
     sameSite: "lax",
-    path: "/auth/refresh",
+    path: "/api/auth/refresh",
   });
 }
+
+// Endpoint per ottenere CSRF token (double submit cookie)
+exports.csrf = (req, res) => {
+  const csrfToken = crypto.randomBytes(32).toString("hex");
+
+  res.cookie("csrf_token", csrfToken, {
+    httpOnly: false, // deve essere leggibile dal frontend
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 2 * 60 * 60 * 1000, // 2 ore
+    path: "/",
+  });
+
+  res.status(200).json({ csrfToken });
+};
 
 //vecchia versione con cookie, sostituida con setAuth e clearAuth che usano refresh token nei cookie e access token nell'header Authorization, ibrido
 // function setAuthCookie(res, token) {
@@ -92,29 +114,53 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error: "Email non valida" });
     }
     if (typeof password !== "string" || password.length < 6 || password.length > 32 || password.includes(" ") || !password.match(/[0-9]/) || !password.match(/[a-zA-Z]/) ) {
-      return res.status(400).json({ error: "Password nons valida, la password deve essere compresa tra 6 e 32 caratteri e contenere almeno un numero, una lettera maiuscola, una lettera minuscola. "});
+      return res.status(400).json({ error: "Password non valida, la password deve essere compresa tra 6 e 32 caratteri e contenere almeno un numero, una lettera maiuscola, una lettera minuscola. "});
     }
     //controllo se le password coincidono
     if (!confermaPassword || password !== confermaPassword) {
       return res.status(400).json({ error: "Le password non coincidono" });
     }
 
-    const existsEmail = await User.findOne({  email });
-    if (existsEmail) return res.status(409).json({ error: "Email già in uso" });
+    // Cerca utente con quella email
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      if (existingUser.googleId ) {
+        if (existingUser.githubId) {
+          // Account creato con entrambi i metodi — suggerisci login con uno dei due
+          return res.status(409).json({ error: "Esiste già un account registrato con google e github, accedi con uno dei due o scegli un'email diversa" });
+        }
+        // Account creato con Google — suggerisci login con Google
+        return res.status(409).json({ error: "Esiste già un account registrato con Google con questa email, accedi con Google o scegli un'email diversa" });
+      }
+      if (existingUser.githubId) {
+        // Account creato con GitHub — suggerisci login con GitHub
+        return res.status(409).json({ error: "Esiste già un account registrato con GitHub con questa email, accedi con GitHub o scegli un'email diversa" });
+      }
+      // Account classico email/password
+      return res.status(409).json({ error: "Email già registrata." });
+    }
+
     // exists = await User.findOne({ $or: [{ email }, { nickname }] });
     // exists = false;
     const existsNickname = await User.findOne({ nickname });
     if (existsNickname) return res.status(409).json({ error: "Nickname già in uso" });
 
+    // genera roken di verifica email
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);  //24 ore
+
     const passwordHash = await bcrypt.hash(password, saltedRound);
-    const user = await User.create({ nome, cognome, email, nickname, passwordHash });
+    const user = await User.create({ nome, cognome, email, nickname, passwordHash,
+      emailVerified: false,
+      emailVerificationToken: verificationToken,
+      emailVerificationExpires: verificationExpires,
+    });
 
-    // const token = jwt.sign({ sub: user._id.toString() }, getJwtSecret(), { expiresIn: "1h" });
-    // setAuthCookie(res, token); 
-    const accessToken = setAuth(res, user._id);
+    // manda email di verifica
+    await sendVerificationEmail(email, verificationToken);
 
-    res.status(201).json({ user: safeUser(user), accessToken }); 
-
+    res.status(201).json({ message: "Registrazione completata! Controlla la tua email per verificare l'account." });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -144,6 +190,10 @@ exports.login = async (req, res) => {
     // const token = jwt.sign({ sub: user._id.toString(), name: user.nome }, getJwtSecret(), { expiresIn: "1h" });
     // setAuthCookie(res, token); //vecchuia versione con cookie
     // setAuth(res, token); 
+
+    if (!user.emailVerified) {
+      return res.status(403).json({ error: "Devi verificare la tua email prima di accedere. Controlla la tua casella di posta."});
+    }
 
     const accessToken = setAuth(res, user._id); //nuova versione con refresh token nei cookie e access token nell'header Authorization
 
@@ -201,6 +251,44 @@ exports.me = async (req, res) => {
     res.json({ user: safeUser(user) });
   } catch {
     res.json({ user: null });
+  }
+};
+
+
+/**
+ * Verifica l'email dell'utente tramite il token ricevuto per email.
+ * Se il token è valido e non scaduto, imposta emailVerified a true
+ * e reindirizza l'utente al frontend sulla pagina di login.
+ *
+ * @route GET /api/auth/verify-email/:token
+ * @param {import("express").Request} req - req.params.token: token di verifica
+ * @param {import("express").Response} res
+ */
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.params;
+    if (!token) return res.status(400).json({ error: "Token mancante" });
+
+    const user = await User.findOne({ emailVerificationToken: token }).select("+emailVerificationToken +emailVerificationExpires");
+
+    if (!user) {
+      return res.status(400).json({ error: "Token non valido" });
+    }
+    if (user.emailVerificationExpires < new Date()) {
+      return res.status(400).json({ error: "Link di verifica è scaduto. Registrati nuovamente." });
+    }
+
+    user.emailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
+
+    //Reinderizza al frontend con messaggo di successo
+    const frontendUrl = process.env.FRONTEND_URL ??"http://localhost:5173";
+    res.redirect(`${frontendUrl}/login?verified=true`);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message })
   }
 };
 
@@ -324,10 +412,6 @@ exports.googleCallback = async(req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-
-
-
 
 
 //Github OAuth2 login/registration handler
