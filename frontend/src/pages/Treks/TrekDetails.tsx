@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-import type { Trek } from "../types/Trek";
-import appStyles from "../App.module.css";
+import type { Trek } from "../../types/Trek";
+import appStyles from "../../App.module.css";
 import styles from "./TrekDetails.module.css";
 // import type { AlignCenter } from "lucide-react";
 
-import TrekMap from "../components/TrekMap";
+import TrekMap from "../../components/TrekMap";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
