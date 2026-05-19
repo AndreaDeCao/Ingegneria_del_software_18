@@ -7,6 +7,7 @@ services:
       - "3000:3000"
     volumes:
       - ./backend:/app                # sync codice
+      - /app/node_modules            # evito conflitti
     networks:
       - app-network
     # depends_on:
