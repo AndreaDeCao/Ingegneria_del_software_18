@@ -19,6 +19,8 @@ export default function TrekDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [shareOpen, setShareOpen] = useState(false);
+  
   useEffect(() => {
     async function fetchData() {
       try {
@@ -101,39 +103,58 @@ export default function TrekDetails() {
     return `${startHour} - ${endHour}`;
   }
 
-function formatDayLabelFromKey(weather: any, key: string) {
-  const start = new Date(weather.weather.start);
+  function formatDayLabelFromKey(weather: any, key: string) {
+    const start = new Date(weather.weather.start);
 
-  const base = 144000000;
-  const step = 1440;
+    const base = 144000000;
+    const step = 1440;
 
-  const numericKey = Number(key);
+    const numericKey = Number(key);
 
-  const offsetDays = (numericKey - base) / step;
+    const offsetDays = (numericKey - base) / step;
 
-  const date = new Date(start);
+    const date = new Date(start);
 
-  date.setDate(date.getDate() + offsetDays);
+    date.setDate(date.getDate() + offsetDays);
 
-  return date.toLocaleDateString("it-IT", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-  });
-}
+    return date.toLocaleDateString("it-IT", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+    });
+  }
 
   function skyToText(code: string) {
-  switch (code) {
-    case "A": return "Sereno";
-    case "B": return "Poco nuvoloso";
-    case "C": return "Nuvoloso";
-    case "D": return "Molto nuvoloso";
-    case "F": return "Pioggia";
-    case "H": return "Temporale";
-    case "J": return "Variabile";
-    default: return "N/D";
+    switch (code) {
+      case "A": return "Sereno";
+      case "B": return "Poco nuvoloso";
+      case "C": return "Nuvoloso";
+      case "D": return "Molto nuvoloso";
+      case "F": return "Pioggia";
+      case "H": return "Temporale";
+      case "J": return "Variabile";
+      default: return "N/D";
+    }
   }
-}
+
+  async function shareWithFriends() {
+    const shareData = {
+      title: trek?.name ?? "Percorso",
+      text: `Guarda questo percorso su Dolomate!`,
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (err) {
+        console.log("Condivisione annullata");
+      }
+    }
+
+    setShareOpen(true);
+  }
 
   if (loading) {
     return (
@@ -379,11 +400,10 @@ function formatDayLabelFromKey(weather: any, key: string) {
               <button className={styles.saveShareButton}> {/*FIXME: aggiungi funzionalità */}
                 Salva percorso
               </button>
-              <button className={styles.saveShareButton}>
+              <button className={styles.saveShareButton} onClick={shareWithFriends}>
                 Condividi con amici
               </button>
             </div>
-
           </div>
         </section>
 
