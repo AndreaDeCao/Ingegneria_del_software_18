@@ -1,10 +1,12 @@
 const mongoose = require("mongoose");
 
 const ActivitySchema = new mongoose.Schema({ 
+    _id: mongoose.Schema.Types.ObjectId,
     id: Number,
     title: { type: String, required: true },
+    
     description: String,
-    activityDate: { type: Date, required: true}, // Data e ora dell'attività. 
+    activityDate: Date, // Data e ora dell'attività. 
     maxParticipants: Number,
     status: {
         type: String,

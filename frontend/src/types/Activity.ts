@@ -1,9 +1,18 @@
+import type { ObjectId } from "mongoose";
+
 export type Activity = {
-  id: string;
+  _id: ObjectId;
+  id: Number,
+
   title: string;
   description: string;
-  //activityDate: string;
-  maxParticipants: number;
-  status: string;
+  
+  activityDate: Date;
+  status?: "Aperto" | "Chiuso" | "Annullato";
 
+  maxParticipants: number;
+
+  organizerID?: ObjectId;
+
+  trekID?: ObjectId;
 };
