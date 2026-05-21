@@ -46,3 +46,17 @@ exports.createActivity = async (req, res) => {
   }
 };
 */
+
+exports.getActivityById = async (req, res) => {
+  try {
+    const activity = await Activity.findOne({id: parseInt(req.params.id)});
+    if (!activity) {
+      return res.status(404).json({ error: "Attività non trovata" });
+    }
+    console.log("ID ricevuto:", req.params.id);
+    console.log("Tipo:", typeof req.params.id);
+    res.json(activity);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

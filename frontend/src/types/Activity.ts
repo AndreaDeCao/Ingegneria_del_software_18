@@ -1,8 +1,8 @@
 import type { ObjectId } from "mongoose";
 
 export type Activity = {
-  _id: ObjectId;
-  id: Number,
+  _id: string;
+  id: number;
 
   title: string;
   description: string;
