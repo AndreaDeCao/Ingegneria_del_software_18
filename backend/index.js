@@ -53,6 +53,10 @@ app.use((req, _res, next) => {
   next();
 });
 
+app.get("/test-eventi", (req, res) => {
+  res.json({ ok: true });
+});
+
 const userRoutes = require("./routes/usersRoutes");
 const trekRoutes = require("./routes/treksRoutes");
 const authRoutes = require("./routes/authRoutes");
