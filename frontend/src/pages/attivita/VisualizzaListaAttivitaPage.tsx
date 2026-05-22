@@ -10,6 +10,7 @@ type Activity = {
   activityDate: string;
   maxParticipants: number;
   status: string;
+  travelMode: string;
   organizerID: string;
   trekID: string;
 };
@@ -26,6 +27,7 @@ export default function VisualizzaAttivitaPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Tutti");
   const [selectedDate, setSelectedDate] = useState("");
+  const [travelModeFilter, setTravelModeFilter] = useState("Tutti");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,12 +58,16 @@ export default function VisualizzaAttivitaPage() {
     const matchesStatus =
       statusFilter === "Tutti" ||
       activity.status === statusFilter;
-    
+
+    const matchesTravelMode =
+      travelModeFilter === "Tutti" ||
+      activity.travelMode === travelModeFilter 
+
     const matchesDate =
       !selectedDate ||
       new Date(activity.activityDate).toISOString().split("T")[0] === selectedDate;
 
-    return matchesSearch && matchesStatus && matchesDate;
+    return matchesSearch && matchesStatus && matchesDate && matchesTravelMode;
   });
 
   useEffect(() => {
@@ -141,33 +147,60 @@ export default function VisualizzaAttivitaPage() {
 
       <div className={styles.filtersBar}>
         {/* SEARCH */}
-        <input
-          type="text"
-          placeholder="Cerca attività..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className={styles.searchInput}
-        />
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Ricerca</label>
+          <input
+            type="text"
+            placeholder="Cerca attività..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className={styles.searchInput}
+          />
+        </div>
+
+        {/* DATE FILTER */}
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Data</label>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className={styles.dateInput}
+          />
+        </div>
 
         {/* STATUS FILTER */}
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          className={styles.dateInput}
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className={styles.select}
-        >
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Status</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className={styles.select}
+          >
+            <option value="Tutti">Tutti</option>
+            <option value="Aperto">Aperto</option>
+            <option value="Chiuso">Chiuso</option>
+            <option value="Annullato">Annullato</option>
+          </select>
+        </div>
+
+        {/* TRAVEL MODE FILTER */}
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Modalità di viaggio</label>
+          <select
+            value={travelModeFilter}
+            onChange={(e) => setTravelModeFilter(e.target.value)}
+            className={styles.select}
+          >
           <option value="Tutti">Tutti</option>
-          <option value="Aperto">Aperto</option>
-          <option value="Chiuso">Chiuso</option>
-          <option value="Annullato">Annullato</option>
+          <option value="walking">A piedi</option>
+          <option value="bicycling">In bicicletta</option>
         </select>
+        </div>
 
       </div>
+
+      
 
       {/* GRID */}
       <section className={styles.activitiesGrid}>

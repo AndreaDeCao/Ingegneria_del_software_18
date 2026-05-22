@@ -140,6 +140,18 @@ select:focus {
   gap: 16px;
 }
 
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filterLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #444;
+}
+
 .activitiesGrid {
   display: grid;
 
