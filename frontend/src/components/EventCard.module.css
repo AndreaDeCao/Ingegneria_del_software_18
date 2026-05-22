@@ -1,0 +1,79 @@
+.card {
+   background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  border: 0.5px solid #c9a84c;
+  overflow: hidden;
+  min-width: 200px;
+  flex: 0 0 200px;
+  transition: transform 0.18s;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+}
+
+.cardImg {
+  height: 110px;
+  width: 100%;
+  background: linear-gradient(135deg, #c9a84c 0%, #7c5c1e 100%);
+}
+
+.cardBody {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.cardName {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.cardAbstract {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardMeta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 500;
+  background: var(--accent-light);
+  color: var(--accent-text);
+}
+
+.badgeFree {
+  background: #d8f3dc;
+  color: #308662;
+}
+
+.cardLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}

@@ -23,6 +23,8 @@ const Event = require("../models/events");
 
 /**
  * Restituisce gli eventi pubblici del comune di Trento.
+ * I duplicati per titolo vengono eliminati tramite aggregazione MongoDB,
+ * mostrando un solo evento per ogni titolo, data e luogo univoco.
  * 
  * @route GET /api/trento-events
  * @param {import("express").Request} req - Oggetto richiesta Express
@@ -31,7 +33,42 @@ const Event = require("../models/events");
 */
 exports.getEventiComune = async (req, res) => {
     try {
-    const eventi = await Event.find().sort({ startDate: 1});
+    const RELEVANT_TOPICS = ["Ambiente", "Beni comuni", "Tempo libero"]; 
+
+    const eventi = await Event.aggregate([
+      {
+        $match: {
+          topics: {
+            $in: RELEVANT_TOPICS   // Filtra per topic rilevanti
+          }}
+      },
+      { 
+        $sort: {
+          startDate: 1
+      }},
+      {
+        $group: {
+          _id: {
+            title: "$title",
+            startDate: "$startDate",
+            address: "$address"
+          },
+          doc: {
+            $first: "$$ROOT"
+          }}
+        },
+        { 
+          $replaceRoot: {
+            newRoot: "$doc"
+        }},
+        {
+          $sort: {
+            startDate: 1
+          }},
+        {
+          $limit: 20
+        }
+    ]);
     res.json(eventi);
 
   } catch (err) {
