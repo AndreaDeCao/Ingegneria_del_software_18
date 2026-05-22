@@ -1,42 +1,53 @@
-const fetch = require("node-fetch"); // già presente nel progetto probabilmente, altrimenti: npm install node-fetch
+const https = require("https");
 
 const ORS_API_KEY = process.env.ORS_API_KEY;
-const ORS_BASE = "https://api.openrouteservice.org/v2/directions";
 
-/**
- * Calcola il percorso tra due coordinate usando OpenRouteService.
- * @param {number} startLat
- * @param {number} startLon
- * @param {number} endLat
- * @param {number} endLon
- * @param {string} profile - es. "foot-hiking"
- * @returns {object} GeoJSON FeatureCollection con il tracciato
- */
-async function getRoute(startLat, startLon, endLat, endLon, profile = "foot-hiking") {
-  const url = `${ORS_BASE}/${profile}/geojson`;
+function httpsPost(url, body, headers) {
+  return new Promise((resolve, reject) => {
+    const urlObj = new URL(url);
+    const data = JSON.stringify(body);
 
-  const body = {
-    coordinates: [
-      [startLon, startLat], // ORS vuole [lon, lat]
-      [endLon, endLat],
-    ],
-  };
+    const options = {
+      hostname: urlObj.hostname,
+      path: urlObj.pathname,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(data),
+        ...headers,
+      },
+    };
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: ORS_API_KEY,
-    },
-    body: JSON.stringify(body),
+    const req = https.request(options, (res) => {
+      let raw = "";
+      res.on("data", (chunk) => { raw += chunk; });
+      res.on("end", () => {
+        if (res.statusCode >= 400) {
+          reject(new Error(`ORS ${res.statusCode}: ${raw}`));
+        } else {
+          try { resolve(JSON.parse(raw)); }
+          catch { reject(new Error("Risposta ORS non è JSON valido")); }
+        }
+      });
+    });
+
+    req.on("error", reject);
+    req.write(data);
+    req.end();
   });
+}
 
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`ORS error ${response.status}: ${err}`);
-  }
-
-  return await response.json(); // GeoJSON FeatureCollection
+async function getRoute(startLat, startLon, endLat, endLon, profile = "foot-hiking") {
+  return httpsPost(
+    `https://api.openrouteservice.org/v2/directions/${profile}/geojson`,
+    {
+      coordinates: [
+        [startLon, startLat],
+        [endLon, endLat],
+      ],
+    },
+    { Authorization: ORS_API_KEY }
+  );
 }
 
 module.exports = { getRoute };

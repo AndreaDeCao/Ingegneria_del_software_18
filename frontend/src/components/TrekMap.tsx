@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap, GeoJSON, Tooltip } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap, GeoJSON } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -14,7 +14,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-const mountainIcon = new L.Icon({
+const startIcon = new L.Icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
   shadowUrl: markerShadow,
   iconSize: [25, 41],
@@ -23,7 +23,6 @@ const mountainIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-// Icona rossa per il punto di arrivo
 const endIcon = new L.Icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
   shadowUrl: markerShadow,
@@ -41,13 +40,19 @@ function RecenterMap({ lat, lon }: { lat: number; lon: number }) {
   return null;
 }
 
-// Questo componente si occupa di fare il fitBounds sulla polyline del percorso
 function FitRoute({ geojson }: { geojson: any }) {
   const map = useMap();
   useEffect(() => {
     if (!geojson) return;
-    const layer = L.geoJSON(geojson);
-    map.fitBounds(layer.getBounds(), { padding: [30, 30] });
+    try {
+      const layer = L.geoJSON(geojson);
+      const bounds = layer.getBounds();
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [40, 40] });
+      }
+    } catch (e) {
+      console.warn("FitRoute: bounds non validi", e);
+    }
   }, [geojson, map]);
   return null;
 }
@@ -55,55 +60,62 @@ function FitRoute({ geojson }: { geojson: any }) {
 type TrekMapProps = {
   name: string;
   coordinates?: { lat: number; lon: number };
-  endCoordinates?: { lat: number; lon: number };  // aggiunto
-  routeGeojson?: any;                             // aggiunto
+  endCoordinates?: { lat: number; lon: number };
+  routeGeojson?: any;
 };
 
 export default function TrekMap({ name, coordinates, endCoordinates, routeGeojson }: TrekMapProps) {
   const center = coordinates ?? { lat: 46.065, lon: 11.12 };
-  const hasCoords = !!coordinates;
+  const hasStart = !!coordinates;
+  const hasEnd = !!endCoordinates;
+
+  // Chiave univoca per forzare il re-render del layer GeoJSON quando cambia il tracciato
+  const geojsonKey = routeGeojson ? JSON.stringify(routeGeojson).length : "none";
 
   return (
     <MapContainer
       center={[center.lat, center.lon]}
-      zoom={hasCoords ? 13 : 9}
+      zoom={hasStart ? 13 : 9}
       style={{ height: "100%", width: "100%" }}
       scrollWheelZoom={true}
     >
       <TileLayer
-        attribution='Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | <a href="https://opentopomap.org">OpenTopoMap</a>'
         url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
         maxZoom={17}
       />
 
-      {/* Tracciato calcolato */}
+      {/* Tracciato — la key forza il re-render se cambia il geojson */}
       {routeGeojson && (
         <>
           <GeoJSON
+            key={geojsonKey}
             data={routeGeojson}
-            style={{ color: "#2563eb", weight: 4, opacity: 0.8 }}
+            style={() => ({
+              color: "#2563eb",
+              weight: 5,
+              opacity: 0.85,
+            })}
           />
           <FitRoute geojson={routeGeojson} />
         </>
       )}
 
       {/* Marker partenza (verde) */}
-      {hasCoords && (
-        <Marker position={[center.lat, center.lon]} icon={mountainIcon}>
-          <Popup>Partenza: {name}</Popup>
+      {hasStart && (
+        <Marker position={[center.lat, center.lon]} icon={startIcon}>
+          <Popup>🟢 Partenza: {name}</Popup>
         </Marker>
-        
       )}
-      
 
       {/* Marker arrivo (rosso) */}
-      {endCoordinates && (
-        <Marker position={[endCoordinates.lat, endCoordinates.lon]} icon={endIcon}>
-          <Popup>Arrivo: {name}</Popup>
+      {hasEnd && (
+        <Marker position={[endCoordinates!.lat, endCoordinates!.lon]} icon={endIcon}>
+          <Popup>🔴 Arrivo: {name}</Popup>
         </Marker>
       )}
 
-      {/* Solo se non c'è il tracciato, ricentra sul marker */}
+      {/* Ricentra solo se non c'è tracciato */}
       {!routeGeojson && <RecenterMap lat={center.lat} lon={center.lon} />}
     </MapContainer>
   );

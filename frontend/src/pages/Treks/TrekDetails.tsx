@@ -13,6 +13,32 @@ import StarRating from "../../components/StarRating";
 import starStyles from "../../components/StarRating.module.css";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+function downloadGpx(geojson: any, trekName: string) {
+  const coords: [number, number][] =
+    geojson?.features?.[0]?.geometry?.coordinates ?? [];
+
+  const trkpts = coords
+    .map(([lon, lat]) => `    <trkpt lat="${lat}" lon="${lon}"></trkpt>`)
+    .join("\n");
+
+  const gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="DoloMate" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>${trekName}</name>
+    <trkseg>
+${trkpts}
+    </trkseg>
+  </trk>
+</gpx>`;
+
+  const blob = new Blob([gpx], { type: "application/gpx+xml" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${trekName.replace(/\s+/g, "_")}.gpx`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function TrekDetails() {
   const { id } = useParams();
@@ -644,6 +670,18 @@ export default function TrekDetails() {
               <button className={styles.saveShareButton} onClick={shareWithFriends}>
                 Condividi con amici
               </button>
+              
+              
+              {/* Bottone GPX: visibile solo se abbiamo le coordinate */}
+              {trek.coordinates && trek.endCoordinates && (
+                <button
+                  className={styles.saveShareButton}
+                  disabled={!routeGeojson} 
+                  onClick={() => downloadGpx(routeGeojson, trek.name)}
+                >
+                  {routeGeojson ? "⬇ Scarica GPX" : "⏳ Caricamento..."}
+                </button>
+              )}
             </div>
           </div>
         </section>

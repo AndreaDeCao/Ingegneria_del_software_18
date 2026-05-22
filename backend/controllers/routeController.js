@@ -9,22 +9,16 @@ const { getRoute } = require("../services/routeService");
 exports.getRouteByTrekId = async (req, res) => {
   try {
     const trek = await Trek.findOne({ id: parseInt(req.params.id) });
-    if (!trek) {
-      return res.status(404).json({ error: "Trek non trovato" });
-    }
+    if (!trek) return res.status(404).json({ error: "Trek non trovato" });
 
-    const start = trek.coordinates;       // { lat, lon } — punto di partenza
-    const end = trek.endCoordinates;      // { lat, lon } — punto di arrivo
+    const start = trek.coordinates;
+    const end = trek.endCoordinates;
 
     if (!start || !end) {
-      return res.status(400).json({
-        error: "Coordinate di partenza o arrivo mancanti nel trek",
-      });
+      return res.status(400).json({ error: "Coordinate mancanti" });
     }
 
     const geojson = await getRoute(start.lat, start.lon, end.lat, end.lon);
-
-    // Estraiamo anche distanza e durata dalla risposta ORS
     const summary = geojson.features?.[0]?.properties?.summary ?? {};
 
     res.json({
@@ -33,7 +27,6 @@ exports.getRouteByTrekId = async (req, res) => {
       durationSeconds: summary.duration ?? null,
     });
   } catch (err) {
-    console.error("Errore calcolo percorso:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
