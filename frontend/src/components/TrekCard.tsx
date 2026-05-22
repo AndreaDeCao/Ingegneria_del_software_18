@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 //   // friendCount?: number;
 //   // likes?: number;
 // };
+
 /**
  * In questo componente, definiamo un mapping tra i valori di difficoltà e le classi CSS corrispondenti.
  * Questo ci permette di applicare stili diversi a seconda della difficoltà del trek.
@@ -46,7 +47,7 @@ function TrekCard({ trek }: TrekCardProps) {
           <div className={styles.cardBody}>
             <div className={styles.cardTop}>
             <h3 className={styles.cardName}>{trek.name}</h3>
-            <span className={styles.ratingBadge}>— ★</span>
+            <span className={styles.ratingBadge}>{trek.averageRating} ★</span>
             </div>
 
             <div className={styles.cardMeta}>
