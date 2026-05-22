@@ -12,6 +12,11 @@ const ActivitySchema = new mongoose.Schema({
         enum: ["Aperto", "Chiuso", "Annullato"]
     },
 
+    travelMode: {
+        type: String,
+        enum: ["walking", "bicycling"]
+    },
+
     organizerID: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     trekID: { type: mongoose.Schema.Types.ObjectId, ref: 'Trek' }
 });

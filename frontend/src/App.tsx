@@ -32,7 +32,7 @@ import PolicyPage from "./pages/account/PolicyPage";
 import VisualizzaDiarioPage from "./pages/diario/VisualizzaDiarioPage";
 import CreaVoceDiarioPage from "./pages/diario/CreaVoceDiarioPage";
 
-import VisualizzaAttivitaPage from "./pages/attivita/VisualizzaAttivitaPage";
+import VisualizzaAttivitaPage from "./pages/attivita/VisualizzaListaAttivitaPage";
 import CreaAttivitaPage from "./pages/attivita/CreaAttivitaPage";
 import DettagliAttivita from "./pages/attivita/dettagliAttivita";
 

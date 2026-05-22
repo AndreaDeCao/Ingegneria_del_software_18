@@ -47,9 +47,7 @@ export default function DettagliAttivita() {
 
   return (
     <main className={styles.page}>
-      <section className={styles.hero}>
-        <h1 className={styles.pageTitle}>{activity.title}</h1>
-      </section>
+      <h1 className={styles.pageTitle}>{activity.title}</h1>
 
       <div className={styles.formCard}>
         <p><strong>Descrizione:</strong> {activity.description}</p>

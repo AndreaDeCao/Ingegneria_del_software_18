@@ -1,41 +1,7 @@
-.hero {
-  height: 220px;
-  border-radius: var(--radius-lg);
 
-  background:
-    linear-gradient(135deg, var(--accent-light), var(--bg-secondary));
-
-  position: relative;
-  overflow: hidden;
-
-  border: 1px solid var(--border);
-
-  display: flex;
-  align-items: flex-end;
-
-  padding: 24px;
-
-  margin-bottom: 24px;
-
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.heroBadge {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-
-  font-size: 12px;
-  font-weight: 700;
-
-  padding: 6px 10px;
-
-  border-radius: var(--radius-sm);
-
-  background: rgba(0, 0, 0, 0.55);
-  color: white;
-
-  backdrop-filter: blur(10px);
+.pageHeader {
+  padding: 8px;
+  padding-bottom: 24px;
 }
 
 .pageTitle {
@@ -165,16 +131,6 @@ select:focus {
   gap: 24px;
 
   padding: 24px;
-}
-
-.heroText {
-  margin-top: 8px;
-
-  color: var(--text-secondary);
-
-  max-width: 700px;
-
-  line-height: 1.5;
 }
 
 .listHeader {

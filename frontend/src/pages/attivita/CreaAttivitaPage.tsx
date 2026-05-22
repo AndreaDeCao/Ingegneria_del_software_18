@@ -4,6 +4,7 @@ import appStyles from "../../App.module.css";
 
 import type { Trek } from "../../types/Trek";
 import { useAuth } from "../../auth/AuthProvider";
+import { Link } from "react-router-dom";
 
 export default function CreaAttivitaPage() {
   const { user } = useAuth();
@@ -15,6 +16,7 @@ export default function CreaAttivitaPage() {
   const [activityDate, setActivityDate] = useState("");
   const [description, setDescription] = useState("");
   const [message, setMessage] = useState("");
+  const [travelMode, setTravelMode] = useState("");
 
   useEffect(() => {
     async function fetchTreks() {
@@ -29,33 +31,40 @@ export default function CreaAttivitaPage() {
         setTreks(sorted);
       } catch (err) {
         console.error(err);
-        setMessage("Errore nel caricamento dei trek");
+        showMessage("Errore nel caricamento dei trek");
       }
     }
 
     fetchTreks();
   }, []);
 
+  function showMessage(msg: string) {
+    setMessage(msg);
+
+    setTimeout(() => {
+      setMessage("");
+    }, 3000);
+  }
+
   function handleTrekChange(trekID: string) {
     setSelectedTrek(trekID);
-
     const trek = treks.find((t) => t._id === trekID);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setMessage("");
+    showMessage("");
 
     const now = new Date();
     const selectedDate = new Date(activityDate);
 
     if (isNaN(selectedDate.getTime())) {
-      setMessage("Data non valida");
+      showMessage("Data non valida");
       return;
     }
 
     if (selectedDate < now) {
-      setMessage("La data deve essere futura");
+      showMessage("La data deve essere futura");
       return;
     }
 
@@ -66,6 +75,8 @@ export default function CreaAttivitaPage() {
         activityDate: selectedDate.toISOString(),
         maxParticipants,
         trekID: selectedTrek,
+        travelMode,
+        status: "Aperto",
         organizerID: user?._id,
       };
 
@@ -81,32 +92,34 @@ export default function CreaAttivitaPage() {
         throw new Error(err.message || "Errore backend");
       }
 
-      setMessage("Attività creata con successo ✔");
-      
+      showMessage("Attività creata con successo ✔");
       // reset
       setTitle("");
       setDescription("");
       setActivityDate("");
       setSelectedTrek("");
+      setTravelMode("");
       setMaxParticipants(10);
     } catch (err: any) {
       console.error(err);
-      setMessage(err.message || "Errore nella creazione attività");
+      showMessage(err.message || "Errore nella creazione attività");
     }
   }
 
   return (
-    <main className={appStyles.main}>
+    <main className={styles.page}>
       <div className={appStyles.contentLayout}>
+        
         <div className={appStyles.leftColumn}>
+          
+          <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',}}>
+              <h1 className={styles.pageTitle}>Crea Attività</h1>
 
-          {/* HERO */}
-          <div className={styles.hero}>
-            <h1 className={styles.pageTitle}>Crea Attività</h1>
-            <div className={styles.heroBadge}>
-              Pianifica una nuova escursione
-            </div>
+              <Link to="/attivita/visualizza" className={styles.primaryButton}>
+                Apri Lista Attività
+              </Link>
           </div>
+
 
           {/* FORM */}
           <form className={styles.formCard} onSubmit={handleSubmit}>
@@ -135,6 +148,21 @@ export default function CreaAttivitaPage() {
                     {t.name}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            <div className={styles.section}>
+              <label className={styles.label}>Modalità percorso</label>
+
+              <select 
+                className={styles.input}
+                value={travelMode}
+                onChange={(e) => setTravelMode(e.target.value)}
+                required
+              >
+                <option value="">Seleziona modalità</option> {/* FIXME: aggiorna DATABASE, la lista delle modalità non esiste (model e type gia aggiornati)*/}
+                <option value="walking">A piedi</option>
+                <option value="bicycling">In bici</option>
               </select>
             </div>
 

@@ -10,6 +10,8 @@ export type Activity = {
   activityDate: Date;
   status?: "Aperto" | "Chiuso" | "Annullato";
 
+  travelMode?: "walking" | "bicycling";
+
   maxParticipants: number;
 
   organizerID?: ObjectId;

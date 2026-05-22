@@ -122,11 +122,8 @@ export default function VisualizzaAttivitaPage() {
 
   return (
     <main className={styles.page}>
-      {/* HERO */}
-      <section className={styles.hero}>
-        <div className={styles.heroBadge}>Community Activities</div>
-        <h1 className={styles.pageTitle}>Attività</h1>
-      </section>
+      {/* TITLE */}
+      <h1 className={styles.pageTitle}>Attività in programma</h1>
 
       {/* HEADER */}
       <div className={styles.listHeader}>

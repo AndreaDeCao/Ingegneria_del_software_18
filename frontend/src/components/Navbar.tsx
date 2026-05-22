@@ -159,7 +159,7 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
         <DropdownItem
         label="Attività"
         items={[
-          { label: "Visualizza Attività", path: "/attivita/visualizza" },
+          { label: "Visualizza Lista Attività", path: "/attivita/visualizza" },
           { label: "Crea Nuova Attività", path: "/attivita/crea" },
         ]}
         isOpen={openItem === "Attività"}
