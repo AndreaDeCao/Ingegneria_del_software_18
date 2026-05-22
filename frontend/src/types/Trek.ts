@@ -22,5 +22,10 @@ export type Trek = {
     lon: number;
   };
 
+  endCoordinates?: {
+    lat: number;
+    lon: number;
+  };
+
   condizioniAttuali?: string;
 };

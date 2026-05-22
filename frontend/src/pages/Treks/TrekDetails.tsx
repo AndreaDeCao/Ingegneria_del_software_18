@@ -21,6 +21,9 @@ export default function TrekDetails() {
 
   const [shareOpen, setShareOpen] = useState(false);
   
+  const [routeGeojson, setRouteGeojson] = useState<any>(null);
+  const [routeInfo, setRouteInfo] = useState<{ distanceMeters: number; durationSeconds: number } | null>(null);
+  
   useEffect(() => {
     async function fetchData() {
       try {
@@ -36,6 +39,21 @@ export default function TrekDetails() {
 
         const trekData = await trekResponse.json();
         setTrek(trekData);
+
+        // TRACCIATO
+        try {
+          const routeResponse = await fetch(`${API_BASE}/api/route/${id}`);
+          if (routeResponse.ok) {
+            const routeData = await routeResponse.json();
+            setRouteGeojson(routeData.geojson);
+            setRouteInfo({
+              distanceMeters: routeData.distanceMeters,
+              durationSeconds: routeData.durationSeconds,
+            });
+          }
+        } catch {
+          // tracciato non disponibile, la mappa mostra solo il marker
+        }
 
         // METEO 
         const weatherResponse = await fetch(
@@ -241,7 +259,17 @@ export default function TrekDetails() {
           </div> */}
 
           <div className={styles.mapContainer}>
-            <TrekMap name={trek.name} coordinates={trek.coordinates} />
+            <TrekMap
+              name={trek.name}
+              coordinates={trek.coordinates}
+              endCoordinates={trek.endCoordinates}
+              routeGeojson={routeGeojson}
+            />
+          </div>
+          <div className={styles.mapLegend}>
+            <span>🟢 Partenza</span>
+            <span>🔴 Arrivo</span>
+            <span>🔵 Percorso</span>
           </div>
 
           {/* INFO BOX */}

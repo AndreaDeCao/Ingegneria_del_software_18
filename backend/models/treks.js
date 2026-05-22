@@ -27,6 +27,11 @@ const TrekSchema = new mongoose.Schema({ //fatti circa 70 sentieri
     lon: Number,
   },
 
+  endCoordinates: {                                     // Coordinate GPS del punto di arrivo
+    lat: Number,
+    lon: Number,
+  },
+
   /*meteoLocationId: String,  // ID per identificare la località meteo associata al trek*/
 
   condizioniAttuali: String,  // Condizioni meteo/percorribilità
