@@ -47,7 +47,9 @@ function TrekCard({ trek }: TrekCardProps) {
           <div className={styles.cardBody}>
             <div className={styles.cardTop}>
             <h3 className={styles.cardName}>{trek.name}</h3>
-            <span className={styles.ratingBadge}>{trek.averageRating} ★</span>
+            <span className={styles.ratingBadge}>
+              {trek.averageRating && trek.averageRating > 0 ? trek.averageRating.toFixed(1) : "-"} ★
+            </span>
             </div>
 
             <div className={styles.cardMeta}>

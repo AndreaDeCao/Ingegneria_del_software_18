@@ -19,8 +19,7 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 export default function Homepage() {
   const [treks, setTreks] = useState<Trek[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
-  
-  const [trek, setTrek] = useState<Trek | null>(null);
+
 
   const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
 

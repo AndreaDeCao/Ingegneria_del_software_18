@@ -9,6 +9,8 @@ import styles from "./TrekDetails.module.css";
 // import type { AlignCenter } from "lucide-react";
 
 import TrekMap from "../../components/TrekMap";
+import StarRating from "../../components/StarRating";
+import starStyles from "../../components/StarRating.module.css";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -486,13 +488,10 @@ export default function TrekDetails() {
 
               {/* Media attuale */}
               <div style={{ marginBottom: "0.75rem" }}>
-                <span style={{ fontSize: "1.4rem" }}>
-                  {"★".repeat(Math.round(trek.averageRating ?? 0))}
-                  {"☆".repeat(5 - Math.round(trek.averageRating ?? 0))}
-                </span>
+                <StarRating rating={trek.averageRating ?? 0} />
                 <p style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>
                   {trek.averageRating
-                    ? `${trek.averageRating} / 5 (${trek.ratingCount} vot${trek.ratingCount === 1 ? "o" : "i"})`
+                    ? `${trek.ratingCount ?? 0} vot${(trek.ratingCount ?? 0) === 1 ? "o" : "i"}`
                     : "Nessuna valutazione ancora"}
                 </p>
               </div>
@@ -503,7 +502,7 @@ export default function TrekDetails() {
                   <p style={{ fontSize: "0.85rem", marginBottom: "0.4rem" }}>
                     {myVote ? `Il tuo voto: ${myVote}/5` : "Dai un voto a questo percorso:"}
                   </p>
-                  <div style={{ display: "flex", gap: "0.3rem" }}>
+                  <div className={starStyles.stars}>
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
                         key={star}
@@ -516,17 +515,15 @@ export default function TrekDetails() {
                         onMouseEnter={() => setHoverVote(star)}
                         onMouseLeave={() => setHoverVote(null)}
                         disabled={ratingLoading}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: ratingLoading ? "not-allowed" : "pointer",
-                          fontSize: "1.8rem",
-                          color: star <= (hoverVote ?? myVote ?? 0) ? "#f59e0b" : "#d1d5db",
-                          padding: 0,
-                          transition: "color 0.15s"
-                        }}
+                        className={starStyles.starButton}
                       >
-                        ★
+                        <span
+                          className={`${starStyles.star} ${
+                            star <= (hoverVote ?? myVote ?? 0) ? starStyles.starFull : starStyles.starEmpty
+                          }`}
+                        >
+                          ★
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -566,42 +563,24 @@ export default function TrekDetails() {
                   </button> */}
 
                   {showNoteBox && (
-                    <>
+                    <div className={styles.noteBox}>
                       <textarea
+                        className={styles.noteTextarea}
                         value={myNote}
                         onChange={(e) => setMyNote(e.target.value)}
                         placeholder="Aggiungi una nota (opzionale)..."
                         maxLength={500}
                         rows={3}
-                        style={{
-                          marginTop: "0.75rem",
-                          width: "100%",
-                          resize: "vertical",
-                          padding: "0.4rem",
-                          fontSize: "0.85rem",
-                          borderRadius: "6px",
-                          border: "1px solid #d1d5db",
-                          boxSizing: "border-box"
-                        }}
                       />
 
                       <button
+                        className={styles.noteSaveButton}
                         onClick={handleVote}
                         disabled={ratingLoading || !myVote}
-                        style={{
-                          marginTop: "0.4rem",
-                          fontSize: "0.8rem",
-                          padding: "0.3rem 0.8rem",
-                          cursor: !myVote || ratingLoading ? "not-allowed" : "pointer",
-                          borderRadius: "6px",
-                          border: "none",
-                          background: !myVote ? "#d1d5db" : "#f59e0b",
-                          color: "white"
-                        }}
                       >
                         Salva recensione
                       </button>
-                    </>
+                    </div>
                   )}
 
                   {ratingLoading && (
