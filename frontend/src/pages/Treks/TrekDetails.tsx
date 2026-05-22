@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useAuth } from "../../auth/AuthProvider";
 
+import { http } from "../../auth/api";
 import type { Trek } from "../../types/Trek";
 import appStyles from "../../App.module.css";
 import styles from "./TrekDetails.module.css";
 // import type { AlignCenter } from "lucide-react";
 
 import TrekMap from "../../components/TrekMap";
+import StarRating from "../../components/StarRating";
+import starStyles from "../../components/StarRating.module.css";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -19,11 +23,19 @@ export default function TrekDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [shareOpen, setShareOpen] = useState(false);
+  const [hoverVote, setHoverVote] = useState<number | null>(null);
+  
+  const { user } = useAuth(); 
+
+  const [myVote, setMyVote] = useState<number | null>(null);
+  const [ratingLoading, setRatingLoading] = useState(false);
+  const [ratingError, setRatingError] = useState<string | null>(null);
+  const [showNoteBox, setShowNoteBox] = useState(false);
+  const [myNote, setMyNote] = useState<string>("");
   
   const [routeGeojson, setRouteGeojson] = useState<any>(null);
   const [routeInfo, setRouteInfo] = useState<{ distanceMeters: number; durationSeconds: number } | null>(null);
-  
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -39,6 +51,13 @@ export default function TrekDetails() {
 
         const trekData = await trekResponse.json();
         setTrek(trekData);
+
+        // RATING UTENTE (solo se loggato)
+        if (user) {
+          const ratingData = await http<{ vote: number | null; note: string }>(`/treks/${id}/rate`);
+          setMyVote(ratingData.vote);
+          setMyNote(ratingData.note ?? "");
+        }
 
         // TRACCIATO
         try {
@@ -94,7 +113,9 @@ export default function TrekDetails() {
     const now = new Date().getHours();
 
     // approssimazione: ogni slot ≈ 3 ore
-    return Math.floor(now / 3);
+    const idx = Math.floor(now / 3);
+    if (!Array.isArray(list) || list.length === 0) return idx;
+    return Math.min(idx, list.length - 1);
   }
 
   function getDayList(weather: any) {
@@ -171,7 +192,13 @@ export default function TrekDetails() {
       }
     }
 
-    setShareOpen(true);
+    // fallback: copia link negli appunti
+    try {
+      await navigator.clipboard.writeText(shareData.url);
+      alert("Link copiato negli appunti!");
+    } catch {
+      alert("Impossibile condividere automaticamente. Copia il link dalla barra degli indirizzi.");
+    }
   }
 
   if (loading) {
@@ -192,6 +219,74 @@ export default function TrekDetails() {
     );
   }
 
+  // async function handleVote(vote: number) {
+    
+  //   if (!user) return;
+    
+  //   setRatingLoading(true);
+    
+  //   try {
+  //     const data = await http<{ averageRating: number; ratingCount: number }>(`/treks/${id}/rate`, {
+  //       method: "PUT",
+  //       body: JSON.stringify({ vote, note: myNote }),
+  //     });
+
+  //     setMyVote(vote);
+  //     setTrek(prev => prev ? { ...prev, averageRating: data.averageRating, ratingCount: data.ratingCount } : prev);
+  //   } catch (err) {
+  //     console.error("Errore voto:", err);
+  //   } finally {
+  //     setRatingLoading(false);
+  //   }
+  // }
+
+  async function handleVote() {
+
+  if (!user || !myVote) return;
+
+  setRatingError(null);
+  setRatingLoading(true);
+
+  try {
+
+    const data = await http<{ averageRating: number; ratingCount: number }>(
+      `/treks/${id}/rate`,
+      {
+        method: "PUT",
+        body: JSON.stringify({
+          vote: myVote,
+          note: myNote
+        }),
+      }
+    );
+
+    setTrek(prev =>
+      prev
+        ? {
+            ...prev,
+            averageRating: data.averageRating,
+            ratingCount: data.ratingCount
+          }
+        : prev
+    );
+
+    // reset UI dopo salvataggio
+    setShowNoteBox(false);
+    // mantieni la nota in stato (se vuoi riaprire la textarea)
+
+  } catch (err) {
+
+    const message = err instanceof Error ? err.message : "Errore nel salvataggio del voto";
+    setRatingError(message);
+    console.error("Errore voto:", err);
+
+  } finally {
+
+    setRatingLoading(false);
+
+  }
+}
+
   return (
     <main className={appStyles.main}>
       <div className={appStyles.contentLayout}>
@@ -200,11 +295,11 @@ export default function TrekDetails() {
         <section className={appStyles.leftColumn}>
 
           {/* HERO */}
-          <div className={styles.hero}> {/*FIXME: aggiungi immagine */}
+          {/* <div className={styles.hero}> 
             <div className={styles.heroBadge}>
               SAT {trek.SatRouteNumber}
             </div>
-          </div>
+          </div> */}
 
           {/* TITLE */}
           <div className={appStyles.sectionHead}>
@@ -413,6 +508,124 @@ export default function TrekDetails() {
                 <span>📏 Lunghezza: {trek.lengthKm ?? "-"} km</span>
                 <span>⛰ Dislivello: {trek.elevationGain ?? "-"} m</span>
               </div>
+            </div>
+
+            {/* RATING */}
+            <div className={styles.card}>
+              <h3 className={appStyles.sectionTitle}>Valutazione</h3>
+
+              {/* Media attuale */}
+              <div style={{ marginBottom: "0.75rem" }}>
+                <StarRating rating={trek.averageRating ?? 0} />
+                <p style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>
+                  {trek.averageRating
+                    ? `${trek.ratingCount ?? 0} vot${(trek.ratingCount ?? 0) === 1 ? "o" : "i"}`
+                    : "Nessuna valutazione ancora"}
+                </p>
+              </div>
+
+              {/* Stelle cliccabili (solo se loggato) */}
+              {user ? (
+                <div>
+                  <p style={{ fontSize: "0.85rem", marginBottom: "0.4rem" }}>
+                    {myVote ? `Il tuo voto: ${myVote}/5` : "Dai un voto a questo percorso:"}
+                  </p>
+                  <div className={starStyles.stars}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        // onClick={() => handleVote(star)}
+                        onClick={() => {
+                          setMyVote(star);
+                          setShowNoteBox(true);
+                          setRatingError(null);
+                        }}
+                        onMouseEnter={() => setHoverVote(star)}
+                        onMouseLeave={() => setHoverVote(null)}
+                        disabled={ratingLoading}
+                        className={starStyles.starButton}
+                      >
+                        <span
+                          className={`${starStyles.star} ${
+                            star <= (hoverVote ?? myVote ?? 0) ? starStyles.starFull : starStyles.starEmpty
+                          }`}
+                        >
+                          ★
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* <textarea
+                    value={myNote}
+                    onChange={(e) => setMyNote(e.target.value)}
+                    placeholder="Aggiungi una nota (opzionale)..."
+                    maxLength={500}
+                    rows={3}
+                    style={{
+                      marginTop: "0.75rem",
+                      width: "100%",
+                      resize: "vertical",
+                      padding: "0.4rem",
+                      fontSize: "0.85rem",
+                      borderRadius: "6px",
+                      border: "1px solid #d1d5db",
+                      boxSizing: "border-box"
+                    }}
+                  />
+                  <button
+                    onClick={() => handleVote(myVote ?? 0)}
+                    disabled={ratingLoading || !myVote}
+                    style={{
+                      marginTop: "0.4rem",
+                      fontSize: "0.8rem",
+                      padding: "0.3rem 0.8rem",
+                      cursor: !myVote || ratingLoading ? "not-allowed" : "pointer",
+                      borderRadius: "6px",
+                      border: "none",
+                      background: !myVote ? "#d1d5db" : "#f59e0b",
+                      color: "white"
+                    }}
+                  >
+                    Salva nota
+                  </button> */}
+
+                  {showNoteBox && (
+                    <div className={styles.noteBox}>
+                      <textarea
+                        className={styles.noteTextarea}
+                        value={myNote}
+                        onChange={(e) => setMyNote(e.target.value)}
+                        placeholder="Aggiungi una nota (opzionale)..."
+                        maxLength={500}
+                        rows={3}
+                      />
+
+                      <button
+                        className={styles.noteSaveButton}
+                        onClick={handleVote}
+                        disabled={ratingLoading || !myVote}
+                      >
+                        Salva recensione
+                      </button>
+                    </div>
+                  )}
+
+                  {ratingLoading && (
+                    <p style={{ fontSize: "0.8rem", marginTop: "0.3rem" }}>Salvataggio...</p>
+                  )}
+
+                  {ratingError && (
+                    <p style={{ fontSize: "0.8rem", marginTop: "0.3rem", color: "#b91c1c" }}>
+                      {ratingError}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p style={{ fontSize: "0.85rem", color: "gray" }}>
+                  Accedi per votare questo percorso.
+                </p>
+              )}
             </div>
 
             {/* ACTION CARD */}

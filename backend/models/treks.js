@@ -36,6 +36,9 @@ const TrekSchema = new mongoose.Schema({ //fatti circa 70 sentieri
 
   condizioniAttuali: String,  // Condizioni meteo/percorribilità
 
+  averageRating: { type: Number, default: 0 },
+  ratingCount:   { type: Number, default: 0 },
+
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 });
 

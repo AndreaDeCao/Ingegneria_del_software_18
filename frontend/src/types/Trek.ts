@@ -17,6 +17,7 @@ export type Trek = {
 
   minAltitude?: number;
   maxAltitude?: number;
+  
   coordinates?: {
     lat: number;
     lon: number;
@@ -28,4 +29,7 @@ export type Trek = {
   };
 
   condizioniAttuali?: string;
+
+  averageRating?: number;
+  ratingCount?: number;
 };
