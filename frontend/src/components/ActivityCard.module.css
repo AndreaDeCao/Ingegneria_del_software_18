@@ -45,3 +45,9 @@
   background: var(--accent-light);
   color: var(--accent-text);
 }
+
+.cardLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}

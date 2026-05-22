@@ -106,7 +106,7 @@ export default function Homepage() {
             {!loading && !error && (
               <div className={styles.cardsRow}>
                 {treks.slice(0, MAX_TREK_CARDS).map((trek) => (
-                  <TrekCard key={trek.id} trek={trek} />
+                  <TrekCard key={trek._id} trek={trek} />
                 ))}
               </div>
             )}
