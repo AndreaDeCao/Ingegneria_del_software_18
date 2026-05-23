@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap, GeoJSON } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap, GeoJSON, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -17,26 +17,25 @@ L.Icon.Default.mergeOptions({
 const startIcon = new L.Icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
   shadowUrl: markerShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
+  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41],
 });
 
 const endIcon = new L.Icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
   shadowUrl: markerShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
+  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41],
+});
+
+// marker viola per partenza personalizzata
+const customStartIcon = new L.Icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png",
+  shadowUrl: markerShadow,
+  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41],
 });
 
 function RecenterMap({ lat, lon }: { lat: number; lon: number }) {
   const map = useMap();
-  useEffect(() => {
-    map.setView([lat, lon]);
-  }, [lat, lon, map]);
+  useEffect(() => { map.setView([lat, lon]); }, [lat, lon, map]);
   return null;
 }
 
@@ -47,13 +46,19 @@ function FitRoute({ geojson }: { geojson: any }) {
     try {
       const layer = L.geoJSON(geojson);
       const bounds = layer.getBounds();
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40] });
-      }
-    } catch (e) {
-      console.warn("FitRoute: bounds non validi", e);
-    }
+      if (bounds.isValid()) map.fitBounds(bounds, { padding: [40, 40] });
+    } catch (e) { console.warn("FitRoute: bounds non validi", e); }
   }, [geojson, map]);
+  return null;
+}
+
+// componente che intercetta i click sulla mappa
+function MapClickHandler({ onMapClick }: { onMapClick?: (lat: number, lon: number) => void }) {
+  useMapEvents({
+    click(e) {
+      onMapClick?.(e.latlng.lat, e.latlng.lng);
+    },
+  });
   return null;
 }
 
@@ -62,49 +67,68 @@ type TrekMapProps = {
   coordinates?: { lat: number; lon: number };
   endCoordinates?: { lat: number; lon: number };
   routeGeojson?: any;
+  customStart?: { lat: number; lon: number } | null;  // ← nuovo
+  onMapClick?: (lat: number, lon: number) => void;    // ← nuovo
+  clickToSelect?: boolean;                            // ← nuovo: abilita selezione click
 };
 
-export default function TrekMap({ name, coordinates, endCoordinates, routeGeojson }: TrekMapProps) {
-  const center = coordinates ?? { lat: 46.065, lon: 11.12 };
+export default function TrekMap({
+  name,
+  coordinates,
+  endCoordinates,
+  routeGeojson,
+  customStart,
+  onMapClick,
+  clickToSelect = false,
+}: TrekMapProps) {
+  const center = customStart ?? coordinates ?? { lat: 46.065, lon: 11.12 };
   const hasStart = !!coordinates;
   const hasEnd = !!endCoordinates;
+  const hasCustomStart = !!customStart;
 
-  // Chiave univoca per forzare il re-render del layer GeoJSON quando cambia il tracciato
   const geojsonKey = routeGeojson ? JSON.stringify(routeGeojson).length : "none";
 
   return (
     <MapContainer
       center={[center.lat, center.lon]}
       zoom={hasStart ? 13 : 9}
-      style={{ height: "100%", width: "100%" }}
+      style={{
+        height: "100%",
+        width: "100%",
+        cursor: clickToSelect ? "crosshair" : "grab"
+      }}
       scrollWheelZoom={true}
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | <a href="https://opentopomap.org">OpenTopoMap</a>'
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | <a href="https://opentopomap.org">OpenTopoMap</a>'
         url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
         maxZoom={17}
       />
 
-      {/* Tracciato — la key forza il re-render se cambia il geojson */}
+      {clickToSelect && <MapClickHandler onMapClick={onMapClick} />}
+
       {routeGeojson && (
         <>
           <GeoJSON
             key={geojsonKey}
             data={routeGeojson}
-            style={() => ({
-              color: "#2563eb",
-              weight: 5,
-              opacity: 0.85,
-            })}
+            style={() => ({ color: "#2563eb", weight: 5, opacity: 0.85 })}
           />
           <FitRoute geojson={routeGeojson} />
         </>
       )}
 
-      {/* Marker partenza (verde) */}
-      {hasStart && (
-        <Marker position={[center.lat, center.lon]} icon={startIcon}>
+      {/* Marker partenza originale (verde) — visibile solo se NON c'è una custom */}
+      {hasStart && !hasCustomStart && (
+        <Marker position={[coordinates!.lat, coordinates!.lon]} icon={startIcon}>
           <Popup>🟢 Partenza: {name}</Popup>
+        </Marker>
+      )}
+
+      {/* Marker partenza personalizzata (viola) */}
+      {hasCustomStart && (
+        <Marker position={[customStart!.lat, customStart!.lon]} icon={customStartIcon}>
+          <Popup>🟣 La tua partenza</Popup>
         </Marker>
       )}
 
@@ -115,7 +139,6 @@ export default function TrekMap({ name, coordinates, endCoordinates, routeGeojso
         </Marker>
       )}
 
-      {/* Ricentra solo se non c'è tracciato */}
       {!routeGeojson && <RecenterMap lat={center.lat} lon={center.lon} />}
     </MapContainer>
   );

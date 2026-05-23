@@ -62,6 +62,19 @@ export default function TrekDetails() {
   const [routeGeojson, setRouteGeojson] = useState<any>(null);
   const [routeInfo, setRouteInfo] = useState<{ distanceMeters: number; durationSeconds: number } | null>(null);
 
+  // partenza personalizzata
+  const [customStart, setCustomStart] = useState<{ lat: number; lon: number } | null>(null);
+  const [customStartLabel, setCustomStartLabel] = useState<string>("");
+  const [selectMode, setSelectMode] = useState<"none" | "search" | "gps" | "map">("none");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [routeLoading, setRouteLoading] = useState(false);
+  const [clickToSelect, setClickToSelect] = useState(false);
+
+  const [searchResults, setSearchResults] = useState<{ display_name: string; lat: string; lon: string }[]>([]);
+  const [searchDebounce, setSearchDebounce] = useState<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -227,6 +240,123 @@ export default function TrekDetails() {
     }
   }
 
+  // applica una partenza personalizzata e ricalcola il tracciato
+  async function applyCustomStart(lat: number, lon: number, label: string) {
+    setCustomStart({ lat, lon });
+    setCustomStartLabel(label);
+    setClickToSelect(false);
+    setSelectMode("none");
+    setRouteLoading(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/route/${id}/custom?startLat=${lat}&startLon=${lon}`
+      );
+      if (!res.ok) throw new Error("Errore calcolo percorso");
+      const data = await res.json();
+      setRouteGeojson(data.geojson);
+      setRouteInfo({ distanceMeters: data.distanceMeters, durationSeconds: data.durationSeconds });
+    } catch (err: any) {
+      setSearchError(err.message);
+    } finally {
+      setRouteLoading(false);
+    }
+  }
+
+  // ripristina partenza originale
+  async function resetCustomStart() {
+    setCustomStart(null);
+    setCustomStartLabel("");
+    setSelectMode("none");
+    setClickToSelect(false);
+    setSearchError(null);
+    setRouteLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/route/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRouteGeojson(data.geojson);
+        setRouteInfo({ distanceMeters: data.distanceMeters, durationSeconds: data.durationSeconds });
+      }
+    } finally {
+      setRouteLoading(false);
+    }
+  }
+
+  // ricerca indirizzo via Nominatim
+  // async function handleSearch() {
+  //   if (!searchQuery.trim()) return;
+  //   setSearchLoading(true);
+  //   setSearchError(null);
+  //   try {
+  //     const res = await fetch(
+  //       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1`,
+  //       { headers: { "Accept-Language": "it" } }
+  //     );
+  //     const results = await res.json();
+  //     if (!results.length) throw new Error("Nessun luogo trovato");
+  //     const { lat, lon, display_name } = results[0];
+  //     await applyCustomStart(parseFloat(lat), parseFloat(lon), display_name);
+  //   } catch (err: any) {
+  //     setSearchError(err.message);
+  //   } finally {
+  //     setSearchLoading(false);
+  //   }
+  // }
+
+  function handleSearchInput(value: string) {
+    setSearchQuery(value);
+    setSearchError(null);
+
+    if (searchDebounce) clearTimeout(searchDebounce);
+
+    if (value.trim().length < 3) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(value)}&format=json&limit=5&addressdetails=1`,
+          { headers: { "Accept-Language": "it" } }
+        );
+        const results = await res.json();
+        setSearchResults(results);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 400); // aspetta 400ms dopo l'ultimo tasto prima di cercare
+
+    setSearchDebounce(timeout);
+  }
+
+  function handleSelectResult(result: { display_name: string; lat: string; lon: string }) {
+    setSearchResults([]);
+    setSearchQuery(result.display_name);
+    applyCustomStart(parseFloat(result.lat), parseFloat(result.lon), result.display_name);
+  }
+
+  // GPS
+  function handleGps() {
+    setSearchError(null);
+    if (!navigator.geolocation) {
+      setSearchError("GPS non supportato dal browser");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => applyCustomStart(pos.coords.latitude, pos.coords.longitude, "La tua posizione"),
+      () => setSearchError("Impossibile ottenere la posizione GPS")
+    );
+  }
+
+  // click su mappa
+  function handleMapClick(lat: number, lon: number) {
+    applyCustomStart(lat, lon, `${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+  }
+
   if (loading) {
     return (
       <main className={appStyles.main}>
@@ -379,16 +509,151 @@ export default function TrekDetails() {
             />
           </div> */}
 
+                    {/* SELEZIONE PARTENZA PERSONALIZZATA */}
+          <div className={styles.customStartBox}>
+
+            {/* Banner partenza personalizzata attiva */}
+            {customStart && (
+              <div className={styles.customStartBanner}>
+                <span>🟣 Partenza personalizzata: <strong>{customStartLabel}</strong></span>
+                <button className={styles.resetButton} onClick={resetCustomStart}>
+                  Ripristina predefinita
+                </button>
+              </div>
+            )}
+
+            {/* Bottoni scelta modalità */}
+            {!customStart && (
+              <div className={styles.customStartActions}>
+                <p className={styles.customStartLabel}>Cambia punto di partenza:</p>
+                <div className={styles.customStartButtons}>
+                  <button
+                    className={`${styles.modeButton} ${selectMode === "search" ? styles.modeButtonActive : ""}`}
+                    onClick={() => { setSelectMode(selectMode === "search" ? "none" : "search"); setSearchError(null); }}
+                  >
+                    🔍 Cerca indirizzo
+                  </button>
+                  <button
+                    className={`${styles.modeButton} ${selectMode === "gps" ? styles.modeButtonActive : ""}`}
+                    onClick={() => { setSelectMode("gps"); handleGps(); }}
+                  >
+                    📍 Usa GPS
+                  </button>
+                  <button
+                    className={`${styles.modeButton} ${selectMode === "map" ? styles.modeButtonActive : ""}`}
+                    onClick={() => {
+                      const next = selectMode !== "map";
+                      setSelectMode(next ? "map" : "none");
+                      setClickToSelect(next);
+                    }}
+                  >
+                    🗺 Seleziona su mappa
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Pannello ricerca */}
+            {selectMode === "search" && !customStart && (
+              // <div className={styles.searchBox}>
+              //   <input
+              //     className={styles.searchInput}
+              //     type="text"
+              //     placeholder="Es: Passo Rolle, Trento..."
+              //     value={searchQuery}
+              //     onChange={(e) => setSearchQuery(e.target.value)}
+              //     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              //   />
+              //   <button
+              //     className={styles.searchButton}
+              //     onClick={handleSearch}
+              //     disabled={searchLoading}
+              //   >
+              //     {searchLoading ? "..." : "Cerca"}
+              //   </button>
+              // </div>
+              <div className={styles.searchBox}>
+                <div className={styles.searchInputWrapper}>
+                  <input
+                    className={styles.searchInput}
+                    type="text"
+                    placeholder="Es: Passo Rolle, Trento..."
+                    value={searchQuery}
+                    onChange={(e) => handleSearchInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && searchResults.length > 0) {
+                        handleSelectResult(searchResults[0]);
+                      }
+                      if (e.key === "Escape") setSearchResults([]);
+                    }}
+                    autoComplete="off"
+                  />
+
+                  {/* Dropdown suggerimenti */}
+                  {searchResults.length > 0 && (
+                    <ul className={styles.searchDropdown}>
+                      {searchResults.map((r, i) => (
+                        <li
+                          key={i}
+                          className={styles.searchDropdownItem}
+                          onClick={() => handleSelectResult(r)}
+                        >
+                          <span className={styles.searchDropdownIcon}>📍</span>
+                          <span>{r.display_name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {searchLoading && (
+                    <span className={styles.searchSpinner}>⏳</span>
+                  )}
+                </div>
+              </div>
+
+            )}
+
+            {/* Istruzione click mappa */}
+            {selectMode === "map" && !customStart && (
+              <p className={styles.mapClickHint}>
+                Clicca sulla mappa per scegliere il punto di partenza
+              </p>
+            )}
+
+            {/* Loading ricalcolo */}
+            {routeLoading && (
+              <p className={styles.routeLoading}>⏳ Ricalcolo percorso...</p>
+            )}
+
+            {/* Errore */}
+            {searchError && (
+              <p className={styles.searchErrorText}>{searchError}</p>
+            )}
+          </div>
+
           <div className={styles.mapContainer}>
+            {/* <TrekMap
+              name={trek.name}
+              coordinates={trek.coordinates}
+              endCoordinates={trek.endCoordinates}
+              routeGeojson={routeGeojson}
+            /> */}
             <TrekMap
               name={trek.name}
               coordinates={trek.coordinates}
               endCoordinates={trek.endCoordinates}
               routeGeojson={routeGeojson}
+              customStart={customStart}
+              onMapClick={handleMapClick}
+              clickToSelect={clickToSelect}
             />
           </div>
           <div className={styles.mapLegend}>
-            <span>🟢 Partenza</span>
+            {customStart ? (
+              <span>🟣 La tua partenza</span>
+            ) : (
+              <span>🟢 Partenza</span>
+            )}
             <span>🔴 Arrivo</span>
             <span>🔵 Percorso</span>
           </div>
@@ -396,7 +661,7 @@ export default function TrekDetails() {
           {/* INFO BOX */}
           <div className={styles.infoCard}>
             <h2 className={appStyles.sectionTitle}>
-              Informazioni percorso
+              Informazioni del percorso predefinito
             </h2>
 
             <div className={styles.infoContent}>
