@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import styles from "./attivitaPage.module.css";
+import appStyles from "../../App.module.css";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 
@@ -140,7 +141,7 @@ export default function VisualizzaAttivitaPage() {
           <h2 className={styles.sectionTitle}>Lista attività</h2>
           <span className={styles.sectionCount}>{activities.length} attività</span>
         </div>
-        <Link to="/attivita/crea" className={styles.primaryButton}>+ Crea attività</Link>
+        <Link to="/attivita/crea" className={appStyles.primaryButton}>+ Crea attività</Link>
       </div>
 
       <div className={styles.filtersBar}>
@@ -227,9 +228,9 @@ export default function VisualizzaAttivitaPage() {
               )}
 
               <div className={styles.cardActions}>
-                <Link to={`/attivita/${activity._id}`} className={styles.secondaryButton}>Dettagli</Link>
+                <Link to={`/attivita/${activity._id}`} className={appStyles.secondaryButton}>Dettagli</Link>
                 <button
-                  className={styles.primaryButtonSmall}
+                  className={appStyles.primaryButtonSmall}
                   disabled={isDisabled}
                   onClick={() => !isDisabled && setJoinModal({ activity })}
                 >
@@ -251,8 +252,8 @@ export default function VisualizzaAttivitaPage() {
               Il tuo <strong>nickname</strong> e la tua <strong>email</strong> saranno condivisi con l'organizzatore.
             </p>
             <div className={styles.modalActions}>
-              <button className={styles.secondaryButton} onClick={() => setJoinModal(null)} disabled={joinLoading}>Annulla</button>
-              <button className={styles.primaryButton} onClick={() => confirmJoin(joinModal.activity)} disabled={joinLoading}>
+              <button className={appStyles.secondaryButton} onClick={() => setJoinModal(null)} disabled={joinLoading}>Annulla</button>
+              <button className={appStyles.primaryButton} onClick={() => confirmJoin(joinModal.activity)} disabled={joinLoading}>
                 {joinLoading ? "Iscrizione in corso..." : "Conferma"}
               </button>
             </div>

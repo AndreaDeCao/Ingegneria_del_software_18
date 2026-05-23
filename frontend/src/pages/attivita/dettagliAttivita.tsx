@@ -245,14 +245,14 @@ export default function DettagliAttivita() {
 
             {/* Può partecipare */}
             {canJoin && (
-              <button className={styles.primaryButton} onClick={() => setActiveModal("join")}>
+              <button className={appStyles.primaryButton} onClick={() => setActiveModal("join")}>
                 Partecipa all'attività
               </button>
             )}
 
             {/* Non può partecipare */}
             {!isOrganizer && !isParticipant && !canJoin && (
-              <button className={styles.primaryButton} disabled>
+              <button className={appStyles.primaryButton} disabled>
                 {activity.status !== "Aperto" ? `Iscrizione non disponibile (${activity.status ?? ""})` : "Attività al completo"}
               </button>
             )}
@@ -274,11 +274,11 @@ export default function DettagliAttivita() {
 
         {/* ── DESTRA ── */}
         <div className={appStyles.rightColumn}>
-            <div className={styles.buttonBox}>
-              <Link to="/attivita/visualizza" className={styles.primaryButton}>
+            <div className={appStyles.buttonBox}>
+              <Link to="/attivita/visualizza" className={appStyles.primaryButton}>
                 Lista attività
               </Link>
-              <Link to="/attivita/crea" className={styles.primaryButton}>
+              <Link to="/attivita/crea" className={appStyles.primaryButton}>
                 + Crea attività
               </Link>
             </div>
@@ -322,8 +322,8 @@ export default function DettagliAttivita() {
               Il tuo <strong>nickname</strong> sarà visibile a tutti nella pagina dell'attività e la tua <strong>email</strong> sarà condivisa con l'organizzatore (<strong>{organizerName}</strong>).
             </p>
             <div className={styles.modalActions}>
-              <button className={styles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Annulla</button>
-              <button className={styles.primaryButton} onClick={() => handleAction("join", "POST")} disabled={actionLoading}>
+              <button className={appStyles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Annulla</button>
+              <button className={appStyles.primaryButton} onClick={() => handleAction("join", "POST")} disabled={actionLoading}>
                 {actionLoading ? "Iscrizione in corso..." : "Conferma"}
               </button>
             </div>
@@ -338,7 +338,7 @@ export default function DettagliAttivita() {
             <h2 className={styles.modalTitle}>Lascia attività</h2>
             <p className={styles.modalBody}>Sei sicuro di voler abbandonare questa attività? Potrai re-iscriverti finché ci sono posti disponibili.</p>
             <div className={styles.modalActions}>
-              <button className={styles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Annulla</button>
+              <button className={appStyles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Annulla</button>
               <button className={styles.dangerButton} onClick={() => handleAction("leave", "POST")} disabled={actionLoading}>
                 {actionLoading ? "Attendere..." : "Lascia attività"}
               </button>
@@ -354,7 +354,7 @@ export default function DettagliAttivita() {
             <h2 className={styles.modalTitle}>Annulla attività</h2>
             <p className={styles.modalBody}>Sei sicuro di voler annullare <strong>{activity.title}</strong>? Questa azione non è reversibile e tutti i partecipanti perderanno l'iscrizione.</p>
             <div className={styles.modalActions}>
-              <button className={styles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Indietro</button>
+              <button className={appStyles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Indietro</button>
               <button className={styles.dangerButton} onClick={() => handleAction("cancel", "PATCH")} disabled={actionLoading}>
                 {actionLoading ? "Attendere..." : "Annulla attività"}
               </button>

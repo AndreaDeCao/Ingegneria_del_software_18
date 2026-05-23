@@ -7,6 +7,7 @@ import type { DiaryEntry } from "../../types/Diary";
 import type { Activity } from "../../types/Activity";
 
 import styles from "../../App.module.css";
+import { Link } from "react-router-dom";
 
 // Helper per fare fetch autenticata (riusa il token in memoria tramite http di api.ts)
 export async function fetchAuth<T>(path: string): Promise<T> {
@@ -176,6 +177,16 @@ export default function Homepage() {
               ))}
             </div>
           )}
+
+          
+            <div className={styles.buttonBox}>
+              <Link to="/attivita/visualizza" className={styles.primaryButton}>
+                Lista attività
+              </Link>
+              <Link to="/attivita/crea" className={styles.primaryButton}>
+                + Crea attività
+              </Link>
+            </div>
 
         </section>
 

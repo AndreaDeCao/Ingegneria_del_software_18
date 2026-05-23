@@ -110,7 +110,7 @@ export default function CreaAttivitaPage() {
           <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',}}>
               <h1 className={styles.pageTitle}>Crea Attività</h1>
 
-              <Link to="/attivita/visualizza" className={styles.primaryButton}>
+              <Link to="/attivita/visualizza" className={appStyles.primaryButton}>
                 Apri Lista Attività
               </Link>
           </div>
@@ -201,7 +201,7 @@ export default function CreaAttivitaPage() {
               />
             </div>
 
-            <button className={styles.primaryButton}>
+            <button className={appStyles.primaryButton}>
               Crea attività
             </button>
 

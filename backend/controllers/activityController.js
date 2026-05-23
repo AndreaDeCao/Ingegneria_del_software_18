@@ -40,6 +40,10 @@ exports.createActivity = async (req, res) => {
       // L'organizzatore è automaticamente il primo partecipante
       partecipantList: organizerID ? [organizerID] : [],
     });
+
+    if (newActivity.partecipantList.length == 1 && newActivity.maxParticipants == 1) {
+      newActivity.status = "Chiuso";
+    }
  
     await newActivity.save();
     res.status(201).json(newActivity);
@@ -88,6 +92,12 @@ exports.joinActivity = async (req, res) => {
     }
  
     activity.partecipantList.push(userID);
+
+    // Se raggiunge il massimo partecipanti, chiudi automaticamente
+    if (activity.partecipantList.length >= activity.maxParticipants) {
+      activity.status = "Chiuso";
+    }
+
     await activity.save();
  
     // Ritorna l'attività aggiornata con i partecipanti popolati
@@ -118,6 +128,10 @@ exports.leaveActivity = async (req, res) => {
     activity.partecipantList = activity.partecipantList.filter((p) => p.toString() !== userID.toString());
     if (activity.partecipantList.length === before) return res.status(400).json({ error: "Non sei iscritto a questa attività" });
  
+    // Se non è più piena e non è annullata, riapri automaticamente
+    if ( activity.status == "Chiuso" && activity.partecipantList.length < activity.maxParticipants
+    ) { activity.status = "Aperto";}
+
     await activity.save();
  
     const updated = await Activity.findById(activity._id).populate("partecipantList", "nickname email nome cognome");
@@ -128,7 +142,6 @@ exports.leaveActivity = async (req, res) => {
   }
 };
  
-// PATCH /activities/:id/cancel — solo organizzatore
 // PATCH /activities/:id/cancel — solo organizzatore
 exports.cancelActivity = async (req, res) => { //FIXME: non funziona 
   try {
@@ -141,7 +154,7 @@ exports.cancelActivity = async (req, res) => { //FIXME: non funziona
     if (activity.status === "Annullato") return res.status(400).json({ error: "Attività già annullata" });
  
     // findByIdAndUpdate garantisce scrittura su DB senza problemi di change tracking
-    const updated = await Activity.findById(
+    const updated = await Activity.findByIdAndUpdate(
       req.params.id,
       { $set: { status: "Annullato" } },
       { new: true }
