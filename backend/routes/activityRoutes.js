@@ -12,7 +12,9 @@ router.get("/:id", activityController.getActivityById);
 
 router.post("/", activityController.createActivity);
 router.post("/:id/join", activityController.joinActivity);
+router.post("/:id/leave", activityController.leaveActivity);
 
+router.patch("/:id/cancel", activityController.cancelActivity);
 //router.post("/", authenticate, requireAdmin, activityController.createActivity); 
 
 module.exports = router;

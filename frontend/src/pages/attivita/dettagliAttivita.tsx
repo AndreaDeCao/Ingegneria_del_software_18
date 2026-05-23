@@ -34,6 +34,8 @@ type ActivityPopulated = Omit<Activity, "partecipantList"> & {
   partecipantList: Participant[];
 };
 
+type ModalType = "join" | "leave" | "cancel" | null;
+
 export default function DettagliAttivita() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -44,9 +46,9 @@ export default function DettagliAttivita() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [joinLoading, setJoinLoading] = useState(false);
-  const [joinMessage, setJoinMessage] = useState("");
+  const [activeModal, setActiveModal] = useState<ModalType>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionMessage, setActionMessage] = useState("");
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -57,6 +59,7 @@ export default function DettagliAttivita() {
           throw new Error(err.error || err.message || `Errore ${resActivity.status}`);
         }
         const activityData: ActivityPopulated = await resActivity.json();
+        activityData.partecipantList = activityData.partecipantList ?? [];
         setActivity(activityData);
 
         if (activityData.trekID) {
@@ -78,31 +81,37 @@ export default function DettagliAttivita() {
     fetchAll();
   }, [id]);
 
-  async function confirmJoin() {
-    setJoinLoading(true);
+  function showMessage(msg: string) {
+    setActionMessage(msg);
+    setTimeout(() => setActionMessage(""), 4000);
+  }
+
+  async function handleAction(endpoint: string, method: string) {
+    setActionLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/activities/${id}/join`, {
-        method: "POST",
+      const res = await fetch(`http://localhost:3000/activities/${id}/${endpoint}`, {
+        method,
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userID: user?._id }),
       });
-
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || err.message || "Errore nella partecipazione");
+        throw new Error(err.error || err.message || "Errore");
       }
-
       const updated: ActivityPopulated = await res.json();
+      updated.partecipantList = updated.partecipantList ?? [];
       setActivity(updated);
-      setJoinMessage("Partecipazione confermata ✔");
-      setTimeout(() => setJoinMessage(""), 4000);
+      showMessage(
+        endpoint === "join" ? "Partecipazione confermata ✔" :
+        endpoint === "leave" ? "Hai lasciato l'attività" :
+        "Attività annullata"
+      );
     } catch (err: any) {
-      setJoinMessage(err.message || "Errore");
-      setTimeout(() => setJoinMessage(""), 4000);
+      showMessage(err.message || "Errore");
     } finally {
-      setJoinLoading(false);
-      setShowConfirmModal(false);
+      setActionLoading(false);
+      setActiveModal(null);
     }
   }
 
@@ -132,21 +141,8 @@ export default function DettagliAttivita() {
       hour: "2-digit", minute: "2-digit",
     });
 
-  if (loading) {
-    return (
-      <main className={styles.page}>
-        <p className={styles.message}>Caricamento attività...</p>
-      </main>
-    );
-  }
-
-  if (error || !activity) {
-    return (
-      <main className={styles.page}>
-        <p className={styles.messageError}>{error || "Attività non trovata"}</p>
-      </main>
-    );
-  }
+  if (loading) return <main className={styles.page}><p className={styles.message}>Caricamento attività...</p></main>;
+  if (error || !activity) return <main className={styles.page}><p className={styles.messageError}>{error || "Attività non trovata"}</p></main>;
 
   const currentUserID = user?._id;
   const isOrganizer = !!currentUserID && activity.organizerID?.toString() === currentUserID;
@@ -154,6 +150,10 @@ export default function DettagliAttivita() {
   const participantCount = activity.partecipantList.length;
   const spotsLeft = activity.maxParticipants - participantCount;
   const canJoin = !isOrganizer && !isParticipant && activity.status === "Aperto" && spotsLeft > 0;
+
+  const organizerName = organizer?.nickname ||
+    `${organizer?.nome ?? ""} ${organizer?.cognome ?? ""}`.trim() ||
+    organizer?.email || "—";
 
   return (
     <main className={styles.page}>
@@ -171,19 +171,12 @@ export default function DettagliAttivita() {
               <span className={styles.activityId}>#{activity.id}</span>
             </div>
             <h1 className={styles.detailTitle}>{activity.title}</h1>
-            {trek && (
-              <div className={styles.detailTrekName}>
-                🗺 Trek: <strong>{trek.name}</strong>
-              </div>
-            )}
-            {activity.description && (
-              <p className={styles.detailDescription}>{activity.description}</p>
-            )}
+            {trek && <div className={styles.detailTrekName}>🗺 Trek: <strong>{trek.name}</strong></div>}
+            {activity.description && <p className={styles.detailDescription}>{activity.description}</p>}
           </div>
 
           {/* Info grid */}
           <div className={styles.detailGrid}>
-
             <div className={styles.detailCard}>
               <span className={styles.detailCardIcon}>📅</span>
               <div>
@@ -207,9 +200,7 @@ export default function DettagliAttivita() {
                 <span className={styles.detailCardLabel}>Partecipanti</span>
                 <span className={styles.detailCardValue}>{participantCount} / {activity.maxParticipants}</span>
                 <span className={styles.detailCardSub}>
-                  {spotsLeft > 0
-                    ? `${spotsLeft} post${spotsLeft === 1 ? "o" : "i"} disponibil${spotsLeft === 1 ? "e" : "i"}`
-                    : "Attività al completo"}
+                  {spotsLeft > 0 ? `${spotsLeft} post${spotsLeft === 1 ? "o" : "i"} disponibil${spotsLeft === 1 ? "e" : "i"}` : "Attività al completo"}
                 </span>
               </div>
             </div>
@@ -218,112 +209,82 @@ export default function DettagliAttivita() {
               <span className={styles.detailCardIcon}>👤</span>
               <div>
                 <span className={styles.detailCardLabel}>Organizzatore</span>
-                <span className={styles.detailCardValue}>
-                  {organizer
-                    ? organizer.nickname || `${organizer.nome ?? ""} ${organizer.cognome ?? ""}`.trim() || organizer.email
-                    : "—"}
-                </span>
-                {isOrganizer && (
-                  <span className={styles.detailCardSub}>Sei tu l'organizzatore</span>
-                )}
+                <span className={styles.detailCardValue}>{organizerName}</span>
+                {isOrganizer && <span className={styles.detailCardSub}>Sei tu l'organizzatore</span>}
               </div>
             </div>
-
           </div>
 
           {/* Trek details */}
           {trek && (trek.distance || trek.duration || trek.difficulty || trek.description) && (
             <div className={styles.formCard}>
               <h2 className={styles.detailSectionTitle}>Dettagli del trek</h2>
-              {trek.description && (
-                <p className={styles.activityDescription}>{trek.description}</p>
-              )}
+              {trek.description && <p className={styles.activityDescription}>{trek.description}</p>}
               <div className={styles.activityInfo}>
-                {trek.difficulty && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>Difficoltà</span>
-                    <span className={styles.infoValue}>{trek.difficulty}</span>
-                  </div>
-                )}
-                {trek.distance && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>Distanza</span>
-                    <span className={styles.infoValue}>{trek.distance} km</span>
-                  </div>
-                )}
-                {trek.duration && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>Durata stimata</span>
-                    <span className={styles.infoValue}>{trek.duration} min</span>
-                  </div>
-                )}
+                {trek.difficulty && <div className={styles.infoItem}><span className={styles.infoLabel}>Difficoltà</span><span className={styles.infoValue}>{trek.difficulty}</span></div>}
+                {trek.distance && <div className={styles.infoItem}><span className={styles.infoLabel}>Distanza</span><span className={styles.infoValue}>{trek.distance} km</span></div>}
+                {trek.duration && <div className={styles.infoItem}><span className={styles.infoLabel}>Durata stimata</span><span className={styles.infoValue}>{trek.duration}</span></div>}
               </div>
             </div>
           )}
 
-          {/* ── I 3 SCENARI ── */}
+          {/* ── AZIONI ── */}
           <div className={styles.detailActions}>
 
-            {/* 1. Organizzatore */}
+            {/* Organizzatore */}
             {isOrganizer && (
-              <div className={styles.organizerBadge}>
-                ✅ Sei l'organizzatore di questa attività
-              </div>
-            )}
-
-            {/* 2. Può partecipare */}
-            {canJoin && (
               <>
-                <button className={styles.primaryButton} onClick={() => setShowConfirmModal(true)}>
-                  Partecipa all'attività
-                </button>
-                {joinMessage && <p className={styles.message}>{joinMessage}</p>}
+                <div className={styles.organizerBadge}>✅ Sei l'organizzatore di questa attività</div>
+                {activity.status !== "Annullato" && (
+                  <button className={styles.dangerButton} onClick={() => setActiveModal("cancel")}>
+                    Annulla attività
+                  </button>
+                )}
               </>
             )}
 
-            {/* 2b. Non può partecipare (attività chiusa/annullata o al completo) */}
-            {!isOrganizer && !isParticipant && !canJoin && (
-              <button className={styles.primaryButton} disabled>
-                {activity.status !== "Aperto"
-                  ? `Iscrizione non disponibile (${activity.status ?? ""})`
-                  : "Attività al completo"}
+            {/* Può partecipare */}
+            {canJoin && (
+              <button className={styles.primaryButton} onClick={() => setActiveModal("join")}>
+                Partecipa all'attività
               </button>
             )}
 
-            {/* 3. Già partecipante */}
+            {/* Non può partecipare */}
+            {!isOrganizer && !isParticipant && !canJoin && (
+              <button className={styles.primaryButton} disabled>
+                {activity.status !== "Aperto" ? `Iscrizione non disponibile (${activity.status ?? ""})` : "Attività al completo"}
+              </button>
+            )}
+
+            {/* Già partecipante */}
             {isParticipant && (
               <>
-                <div className={styles.alreadyJoinedBadge}>
-                  ✅ Partecipi già a questa attività
-                </div>
-                {joinMessage && <p className={styles.message}>{joinMessage}</p>}
+                <div className={styles.alreadyJoinedBadge}>✅ Partecipi già a questa attività</div>
+                <button className={styles.leaveButton} onClick={() => setActiveModal("leave")}>
+                  Lascia attività
+                </button>
               </>
             )}
 
+            {actionMessage && <p className={styles.message}>{actionMessage}</p>}
           </div>
 
         </div>
 
-        {/* ── DESTRA: lista partecipanti ── */}
+        {/* ── DESTRA ── */}
         <div className={appStyles.rightColumn}>
-          <div className={styles.buttonBox}>
-            <Link to="/attivita/visualizza" className={styles.primaryButton}>
-              Lista attività
-            </Link>
-          </div>
-
-          {!isOrganizer && !isParticipant && !canJoin && (
-              <button className={styles.primaryButton} disabled>
-                {activity.status !== "Aperto"
-                  ? `Iscrizione non disponibile (${activity.status ?? ""})`
-                  : "Attività al completo"}
-              </button>
-            )}
+            <div className={styles.buttonBox}>
+              <Link to="/attivita/visualizza" className={styles.primaryButton}>
+                Lista attività
+              </Link>
+              <Link to="/attivita/crea" className={styles.primaryButton}>
+                + Crea attività
+              </Link>
+            </div>
 
           <div className={styles.formCard}>
-            <h2 className={styles.detailSectionTitle}>
-              Partecipanti ({participantCount})
-            </h2>
+            <h2 className={styles.detailSectionTitle}>Partecipanti ({participantCount})</h2>
 
             {activity.partecipantList.length === 0 ? (
               <p className={styles.message}>Nessun partecipante ancora.</p>
@@ -337,14 +298,9 @@ export default function DettagliAttivita() {
                     <div className={styles.participantInfo}>
                       <span className={styles.participantNickname}>
                         {p.nickname}
-                        {i === 0 && (
-                          <span className={styles.organizerTag}> 👑</span>
-                        )}
+                        {i === 0 && <span className={styles.organizerTag}> 👑</span>}
                       </span>
-                      {/* Email visibile solo all'organizzatore */}
-                      {isOrganizer && (
-                        <span className={styles.participantEmail}>{p.email}</span>
-                      )}
+                      {isOrganizer && <span className={styles.participantEmail}>{p.email}</span>}
                     </div>
                   </li>
                 ))}
@@ -355,37 +311,52 @@ export default function DettagliAttivita() {
 
       </div>
 
-      {/* ── MODAL CONFERMA ── */}
-      {showConfirmModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowConfirmModal(false)}>
+      {/* ── MODALI ── */}
+
+      {/* Join */}
+      {activeModal === "join" && (
+        <div className={styles.modalOverlay} onClick={() => setActiveModal(null)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
             <h2 className={styles.modalTitle}>Conferma partecipazione</h2>
             <p className={styles.modalBody}>
-              Partecipando a questa attività il tuo <strong>nickname</strong> sarà visibile a tutti nella pagina dell'attività e la tua{" "}
-              <strong>email</strong> sarà condivisa con l'organizzatore.
-            </p>
-            <p className={styles.modalBody}>
-              Organizzatore:{" "}
-              <strong>
-                {organizer?.nickname ||
-                  `${organizer?.nome ?? ""} ${organizer?.cognome ?? ""}`.trim() ||
-                  "—"}
-              </strong>
+              Il tuo <strong>nickname</strong> sarà visibile a tutti nella pagina dell'attività e la tua <strong>email</strong> sarà condivisa con l'organizzatore (<strong>{organizerName}</strong>).
             </p>
             <div className={styles.modalActions}>
-              <button
-                className={styles.secondaryButton}
-                onClick={() => setShowConfirmModal(false)}
-                disabled={joinLoading}
-              >
-                Annulla
+              <button className={styles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Annulla</button>
+              <button className={styles.primaryButton} onClick={() => handleAction("join", "POST")} disabled={actionLoading}>
+                {actionLoading ? "Iscrizione in corso..." : "Conferma"}
               </button>
-              <button
-                className={styles.primaryButton}
-                onClick={confirmJoin}
-                disabled={joinLoading}
-              >
-                {joinLoading ? "Iscrizione in corso..." : "Conferma"}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave */}
+      {activeModal === "leave" && (
+        <div className={styles.modalOverlay} onClick={() => setActiveModal(null)}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Lascia attività</h2>
+            <p className={styles.modalBody}>Sei sicuro di voler abbandonare questa attività? Potrai re-iscriverti finché ci sono posti disponibili.</p>
+            <div className={styles.modalActions}>
+              <button className={styles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Annulla</button>
+              <button className={styles.dangerButton} onClick={() => handleAction("leave", "POST")} disabled={actionLoading}>
+                {actionLoading ? "Attendere..." : "Lascia attività"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel */}
+      {activeModal === "cancel" && (
+        <div className={styles.modalOverlay} onClick={() => setActiveModal(null)}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Annulla attività</h2>
+            <p className={styles.modalBody}>Sei sicuro di voler annullare <strong>{activity.title}</strong>? Questa azione non è reversibile e tutti i partecipanti perderanno l'iscrizione.</p>
+            <div className={styles.modalActions}>
+              <button className={styles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Indietro</button>
+              <button className={styles.dangerButton} onClick={() => handleAction("cancel", "PATCH")} disabled={actionLoading}>
+                {actionLoading ? "Attendere..." : "Annulla attività"}
               </button>
             </div>
           </div>

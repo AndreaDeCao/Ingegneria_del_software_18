@@ -103,3 +103,54 @@ exports.joinActivity = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// POST /activities/:id/leave
+exports.leaveActivity = async (req, res) => {
+  try {
+    const userID = req.user?._id || req.body.userID;
+    if (!userID) return res.status(401).json({ error: "Non autenticato" });
+ 
+    const activity = await Activity.findById(req.params.id);
+    if (!activity) return res.status(404).json({ error: "Attività non trovata" });
+    if (activity.organizerID?.toString() === userID.toString()) return res.status(400).json({ error: "L'organizzatore non può abbandonare l'attività" });
+ 
+    const before = activity.partecipantList.length;
+    activity.partecipantList = activity.partecipantList.filter((p) => p.toString() !== userID.toString());
+    if (activity.partecipantList.length === before) return res.status(400).json({ error: "Non sei iscritto a questa attività" });
+ 
+    await activity.save();
+ 
+    const updated = await Activity.findById(activity._id).populate("partecipantList", "nickname email nome cognome");
+    res.json(updated);
+  } catch (err) {
+    if (err.name === "CastError") return res.status(400).json({ error: "ID non valido" });
+    res.status(500).json({ error: err.message });
+  }
+};
+ 
+// PATCH /activities/:id/cancel — solo organizzatore
+// PATCH /activities/:id/cancel — solo organizzatore
+exports.cancelActivity = async (req, res) => { //FIXME: non funziona 
+  try {
+    const userID = req.user?._id?.toString() || req.body.userID?.toString();
+    if (!userID) return res.status(401).json({ error: "Non autenticato" });
+ 
+    const activity = await Activity.findByIdAndUpdate(req.params.id);
+    if (!activity) return res.status(404).json({ error: "Attività non trovata" });
+    if (activity.organizerID?.toString() !== userID) return res.status(403).json({ error: "Solo l'organizzatore può annullare l'attività" });
+    if (activity.status === "Annullato") return res.status(400).json({ error: "Attività già annullata" });
+ 
+    // findByIdAndUpdate garantisce scrittura su DB senza problemi di change tracking
+    const updated = await Activity.findById(
+      req.params.id,
+      { $set: { status: "Annullato" } },
+      { new: true }
+    ).populate("partecipantList", "nickname email nome cognome");
+ 
+    res.json(updated);
+  } catch (err) {
+    if (err.name === "CastError") return res.status(400).json({ error: "ID non valido" });
+    res.status(500).json({ error: err.message });
+  }
+};
+

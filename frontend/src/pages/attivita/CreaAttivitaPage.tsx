@@ -4,10 +4,11 @@ import appStyles from "../../App.module.css";
 
 import type { Trek } from "../../types/Trek";
 import { useAuth } from "../../auth/AuthProvider";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function CreaAttivitaPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [treks, setTreks] = useState<Trek[]>([]);
   const [title, setTitle] = useState("");
@@ -92,14 +93,8 @@ export default function CreaAttivitaPage() {
         throw new Error(err.message || "Errore backend");
       }
 
-      showMessage("Attività creata con successo ✔");
-      // reset
-      setTitle("");
-      setDescription("");
-      setActivityDate("");
-      setSelectedTrek("");
-      setTravelMode("");
-      setMaxParticipants(10);
+      const created = await res.json();
+      navigate(`/attivita/${created._id}`);
     } catch (err: any) {
       console.error(err);
       showMessage(err.message || "Errore nella creazione attività");
@@ -210,7 +205,7 @@ export default function CreaAttivitaPage() {
               Crea attività
             </button>
 
-            {message && <p className={styles.message}>{message}</p>}
+            {message && <p className={styles.messageError}>{message}</p>}
           </form>
 
         </div>
