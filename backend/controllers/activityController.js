@@ -157,7 +157,7 @@ exports.cancelActivity = async (req, res) => {
     const updated = await Activity.findByIdAndUpdate(
       req.params.id,
       { $set: { status: "Annullato" } },
-      { new: true }
+      { returnDocument: "after" }
     ).populate("partecipantList", "nickname email nome cognome");
  
     res.json(updated);
@@ -188,7 +188,7 @@ exports.uncancelActivity = async (req, res) => {
     const updated = await Activity.findByIdAndUpdate(
       req.params.id,
       { $set: { status: newStatus } },
-      { new: true }
+      { returnDocument: "after" }
     ).populate("partecipantList", "nickname email nome cognome");
 
     res.json(updated);
@@ -215,7 +215,7 @@ exports.closeActivity = async (req, res) => {
     const updated = await Activity.findByIdAndUpdate(
       req.params.id,
       { $set: { status: "Chiuso" } },
-      { new: true }
+      { returnDocument: "after" }
     ).populate("partecipantList", "nickname email nome cognome");
 
     res.json(updated);
@@ -244,7 +244,7 @@ exports.openActivity = async (req, res) => {
       const updated = await Activity.findByIdAndUpdate(
         req.params.id,
         { $set: { status: "Aperto" } },
-        { new: true }
+        { returnDocument: "after" }
       ).populate("partecipantList", "nickname email nome cognome");
 
       res.json(updated);
