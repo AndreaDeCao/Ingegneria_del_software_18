@@ -34,7 +34,7 @@ type ActivityPopulated = Omit<Activity, "partecipantList"> & {
   partecipantList: Participant[];
 };
 
-type ModalType = "join" | "leave" | "cancel" | null;
+type ModalType = "join" | "leave" | "cancel" | "uncancel" | null;
 
 export default function DettagliAttivita() {
   const { id } = useParams();
@@ -105,7 +105,11 @@ export default function DettagliAttivita() {
       showMessage(
         endpoint === "join" ? "Partecipazione confermata ✔" :
         endpoint === "leave" ? "Hai lasciato l'attività" :
-        "Attività annullata"
+        endpoint === "cancel" ? "Attività annullata" :
+        endpoint === "uncancel" ? "Attività riattivata" :
+        endpoint === "open" ? "Attività raperta" :
+        endpoint === "close" ? "Attività chiusa" :
+        "N/A"
       );
     } catch (err: any) {
       showMessage(err.message || "Errore");
@@ -119,6 +123,7 @@ export default function DettagliAttivita() {
     switch (status) {
       case "Annullato": return styles.statusCancelled;
       case "Chiuso":    return styles.statusClosed;
+      case "Aperto":    return styles.statusAvailable;
       default:          return styles.statusAvailable;
     }
   };
@@ -240,6 +245,24 @@ export default function DettagliAttivita() {
                     Annulla attività
                   </button>
                 )}
+                {activity.status === "Annullato" && ( 
+                  <button className={styles.dangerButton} onClick={() => setActiveModal("uncancel")}>
+                    Riattiva attività
+                  </button>
+                )}
+
+                {activity.status !== "Annullato" && activity.status === "Chiuso" && participantCount < activity.maxParticipants && ( 
+                  <button className={styles.dangerButton} onClick={() => handleAction("open", "PATCH")}>
+                    Apri attività
+                  </button>
+                )}
+                {activity.status !== "Annullato" && activity.status === "Aperto" && ( 
+                  <button className={styles.dangerButton} onClick={() => handleAction("close", "PATCH")}>
+                    Chiudi attività
+                  </button>
+                )}
+
+                
               </>
             )}
 
@@ -352,11 +375,27 @@ export default function DettagliAttivita() {
         <div className={styles.modalOverlay} onClick={() => setActiveModal(null)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
             <h2 className={styles.modalTitle}>Annulla attività</h2>
-            <p className={styles.modalBody}>Sei sicuro di voler annullare <strong>{activity.title}</strong>? Questa azione non è reversibile e tutti i partecipanti perderanno l'iscrizione.</p>
+            <p className={styles.modalBody}>Sei sicuro di voler annullare <strong>{activity.title}</strong>? Questa azione è reversibile.</p>
             <div className={styles.modalActions}>
               <button className={appStyles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Indietro</button>
               <button className={styles.dangerButton} onClick={() => handleAction("cancel", "PATCH")} disabled={actionLoading}>
                 {actionLoading ? "Attendere..." : "Annulla attività"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Uncancel */}
+      {activeModal === "uncancel" && (
+        <div className={styles.modalOverlay} onClick={() => setActiveModal(null)}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Riattiva attività</h2>
+            <p className={styles.modalBody}>Sei sicuro di voler riattivare <strong>{activity.title}</strong>? Questa azione potrebbe riaprire l'attività a nuovi partecipanti.</p>
+            <div className={styles.modalActions}>
+              <button className={appStyles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Indietro</button>
+              <button className={styles.dangerButton} onClick={() => handleAction("uncancel", "PATCH")} disabled={actionLoading}>
+                {actionLoading ? "Attendere..." : "Riattiva attività"}
               </button>
             </div>
           </div>

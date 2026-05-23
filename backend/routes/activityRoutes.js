@@ -15,6 +15,9 @@ router.post("/:id/join", activityController.joinActivity);
 router.post("/:id/leave", activityController.leaveActivity);
 
 router.patch("/:id/cancel", activityController.cancelActivity);
+router.patch("/:id/uncancel", activityController.uncancelActivity);
+router.patch("/:id/close", activityController.closeActivity);
+router.patch("/:id/open", activityController.openActivity);
 //router.post("/", authenticate, requireAdmin, activityController.createActivity); 
 
 module.exports = router;

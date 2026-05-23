@@ -143,7 +143,7 @@ exports.leaveActivity = async (req, res) => {
 };
  
 // PATCH /activities/:id/cancel — solo organizzatore
-exports.cancelActivity = async (req, res) => { //FIXME: non funziona 
+exports.cancelActivity = async (req, res) => { 
   try {
     const userID = req.user?._id?.toString() || req.body.userID?.toString();
     if (!userID) return res.status(401).json({ error: "Non autenticato" });
@@ -167,3 +167,93 @@ exports.cancelActivity = async (req, res) => { //FIXME: non funziona
   }
 };
 
+// PATCH /activities/:id/uncancel — solo organizzatore
+exports.uncancelActivity = async (req, res) => { 
+  try {
+    const userID = req.user?._id?.toString() || req.body.userID?.toString();
+    if (!userID) return res.status(401).json({ error: "Non autenticato" });
+ 
+    const activity = await Activity.findByIdAndUpdate(req.params.id);
+    if (!activity) return res.status(404).json({ error: "Attività non trovata" });
+    if (activity.organizerID?.toString() !== userID) return res.status(403).json({ error: "Solo l'organizzatore può riattivare l'attività" });
+    if (activity.status == "Chiuso" || activity.status == "Aperto") return res.status(400).json({ error: "Attività già attiva" });
+
+    let newStatus;
+    if (activity.partecipantList.length >= activity.maxParticipants) {
+      newStatus = "Chiuso";
+    } else {
+      newStatus = "Aperto";
+    }
+
+    const updated = await Activity.findByIdAndUpdate(
+      req.params.id,
+      { $set: { status: newStatus } },
+      { new: true }
+    ).populate("partecipantList", "nickname email nome cognome");
+
+    res.json(updated);
+
+  } catch (err) {
+    if (err.name === "CastError") {
+      return res.status(400).json({ error: "ID non valido" });
+    }
+
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.closeActivity = async (req, res) => { 
+  try {
+    const userID = req.user?._id?.toString() || req.body.userID?.toString();
+    if (!userID) return res.status(401).json({ error: "Non autenticato" });
+ 
+    const activity = await Activity.findByIdAndUpdate(req.params.id);
+    if (!activity) return res.status(404).json({ error: "Attività non trovata" });
+    if (activity.organizerID?.toString() !== userID) return res.status(403).json({ error: "Solo l'organizzatore può chiudere l'attività" });
+    if (activity.status == "Chiuso") return res.status(400).json({ error: "Attività già chiusa " });
+
+    const updated = await Activity.findByIdAndUpdate(
+      req.params.id,
+      { $set: { status: "Chiuso" } },
+      { new: true }
+    ).populate("partecipantList", "nickname email nome cognome");
+
+    res.json(updated);
+  } catch (err) {
+    if (err.name === "CastError") {
+      return res.status(400).json({ error: "ID non valido" });
+    }
+
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.openActivity = async (req, res) => { 
+  try {
+    const userID = req.user?._id?.toString() || req.body.userID?.toString();
+    if (!userID) return res.status(401).json({ error: "Non autenticato" });
+ 
+    const activity = await Activity.findByIdAndUpdate(req.params.id);
+    if (!activity) return res.status(404).json({ error: "Attività non trovata" });
+    if (activity.organizerID?.toString() !== userID) return res.status(403).json({ error: "Solo l'organizzatore può aprire l'attività" });
+    if (activity.status == "Aperto") return res.status(400).json({ error: "Attività già aperta " });
+
+    if (activity.partecipantList.length >= activity.maxParticipants) {
+      return res.status(400).json({ error: "Non puoi aprire l'attività perché ha già raggiunto il numero massimo di partecipanti" });
+    } else {
+      const updated = await Activity.findByIdAndUpdate(
+        req.params.id,
+        { $set: { status: "Aperto" } },
+        { new: true }
+      ).populate("partecipantList", "nickname email nome cognome");
+
+      res.json(updated);
+    }
+  } catch (err) {
+    if (err.name === "CastError") {
+      return res.status(400).json({ error: "ID non valido" });
+    }
+
+    res.status(500).json({ error: err.message });
+  }
+};
