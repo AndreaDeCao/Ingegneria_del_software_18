@@ -69,9 +69,11 @@ exports.getEventiComune = async (req, res) => {
           $limit: 20
         }
     ]);
+    console.log(`Eventi trovati: ${eventi.length}`);
     res.json(eventi);
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+

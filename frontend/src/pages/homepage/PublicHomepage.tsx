@@ -75,11 +75,16 @@ export default function PublicHomepage() {
               <h2 className={styles.sectionTitle}>
                 Eventi a Trento
               </h2>
-              {events.length > 0 && (
-                <span className={styles.sectionCount}>
-                  {Math.min(events.length, MAX_EVENT_CARDS)} eventi
-                </span>
-              )}
+
+              {/* Link sito eventi comune di Trento */}
+              <a
+              href="https://eventi.comune.trento.it"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.seeMore}
+              >
+                Scopri tutti gli eventi
+              </a>
             </div>
 
             {events.length === 0 && (

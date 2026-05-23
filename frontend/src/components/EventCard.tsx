@@ -4,6 +4,7 @@ import type {Event} from "../types/Events";
 
 /**
  * Props del componente EventCard
+ * 
  * @param {Event} event - Oggetto evento da visualizzare
  */
 interface EventCardProps {
@@ -14,6 +15,7 @@ interface EventCardProps {
 /**
  * Card evento nella Home.
  * Mostra titolo, descrizione breve, data, luogo e se è gratuito.
+ * 
  * @param {Event} event - Oggetto evento da visualizzare
  */
 function EventCard({event} : EventCardProps) {
@@ -28,9 +30,13 @@ function EventCard({event} : EventCardProps) {
 
       <div className={styles.cardImg} />
         <div className={styles.cardBody}>
-          <div className={styles.cardTop}>
             <h3 className={styles.cardName}>{event.title}</h3>
-          </div>
+
+          {event.address && (
+              <div className={styles.cardLocation}>
+                {event.address}
+              </div>
+          )}
 
           {event.abstract && (
             <p className={styles.cardAbstract}>
@@ -45,17 +51,11 @@ function EventCard({event} : EventCardProps) {
               </span>
             )}
 
-            {event.address && (
-              <span className={styles.badge}>
-                {event.address}
-              </span>
-            )}
-
             {event.isFree && (
               <span className={`${styles.badge} ${styles.badgeFree}`}>
                 Gratuito
               </span>
-            )}
+            )} 
         </div>
       </div>
       
