@@ -173,7 +173,7 @@ export default function DettagliAttivita() {
               <span className={`${styles.statusBadge} ${getStatusClass(activity.status ?? "")}`}>
                 {activity.status ?? "—"}
               </span>
-              <span className={styles.activityId}>#{activity.id}</span>
+              <span className={styles.activityId}>#{activity._id}</span>
             </div>
             <h1 className={styles.detailTitle}>{activity.title}</h1>
             {trek && <div className={styles.detailTrekName}>🗺 Trek: <strong>{trek.name}</strong></div>}
