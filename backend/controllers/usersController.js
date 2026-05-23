@@ -10,6 +10,23 @@ exports.getUsers = async (req, res) => {
   }
 };
 
+// GET utente per ID
+exports.getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("nome cognome nickname email");
+    if (!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+    res.json(user);
+  } catch (err) {
+    if (err.name === "CastError") {
+      return res.status(400).json({ error: "ID non valido" });
+    }
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
 // POST crea utente
 exports.createUser = async (req, res) => {
   try {

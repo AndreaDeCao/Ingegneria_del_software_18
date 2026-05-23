@@ -7,6 +7,8 @@ const ActivitySchema = new mongoose.Schema({
     description: String,
     activityDate: Date, // Data e ora dell'attività. 
     maxParticipants: Number,
+    partecipantList: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+
     status: {
         type: String,
         enum: ["Aperto", "Chiuso", "Annullato"]

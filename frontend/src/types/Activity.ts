@@ -13,6 +13,7 @@ export type Activity = {
   travelMode?: "walking" | "bicycling";
 
   maxParticipants: number;
+  partecipantList?: string[];
 
   organizerID?: ObjectId;
 

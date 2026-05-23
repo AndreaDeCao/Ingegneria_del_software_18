@@ -8,10 +8,11 @@ const activityController = require("../controllers/activityController");
 
 
 router.get("/", activityController.getActivities);
+router.get("/:id", activityController.getActivityById);
 
 router.post("/", activityController.createActivity);
+router.post("/:id/join", activityController.joinActivity);
 
-router.get("/:id", activityController.getActivityById);
 //router.post("/", authenticate, requireAdmin, activityController.createActivity); 
 
 module.exports = router;
