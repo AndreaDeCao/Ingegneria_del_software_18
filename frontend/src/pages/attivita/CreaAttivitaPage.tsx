@@ -155,7 +155,7 @@ export default function CreaAttivitaPage() {
                 onChange={(e) => setTravelMode(e.target.value)}
                 required
               >
-                <option value="">Seleziona modalità</option> {/* FIXME: aggiorna DATABASE, la lista delle modalità non esiste (model e type gia aggiornati)*/}
+                <option value="">Seleziona modalità</option>
                 <option value="walking">A piedi</option>
                 <option value="bicycling">In bici</option>
               </select>
