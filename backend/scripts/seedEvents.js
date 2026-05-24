@@ -3,6 +3,12 @@
  * 
  * Fonte: API ComunWeb del comune di Trento
  * Endpoint:  https://eventi.comune.trento.it/api/opendata/v2/content/search?classes=event
+ * 
+ * 
+ * DA TERMINALE: node backend/scripts/seedEvents.js
+ * 
+ * Va eseguito una sola volta prima di avviare il server.
+ * Rieseguire solo se si vuole aggiornare il dataset.
  */
 
 require("dotenv").config();

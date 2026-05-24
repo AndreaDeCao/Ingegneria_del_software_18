@@ -1,11 +1,11 @@
 .card {
   background: var(--card-bg);
   border-radius: var(--radius-lg);
-  border: 0.5px solid var(--border);
+  border: 2px solid var(--accent);
   overflow: hidden;
   min-width: 200px;
   flex: 0 0 200px;
-  height: 270px;
+  height: 160px;
   transition: transform 0.18s;
   cursor: pointer;
   display: flex;
@@ -14,12 +14,6 @@
 
 .card:hover {
   transform: translateY(-3px);
-}
-
-.cardImg {
-  height: 110px;
-  width: 100%;
-  background: linear-gradient(135deg, var(--accent) 0%, #1b4332 100%);
 }
 
 .cardBody {
@@ -37,7 +31,7 @@
 }
 
 .cardName {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;

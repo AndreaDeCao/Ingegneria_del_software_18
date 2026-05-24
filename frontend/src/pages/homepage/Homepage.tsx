@@ -90,6 +90,67 @@ export default function Homepage() {
         {/* COLONNA SINISTRA */}
         <section className={styles.leftColumn}>
 
+        {/* TREKS */}
+        <div className={styles.sectionTreks}>
+
+          <div className={styles.sectionHead}>
+            <h2 className={styles.sectionTitle}>
+              Di tendenza nelle vicinanze
+            </h2>
+
+            {!loading && !error && (
+              <span className={styles.sectionCount}>
+                {MAX_TREK_CARDS} percorsi
+              </span>
+            )}
+          </div>
+
+          {loading && (
+            <p className={styles.message}>Caricamento percorsi...</p>
+          )}
+
+          {error && (
+            <p className={styles.messageError}>
+              Impossibile caricare i percorsi: {error}
+            </p>
+           )}
+
+           {!loading && !error && treks.length === 0 && (
+            <p className={styles.message}>
+               Nessun percorso trovato nelle vicinanze.
+             </p>
+           )}
+
+            {!loading && !error && (
+             <div className={styles.cardsRow}>
+               {treks.slice(0, MAX_TREK_CARDS).map((trek) => (
+                <TrekCard key={trek.id} trek={trek} />
+               ))}
+             </div>
+          )}
+         </div>
+
+          {/* DIARY */}
+          <div className={styles.sectionDiary}>
+            <div className={styles.sectionHead}>
+              <h2 className={styles.sectionTitle}>Il tuo diario</h2>
+              <span className={styles.sectionCount}>
+                {diaryEntries.length} {diaryEntries.length === 1 ? "voce" : "voci"}
+              </span>
+            </div>
+            {diaryEntries.length === 0 && (
+              <p className={styles.message}>Nessuna voce nel diario ancora.</p>
+            )}
+            {diaryEntries.slice(0, MAX_DIARY_CARDS).map((entry) => (
+              <div key={entry._id}>
+                <strong>{entry.titolo}</strong>
+                <span> — {new Date(entry.data).toLocaleDateString("it-IT")}</span>
+                {entry.trekId && <span> | {entry.trekId.name}</span>}
+                {entry.valutazione && <span> ⭐ {entry.valutazione}/5</span>}
+              </div>
+            ))}
+          </div>
+
           { /* EVENTI */}
           <div className={styles.sectionEvents}>
 
@@ -123,67 +184,6 @@ export default function Homepage() {
                 ))}
               </div>
             )}
-          </div>
-
-          {/* TREKS */}
-          <div className={styles.sectionTreks}>
-
-            <div className={styles.sectionHead}>
-              <h2 className={styles.sectionTitle}>
-                Di tendenza nelle vicinanze
-              </h2>
-
-              {!loading && !error && (
-                <span className={styles.sectionCount}>
-                  {MAX_TREK_CARDS} percorsi
-                </span>
-              )}
-            </div>
-
-            {loading && (
-              <p className={styles.message}>Caricamento percorsi...</p>
-            )}
-
-            {error && (
-              <p className={styles.messageError}>
-                Impossibile caricare i percorsi: {error}
-              </p>
-            )}
-
-            {!loading && !error && treks.length === 0 && (
-              <p className={styles.message}>
-                Nessun percorso trovato nelle vicinanze.
-              </p>
-            )}
-
-            {!loading && !error && (
-              <div className={styles.cardsRow}>
-                {treks.slice(0, MAX_TREK_CARDS).map((trek) => (
-                  <TrekCard key={trek.id} trek={trek} />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* DIARY */}
-          <div className={styles.sectionDiary}>
-            <div className={styles.sectionHead}>
-              <h2 className={styles.sectionTitle}>Il tuo diario</h2>
-              <span className={styles.sectionCount}>
-                {diaryEntries.length} {diaryEntries.length === 1 ? "voce" : "voci"}
-              </span>
-            </div>
-            {diaryEntries.length === 0 && (
-              <p className={styles.message}>Nessuna voce nel diario ancora.</p>
-            )}
-            {diaryEntries.slice(0, MAX_DIARY_CARDS).map((entry) => (
-              <div key={entry._id}>
-                <strong>{entry.titolo}</strong>
-                <span> — {new Date(entry.data).toLocaleDateString("it-IT")}</span>
-                {entry.trekId && <span> | {entry.trekId.name}</span>}
-                {entry.valutazione && <span> ⭐ {entry.valutazione}/5</span>}
-              </div>
-            ))}
           </div>
 
         </section>

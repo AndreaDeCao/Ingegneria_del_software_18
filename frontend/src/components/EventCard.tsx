@@ -28,7 +28,6 @@ function EventCard({event} : EventCardProps) {
 
     <article className={styles.card}>
 
-      <div className={styles.cardImg} />
         <div className={styles.cardBody}>
             <h3 className={styles.cardName}>{event.title}</h3>
 
