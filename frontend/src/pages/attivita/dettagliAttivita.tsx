@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import styles from "./attivitaPage.module.css";
 import appStyles from "../../App.module.css";
 import { useAuth } from "../../auth/AuthProvider";
@@ -34,11 +34,12 @@ type ActivityPopulated = Omit<Activity, "partecipantList"> & {
   partecipantList: Participant[];
 };
 
-type ModalType = "join" | "leave" | "cancel" | "uncancel" | null;
+type ModalType = "join" | "leave" | "cancel" | "uncancel" | "delete" | null;
 
 export default function DettagliAttivita() {
   const { id } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [activity, setActivity] = useState<ActivityPopulated | null>(null);
   const [trek, setTrek] = useState<Trek | null>(null);
@@ -102,20 +103,43 @@ export default function DettagliAttivita() {
       const updated: ActivityPopulated = await res.json();
       updated.partecipantList = updated.partecipantList ?? [];
       setActivity(updated);
-      showMessage(
-        endpoint === "join" ? "Partecipazione confermata ✔" :
-        endpoint === "leave" ? "Hai lasciato l'attività" :
-        endpoint === "cancel" ? "Attività annullata" :
-        endpoint === "uncancel" ? "Attività riattivata" :
-        endpoint === "open" ? "Attività raperta" :
-        endpoint === "close" ? "Attività chiusa" :
-        "N/A"
-      );
+//      showMessage(
+//        endpoint === "join" ? "Partecipazione confermata ✔" :
+//        endpoint === "leave" ? "Hai lasciato l'attività" :
+//        endpoint === "cancel" ? "Attività annullata" :
+//        endpoint === "uncancel" ? "Attività riattivata" :
+//        endpoint === "open" ? "Attività raperta" :
+//        endpoint === "close" ? "Attività chiusa" :
+//        endpoint === "delete" ? "Attività eliminata" :
+//        "N/A"
+//      );
     } catch (err: any) {
       showMessage(err.message || "Errore");
     } finally {
       setActionLoading(false);
       setActiveModal(null);
+    }
+  }
+
+  async function handleDelete() {
+    setActionLoading(true);
+    try {
+      const res = await fetch(`http://localhost:3000/activities/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userID: user?._id }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || err.message || "Errore durante l'eliminazione");
+      }
+      navigate("/attivita/visualizza");
+    } catch (err: any) {
+      showMessage(err.message || "Errore");
+      setActiveModal(null);
+    } finally {
+      setActionLoading(false);
     }
   }
 
@@ -262,7 +286,9 @@ export default function DettagliAttivita() {
                   </button>
                 )}
 
-                
+                <button className={styles.dangerButton} onClick={() => setActiveModal("delete")}>
+                  Elimina attività
+                </button>  
               </>
             )}
 
@@ -396,6 +422,25 @@ export default function DettagliAttivita() {
               <button className={appStyles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Indietro</button>
               <button className={styles.dangerButton} onClick={() => handleAction("uncancel", "PATCH")} disabled={actionLoading}>
                 {actionLoading ? "Attendere..." : "Riattiva attività"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeModal === "delete" && (
+        <div className={styles.modalOverlay} onClick={() => setActiveModal(null)}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>⚠️ Elimina attività</h2>
+            <p className={styles.modalBody}>
+              Stai per eliminare definitivamente <strong>{activity.title}</strong> dal database.
+              <br /><br />
+              <strong>Questa operazione è irreversibile</strong> e non potrà essere annullata.
+            </p>
+            <div className={styles.modalActions}>
+              <button className={appStyles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Annulla</button>
+              <button className={styles.dangerButton} onClick={handleDelete} disabled={actionLoading}>
+                {actionLoading ? "Eliminazione in corso..." : "Elimina definitivamente"}
               </button>
             </div>
           </div>

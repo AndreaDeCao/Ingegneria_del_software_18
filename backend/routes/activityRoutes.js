@@ -18,6 +18,7 @@ router.patch("/:id/cancel", activityController.cancelActivity);
 router.patch("/:id/uncancel", activityController.uncancelActivity);
 router.patch("/:id/close", activityController.closeActivity);
 router.patch("/:id/open", activityController.openActivity);
+router.delete("/:id", activityController.deleteActivity);
 //router.post("/", authenticate, requireAdmin, activityController.createActivity); 
 
 module.exports = router;
