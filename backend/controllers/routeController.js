@@ -64,7 +64,7 @@ exports.getRouteCustomStart = async (req, res) => {
  *
  * Restituisce 4 varianti di percorso per tipo di mezzo/profilo ORS,
  * SENZA modificare il punto di partenza:
- *   1. foot-hiking   — sentiero ufficiale
+ *   1. foot-hiking   — sentiero hiking
  *   2. foot-walking  — a piedi su strada/valle
  *   3. cycling-mountain — MTB
  *   4. cycling-road  — bici da strada
@@ -89,10 +89,10 @@ exports.getRouteVariants = async (req, res) => {
 
     // --- 4 varianti per tipo di percorso (stessa partenza, profilo diverso) ---
     const variants = [
-      { key: "walk_official",  label: "🥾 Sentiero ufficiale",       profile: "foot-hiking" },
-      { key: "walk_road",      label: "🚶 A piedi (strada/valle)",    profile: "foot-walking" },
-      { key: "bike_mountain",  label: "🚵 MTB (mountain bike)",       profile: "cycling-mountain" },
-      { key: "bike_road",      label: "🚴 Bici da strada",            profile: "cycling-road" },
+      { key: "hiking_road",    label: "Sentiero hiking",           profile: "foot-hiking" },
+      { key: "walk_road",      label: "A piedi (strada/valle)",    profile: "foot-walking" },
+      { key: "bike_mountain",  label: "MTB (mountain bike)",       profile: "cycling-mountain" },
+      { key: "bike_road",      label: "Bici da strada",            profile: "cycling-road" },
     ];
 
     // --- Calcola tutti i percorsi in parallelo ---

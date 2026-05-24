@@ -210,15 +210,34 @@ export default function TrekDetails() {
     });
   }
 
-  function skyToText(code: string) {
+  function skyToText(code: string): string {
     switch (code) {
-      case "A": return "Sereno";
-      case "B": return "Poco nuvoloso";
-      case "C": return "Nuvoloso";
-      case "D": return "Molto nuvoloso";
-      case "F": return "Pioggia";
-      case "H": return "Temporale";
-      case "J": return "Variabile";
+      case "A": return "Cielo sereno";
+      case "B": return "Soleggiato";
+      case "C": return "Parzialmente nuvoloso";
+      case "D": return "Nuvoloso";
+      case "E": return "Molto nuvoloso";
+      case "F": return "Rovesci";
+      case "G": return "Rovesci forti";
+      case "H": return "Pioggia moderata";
+      case "I": return "Pioggia forte";
+      case "J": return "Pioggia debole";
+      case "K": return "Rovesci deboli";
+      case "L": return "Neve debole e sole";
+      case "M": return "Neve e sole";
+      case "N": return "Neve debole";
+      case "O": return "Neve moderata";
+      case "P": return "Neve forte";
+      case "Q": return "Neve bagnata e sole";
+      case "R": return "Neve bagnata";
+      case "S": return "Foschia";
+      case "T": return "Foschia in quota";
+      case "U": return "Instabile";
+      case "V": return "Temporali";
+      case "W": return "Instabile con neve bagnata";
+      case "X": return "Temporali di neve bagnata";
+      case "Y": return "Instabile con temporali nevosi";
+      case "Z": return "Temporali nevosi";
       default: return "N/D";
     }
   }
@@ -555,33 +574,36 @@ export default function TrekDetails() {
 
           {/* BADGES */}
           <div className={styles.badges}>
-            <span className={appStyles.sectionCount}>
+            <div className={appStyles.sectionCount}>
+            <span>
               Trek details: 
             </span>
-            <span>🎯 Difficoltà: {
+            <span> — {
               customStart && routeInfo?.distanceMeters && routeInfo?.durationSeconds
                 ? calcDifficulty(routeInfo.distanceMeters, routeInfo.durationSeconds)
                 : trek.difficulty
             }</span>
 
-            <span>⏱ Durata: {
+            <span> — {
               customStart && routeInfo?.durationSeconds
                 ? `${formatDuration(routeInfo.durationSeconds)} (stimati)`
                 : trek.duration
             }</span>
 
-            <span>📏 Lunghezza: {
+            <span> — {
               customStart && routeInfo?.distanceMeters
                 ? `${(routeInfo.distanceMeters / 1000).toFixed(1)} km (calcolati)`
                 : `${trek.lengthKm ?? "-"} km`
             }</span>
-            <span>⛰ Dislivello: {customStart ? "-" : (trek.elevationGain ?? "-")} m</span>
+            <span> — {customStart ? "-" : (trek.elevationGain ?? "-")} m — </span>
             
             {customStart && (
               <span style={{ color: "#7c3aed", fontSize: "12px", borderBottom: "none" }}>
                 🟣 Dati aggiornati dalla tua partenza
               </span>
             )}
+
+            </div>
 
           </div>
 
@@ -658,7 +680,7 @@ export default function TrekDetails() {
                     onClick={handleParking}
                     disabled={parkingLoading}
                   >
-                    {parkingLoading ? "⏳ Ricerca..." : "🅿 Parcheggio più vicino"}
+                    {parkingLoading ? "Ricerca..." : "🅿 Parcheggio più vicino"}
                   </button>
                 </div>
               </div>
@@ -702,7 +724,7 @@ export default function TrekDetails() {
               </p>
             )}
 
-            {routeLoading && <p className={styles.routeLoading}>⏳ Ricalcolo percorso...</p>}
+            {routeLoading && <p className={styles.routeLoading}>Ricalcolo percorso...</p>}
             {searchError && <p className={styles.searchErrorText}>{searchError}</p>}
           </div>
 
@@ -715,7 +737,7 @@ export default function TrekDetails() {
                   className={`${styles.modeButton} ${variantsOpen ? styles.modeButtonActive : ""}`}
                   onClick={loadRouteVariants}
                 >
-                  {variantsOpen ? "Nascondi varianti" : "🔀 Mostra varianti"}
+                  {variantsOpen ? "Nascondi varianti" : "Mostra varianti"}
                 </button>
                 {activeVariantKey && (
                   <button className={styles.resetButton} onClick={resetVariant} style={{ marginLeft: 4 }}>
@@ -727,7 +749,7 @@ export default function TrekDetails() {
 
             {variantsOpen && (
               <div className={styles.variantsSection}>
-                {variantsLoading && <p className={styles.routeLoading}>⏳ Calcolo varianti in corso...</p>}
+                {variantsLoading && <p className={styles.routeLoading}>Calcolo varianti in corso...</p>}
                 <div className={styles.variantsGrid}>
                   {routeVariants.map((v) => (
                     <button
@@ -854,7 +876,7 @@ export default function TrekDetails() {
                             }
                           >
                             <p>
-                              <span style={{ alignSelf: "center" }}>⏰</span> {formatSlotTime(item.key)}
+                              {formatSlotTime(item.key)}
                             </p>
 
                             <p><span>🌡</span> {item.temperature}°C</p>
@@ -865,7 +887,7 @@ export default function TrekDetails() {
 
                             <p><span>❄</span> {item.snow_level} m</p>
 
-                            <p><span>☁</span> {skyToText(item.sky_condition)}</p>
+                            <p>{skyToText(item.sky_condition)}</p>
                           </div>
                         ))}
                       </div>
@@ -890,13 +912,12 @@ export default function TrekDetails() {
                               {formatDayLabelFromKey(weather, item.key)}
                             </p>
 
-                            <p><span>🌡</span> Max: {item.temperature_maximum}°C</p>
-                            <p><span>🌡</span> Min: {item.temperature_minimum}°C</p>
-                            <p><span>🌧</span> Pioggia: {item.rain_fall} mm</p>
-                            <p><span>🌧</span> Probabilità: {item.rain_probability}%</p>
-                            <p><span>❄</span> Neve: {item.snow_level} m</p>
+                            <p><span>🌡</span> Min-Max: <br />{item.temperature_minimum}-{item.temperature_maximum}°C</p>
+                            <p><span>🌧</span> Pioggia: <br />{item.rain_fall} mm</p>
+                            <p><span>🌧</span> Probabilità: <br />{item.rain_probability}%</p>
+                            <p><span>❄</span> Neve: <br />{item.snow_level} m</p>
 
-                            <p><span>☁</span> {skyToText(item.sky_condition)}</p>
+                            <p>{skyToText(item.sky_condition)}</p>
                           </div>
                         ))}
                       </div>
@@ -917,31 +938,31 @@ export default function TrekDetails() {
               <h3 className={appStyles.sectionTitle}>Riepilogo</h3>
 
               <div className={styles.summaryList}>
-                <span>🎯 Difficoltà: {trek.difficulty}</span>
-                <span>⏱ Durata: {trek.duration}</span>
-                <span>📏 Lunghezza: {trek.lengthKm ?? "-"} km</span>
-                <span>⛰ Dislivello: {trek.elevationGain ?? "-"} m</span>
+                <span>Difficoltà: {trek.difficulty}</span>
+                <span>Durata: {trek.duration}</span>
+                <span>Lunghezza: {trek.lengthKm ?? "-"} km</span>
+                <span>Dislivello: {trek.elevationGain ?? "-"} m</span>
               </div>
             </div> */}
             <div className={styles.card}>
               <h3 className={appStyles.sectionTitle}>Riepilogo</h3>
               <div className={styles.summaryList}>
-                <span>🎯 Difficoltà: {
+                <span>Difficoltà: {
                   customStart && routeInfo?.distanceMeters && routeInfo?.durationSeconds
                     ? calcDifficulty(routeInfo.distanceMeters, routeInfo.durationSeconds)
                     : trek.difficulty
                 }</span>
-                <span>⏱ Durata: {
+                <span>Durata: {
                   customStart && routeInfo?.durationSeconds
                     ? `${formatDuration(routeInfo.durationSeconds)} (stimati)`
                     : trek.duration
                 }</span>
-                <span>📏 Lunghezza: {
+                <span>Lunghezza: {
                   customStart && routeInfo?.distanceMeters
                     ? `${(routeInfo.distanceMeters / 1000).toFixed(1)} km (calcolati)`
                     : `${trek.lengthKm ?? "-"} km`
                 }</span>
-                <span>⛰ Dislivello: {customStart ? "-" : (trek.elevationGain ?? "-")} m</span>
+                <span>Dislivello: {customStart ? "-" : (trek.elevationGain ?? "-")} m</span>
 
                 {customStart && (
                   <span style={{ color: "#7c3aed", fontSize: "12px", borderBottom: "none" }}>
@@ -1094,7 +1115,7 @@ export default function TrekDetails() {
                   disabled={!routeGeojson} 
                   onClick={() => downloadGpx(routeGeojson, trek.name)}
                 >
-                  {routeGeojson ? "⬇ Scarica GPX" : "⏳ Caricamento..."}
+                  {routeGeojson ? "⬇ Scarica GPX" : "Caricamento..."}
                 </button>
               )}
             </div>
