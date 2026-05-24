@@ -7,5 +7,6 @@ router.get("/:id", routeController.getRouteByTrekId);
 
 // 
 router.get("/:id/custom", routeController.getRouteCustomStart); 
+router.get("/:id/suggestions", routeController.getRouteSuggestions);
 
 module.exports = router;

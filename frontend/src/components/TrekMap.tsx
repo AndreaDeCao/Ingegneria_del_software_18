@@ -67,9 +67,9 @@ type TrekMapProps = {
   coordinates?: { lat: number; lon: number };
   endCoordinates?: { lat: number; lon: number };
   routeGeojson?: any;
-  customStart?: { lat: number; lon: number } | null;  // ← nuovo
-  onMapClick?: (lat: number, lon: number) => void;    // ← nuovo
-  clickToSelect?: boolean;                            // ← nuovo: abilita selezione click
+  customStart?: { lat: number; lon: number } | null;
+  onMapClick?: (lat: number, lon: number) => void;
+  clickToSelect?: boolean;
 };
 
 export default function TrekMap({
@@ -87,6 +87,21 @@ export default function TrekMap({
   const hasCustomStart = !!customStart;
 
   const geojsonKey = routeGeojson ? JSON.stringify(routeGeojson).length : "none";
+
+  // Estrae il primo e ultimo punto del tracciato GeoJSON (in [lon, lat])
+  // e li converte in [lat, lon] per ancorare i marker all'inizio/fine reale del percorso.
+  const routeCoords: [number, number][] =
+    routeGeojson?.features?.[0]?.geometry?.coordinates ?? [];
+  const routeStart = routeCoords.length > 0
+    ? { lat: routeCoords[0][1], lon: routeCoords[0][0] }
+    : null;
+  const routeEnd = routeCoords.length > 1
+    ? { lat: routeCoords[routeCoords.length - 1][1], lon: routeCoords[routeCoords.length - 1][0] }
+    : null;
+
+  // Usa il punto snappato del tracciato se disponibile, altrimenti le coordinate del DB
+  const startPin = routeStart ?? coordinates;
+  const endPin = routeEnd ?? endCoordinates;
 
   return (
     <MapContainer
@@ -119,8 +134,8 @@ export default function TrekMap({
       )}
 
       {/* Marker partenza originale (verde) — visibile solo se NON c'è una custom */}
-      {hasStart && !hasCustomStart && (
-        <Marker position={[coordinates!.lat, coordinates!.lon]} icon={startIcon}>
+      {hasStart && !hasCustomStart && startPin && (
+        <Marker position={[startPin.lat, startPin.lon]} icon={startIcon}>
           <Popup>🟢 Partenza: {name}</Popup>
         </Marker>
       )}
@@ -133,8 +148,8 @@ export default function TrekMap({
       )}
 
       {/* Marker arrivo (rosso) */}
-      {hasEnd && (
-        <Marker position={[endCoordinates!.lat, endCoordinates!.lon]} icon={endIcon}>
+      {hasEnd && endPin && (
+        <Marker position={[endPin.lat, endPin.lon]} icon={endIcon}>
           <Popup>🔴 Arrivo: {name}</Popup>
         </Marker>
       )}

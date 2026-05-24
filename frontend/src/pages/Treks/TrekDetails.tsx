@@ -65,12 +65,16 @@ export default function TrekDetails() {
   // partenza personalizzata
   const [customStart, setCustomStart] = useState<{ lat: number; lon: number } | null>(null);
   const [customStartLabel, setCustomStartLabel] = useState<string>("");
-  const [selectMode, setSelectMode] = useState<"none" | "search" | "gps" | "map">("none");
+  const [selectMode, setSelectMode] = useState<"none" | "search" | "gps" | "map" | "suggestions">("none");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
   const [clickToSelect, setClickToSelect] = useState(false);
+
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
 
   const [searchResults, setSearchResults] = useState<{ display_name: string; lat: string; lon: string }[]>([]);
   const [searchDebounce, setSearchDebounce] = useState<ReturnType<typeof setTimeout> | null>(null);
@@ -357,6 +361,44 @@ export default function TrekDetails() {
     applyCustomStart(lat, lon, `${lat.toFixed(5)}, ${lon.toFixed(5)}`);
   }
 
+  async function loadSuggestions() {
+    // toggle: se aperto, chiudi
+    if (suggestionsOpen) { setSuggestionsOpen(false); return; }
+
+    setSuggestionsOpen(true);
+
+    // se già caricati, non riscaricare
+    if (suggestions.length > 0) return;
+
+    setSuggestionsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/route/${id}/suggestions`);
+      const data = await res.json();
+      setSuggestions(data.suggestions ?? []);
+    } catch {
+      setSuggestions([]);
+    } finally {
+      setSuggestionsLoading(false);
+    }
+  }
+
+  /**
+   * Applica una suggestion già calcolata dal backend:
+   * riusa il GeoJSON senza fare un'altra chiamata HTTP.
+   */
+  function applySuggestion(s: any) {
+    if (s.error) return;
+    setCustomStart({ lat: s.startLat, lon: s.startLon });
+    setCustomStartLabel(s.label);
+    setClickToSelect(false);
+    setSelectMode("none");
+    setRouteGeojson(s.geojson);
+    setRouteInfo({
+      distanceMeters: s.distanceMeters,
+      durationSeconds: s.durationSeconds,
+    });
+  }
+
   if (loading) {
     return (
       <main className={appStyles.main}>
@@ -396,6 +438,15 @@ export default function TrekDetails() {
   //   }
   // }
   
+  function formatDuration(seconds: number): string {
+    const totalMinutes = Math.round(seconds / 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    if (hours === 0) return `${minutes} min`;
+    if (minutes === 0) return `${hours} h`;
+    return `${hours} h ${minutes} min`;
+  }
+
   function calcDifficulty(distanceMeters: number, durationSeconds: number): string {
     const km = distanceMeters / 1000;
     const ore = durationSeconds / 3600;
@@ -491,7 +542,7 @@ export default function TrekDetails() {
 
             <span>⏱ Durata: {
               customStart && routeInfo?.durationSeconds
-                ? `${Math.round(routeInfo.durationSeconds / 60)} minuti (stimati)`
+                ? `${formatDuration(routeInfo.durationSeconds)} (stimati)`
                 : trek.duration
             }</span>
 
@@ -555,13 +606,13 @@ export default function TrekDetails() {
                 <div className={styles.customStartButtons}>
                   <button
                     className={`${styles.modeButton} ${selectMode === "search" ? styles.modeButtonActive : ""}`}
-                    onClick={() => { setSelectMode(selectMode === "search" ? "none" : "search"); setSearchError(null); }}
+                    onClick={() => { setSelectMode(selectMode === "search" ? "none" : "search"); setSearchError(null); setSuggestionsOpen(false); }}
                   >
                     🔍 Cerca indirizzo
                   </button>
                   <button
                     className={`${styles.modeButton} ${selectMode === "gps" ? styles.modeButtonActive : ""}`}
-                    onClick={() => { setSelectMode("gps"); handleGps(); }}
+                    onClick={() => { setSelectMode("gps");  setSuggestionsOpen(false); handleGps(); }}
                   >
                     📍 Usa GPS
                   </button>
@@ -570,10 +621,22 @@ export default function TrekDetails() {
                     onClick={() => {
                       const next = selectMode !== "map";
                       setSelectMode(next ? "map" : "none");
+                      setSuggestionsOpen(false);
                       setClickToSelect(next);
                     }}
                   >
                     🗺 Seleziona su mappa
+                  </button>
+
+                  <button
+                    className={`${styles.modeButton} ${selectMode === "suggestions" ? styles.modeButtonActive : ""}`}
+                    onClick={() => {
+                      const next = selectMode !== "suggestions";
+                      setSelectMode(next ? "suggestions" : "none");
+                      loadSuggestions();
+                    }}
+                  >
+                    ✨ {suggestionsOpen ? "Nascondi suggerimenti" : "Mostra 5 varianti di percorso"}
                   </button>
                 </div>
               </div>
@@ -645,6 +708,36 @@ export default function TrekDetails() {
                 Clicca sulla mappa per scegliere il punto di partenza
               </p>
             )}
+
+            {/* SUGGERIMENTI DI PARTENZA */}
+            <div className={styles.suggestionsSection}>
+              {suggestionsOpen && !customStart &&(
+                <div className={styles.suggestionsGrid}>
+                  {suggestionsLoading && <p className={styles.routeLoading}>⏳ Calcolo varianti in corso...</p>}
+
+                  {suggestions.map((s) => (
+                    <button
+                      key={s.key}
+                      className={`${styles.suggestionCard} ${s.error ? styles.suggestionCardDisabled : ""}`}
+                      disabled={s.error}
+                      title={s.error ? (s.errorMessage ?? "Non disponibile") : s.label}
+                      onClick={() => applySuggestion(s)}
+                    >
+                      <span className={styles.suggestionLabel}>{s.label}</span>
+                      {s.error ? (
+                        <span className={styles.suggestionMeta}>Non disponibile</span>
+                      ) : (
+                        <span className={styles.suggestionMeta}>
+                          {s.distanceMeters ? `${(s.distanceMeters / 1000).toFixed(1)} km` : "—"}
+                          {" · "}
+                          {s.durationSeconds ? formatDuration(s.durationSeconds) : "—"}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Loading ricalcolo */}
             {routeLoading && (
@@ -790,7 +883,7 @@ export default function TrekDetails() {
                             }
                           >
                             <p>
-                              {formatDayLabelFromKey(weather, item.key)} {/*FIXME: converti in data leggibile*/}
+                              {formatDayLabelFromKey(weather, item.key)}
                             </p>
 
                             <p><span>🌡</span> Max: {item.temperature_maximum}°C</p>
@@ -836,7 +929,7 @@ export default function TrekDetails() {
                 }</span>
                 <span>⏱ Durata: {
                   customStart && routeInfo?.durationSeconds
-                    ? `${Math.round(routeInfo.durationSeconds / 60)} minuti (stimati)`
+                    ? `${formatDuration(routeInfo.durationSeconds)} (stimati)`
                     : trek.duration
                 }</span>
                 <span>📏 Lunghezza: {
