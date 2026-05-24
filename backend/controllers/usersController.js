@@ -124,3 +124,22 @@ exports.verifyEmailChange = async (req, res) => {
     res.status(500).json({ error: err.message});
   }
 };
+
+
+/**
+ * Elimina account utente.
+ * 
+ * @route DELETE /api/users/me
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con messaggio di conferma
+ */
+exports.deleteMe = async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.userId);
+    res.json({ message: "Account eliminato" });
+
+  } catch(err) {
+    res.status(500).json({ error: err.message});
+  }
+};
