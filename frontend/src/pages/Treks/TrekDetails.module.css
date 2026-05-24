@@ -614,18 +614,18 @@
 }
 
 
-.suggestionsSection {
+.variantsSection {
   margin-top: 0.75rem;
 }
 
-.suggestionsGrid {
+.variantsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 0.6rem;
   margin-top: 0.6rem;
 }
 
-.suggestionCard {
+.variantsCard {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -638,19 +638,37 @@
   text-align: left;
   transition: border-color 0.15s, background 0.15s;
 }
-.suggestionCard:hover:not(:disabled) {
+.variantsCard:hover:not(:disabled) {
   border-color: #7c3aed;
   background: #f5f3ff;
 }
-.suggestionCardDisabled {
+.variantsCardActive {
+  border-color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 12%, var(--card-bg)) !important;
+  color: var(--accent);
+}
+[data-theme='dark'] .variantsCard {
+  border-color: var(--border);
+  background: var(--card-bg);
+  color: var(--text-primary);
+}
+[data-theme='dark'] .variantsCard:hover:not(:disabled) {
+  border-color: #a78bfa;
+  background: color-mix(in srgb, #7c3aed 15%, var(--card-bg));
+}
+[data-theme='dark'] .variantsCardActive {
+  border-color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 18%, var(--card-bg)) !important;
+}
+.variantsCardDisabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
-.suggestionLabel {
+.variantsLabel {
   font-weight: 600;
   font-size: 0.85rem;
 }
-.suggestionMeta {
+.variantsMeta {
   font-size: 0.75rem;
   color: #6b7280;
 }

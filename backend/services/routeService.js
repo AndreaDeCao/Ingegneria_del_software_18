@@ -60,18 +60,21 @@ async function getRouteWithProfile(startLat, startLon, endLat, endLon, profile) 
 
 /**
  * Cerca il parcheggio più vicino via Overpass API.
- * Usa GET con query string invece di POST form-encoded,
- * che è il formato più compatibile con tutti i server Overpass.
+ * Prova overpass-api.de, poi mirror alternativi se riceve
+ * ECONNRESET / timeout / 429 / 503.
  */
-async function getNearestParking(lat, lon, radiusMeters = 3000) {
-  const query = `[out:json][timeout:15];node["amenity"="parking"](around:${radiusMeters},${lat},${lon});out body 3;`;
+const OVERPASS_HOSTS = [
+  "overpass-api.de",
+  "overpass.kumi.systems",
+];
 
+function overpassRequest(hostname, query, timeoutMs = 18000) {
   return new Promise((resolve, reject) => {
     const params = new URLSearchParams({ data: query });
     const path = `/api/interpreter?${params.toString()}`;
 
     const options = {
-      hostname: "overpass-api.de",
+      hostname,
       path,
       method: "GET",
       headers: {
@@ -85,14 +88,13 @@ async function getNearestParking(lat, lon, radiusMeters = 3000) {
       res.on("data", c => raw += c);
       res.on("end", () => {
         if (res.statusCode === 429 || res.statusCode === 503) {
-          return reject(new Error(`Overpass non disponibile (HTTP ${res.statusCode}) - riprova tra qualche secondo`));
+          return reject(new Error(`HTTP_RETRY:${res.statusCode}`));
         }
         if (res.statusCode >= 400) {
           return reject(new Error(`Overpass HTTP ${res.statusCode}: ${raw.slice(0, 200)}`));
         }
         if (!raw.trimStart().startsWith("{")) {
-          const preview = raw.slice(0, 120).replace(/\n/g, " ");
-          return reject(new Error(`Overpass risposta HTML (probabilmente sovraccarico): ${preview}`));
+          return reject(new Error(`HTML_RETRY:sovraccarico`));
         }
         try {
           resolve(JSON.parse(raw));
@@ -102,16 +104,36 @@ async function getNearestParking(lat, lon, radiusMeters = 3000) {
       });
     });
 
-    req.setTimeout(18000, () => {
-      req.destroy(new Error("Overpass timeout (18s)"));
+    req.setTimeout(timeoutMs, () => {
+      req.destroy(new Error(`CONN_RETRY:timeout ${timeoutMs}ms`));
     });
 
     req.on("error", (err) => {
-      reject(new Error(`Overpass errore di rete: ${err.message}`));
+      // ECONNRESET, ECONNREFUSED, ETIMEDOUT → ritenta sul mirror
+      reject(new Error(`CONN_RETRY:${err.message}`));
     });
 
     req.end();
   });
+}
+
+async function getNearestParking(lat, lon, radiusMeters = 3000) {
+  const query = `[out:json][timeout:15];node["amenity"="parking"](around:${radiusMeters},${lat},${lon});out body 3;`;
+
+  let lastError;
+  for (const host of OVERPASS_HOSTS) {
+    try {
+      const result = await overpassRequest(host, query);
+      return result;
+    } catch (err) {
+      lastError = err;
+      const msg = err.message ?? "";
+      const retryable = msg.startsWith("CONN_RETRY:") || msg.startsWith("HTTP_RETRY:") || msg.startsWith("HTML_RETRY:");
+      if (!retryable) throw err;  // errore definitivo, non ritentare
+      console.warn(`[Overpass] ${host} fallito (${msg}), provo mirror successivo…`);
+    }
+  }
+  throw new Error(`Overpass non raggiungibile: ${lastError?.message}`);
 }
 
 module.exports = { getRoute, getRouteWithProfile, getNearestParking };
