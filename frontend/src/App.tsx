@@ -31,6 +31,7 @@ import PolicyPage from "./pages/account/PolicyPage";
 
 import VisualizzaDiarioPage from "./pages/diario/VisualizzaDiarioPage";
 import CreaVoceDiarioPage from "./pages/diario/CreaVoceDiarioPage";
+import DettagliVoceDiarioPage from "./pages/diario/DettagliVoceDiarioPage";
 
 import VisualizzaAttivitaPage from "./pages/attivita/VisualizzaAttivitaPage";
 import CreaAttivitaPage from "./pages/attivita/CreaAttivitaPage";
@@ -106,6 +107,7 @@ export default function App() {
 
                   <Route path="/diario/visualizza" element={<AppLayout><ProtectedRoute><VisualizzaDiarioPage /></ProtectedRoute></AppLayout>} />
                   <Route path="/diario/crea" element={<AppLayout><ProtectedRoute><CreaVoceDiarioPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/diario/:id" element={<AppLayout><ProtectedRoute><DettagliVoceDiarioPage /></ProtectedRoute></AppLayout>} />
 
                   <Route path="/attivita/visualizza" element={<AppLayout><ProtectedRoute><VisualizzaAttivitaPage /></ProtectedRoute></AppLayout>} />
                   <Route path="/attivita/crea" element={<AppLayout><ProtectedRoute><CreaAttivitaPage /></ProtectedRoute></AppLayout>} />
