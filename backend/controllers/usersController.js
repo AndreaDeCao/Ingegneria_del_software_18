@@ -143,3 +143,32 @@ exports.deleteMe = async (req, res) => {
     res.status(500).json({ error: err.message});
   }
 };
+
+
+/**
+ * Aggiorna avatar dell'utente.
+ *
+ * @route PUT /users/me/avatar
+ * @param {import("express").Request} req - Body: { avatarBase64 }
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con messaggio di conferma
+ */
+exports.updateAvatar = async (req, res) => {
+  try {
+    const { avatarBase64 } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { avatarUrl: avatarBase64 },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+
+    res.json({ message: "Avatar aggiornato" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

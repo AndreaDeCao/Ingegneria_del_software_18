@@ -14,6 +14,8 @@ const UserSchema = new mongoose.Schema({
   emailVerified: { type: Boolean, default: false }, // true dopo che user clicca il link
   emailVerificationToken: {type: String, select: false }, // token random per link
   emailVerificationExpires: { type: Date, select: false }, // scadenza token
+
+  avatarUrl: { type: String, default: null },
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", UserSchema);

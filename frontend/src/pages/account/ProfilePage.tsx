@@ -13,7 +13,7 @@ import styles from "./ProfilePage.module.css";
  * @returns {JSX.Element} Pagina profilo con sezioni modifica e elimina account
  */
 export default function ProfilePage() {
-  const { logout } = useAuth();
+  const { logout, refreshUser } = useAuth();
 
   const [nome, setNome] = useState("");
   const [cognome, setCognome] = useState("");
@@ -32,9 +32,11 @@ export default function ProfilePage() {
   // Valori temp nel modal
   const [tempValue, setTempValue] = useState("");
 
+  const [avatar, setAvatar] = useState<string | null>(null);
+
   // Carica dati utente
   useEffect(() => {
-     http<{ nome: string; cognome: string; nickname: string; email: string }>(
+     http<{ nome: string; cognome: string; nickname: string; email: string; avatarUrl: string; }>(
     "/users/me"
     )
     .then((data) => {
@@ -42,6 +44,7 @@ export default function ProfilePage() {
       setCognome(data.cognome ?? "");
       setNickname(data.nickname ?? "");
       setEmail(data.email ?? "");
+      setAvatar(data.avatarUrl ?? null);
     })
     .catch((err: Error) => setError(err.message))
     .finally(() => setLoading(false));
@@ -67,6 +70,8 @@ export default function ProfilePage() {
 
     /**
      * Salva modifica del campo aperto nel modal.
+     * 
+     * @returns {Promise<void>}
      */
     async function handleSave() {
       if(!activeModal || activeModal === "elimina") return;
@@ -105,6 +110,8 @@ export default function ProfilePage() {
 
     /**
      * Elimina account utente e fa il logout.
+     * 
+     * @returns {Promise<void>}
      */
     async function handleDelete() {
       try {
@@ -117,12 +124,70 @@ export default function ProfilePage() {
       }
     }
 
+
+    /**
+     * Gestisce upload immagine profilo.
+     * Converte il file in base64 e lo salva tramite API.
+     *
+     * @param e - Evento change dell'input file
+     */
+    async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+      const file = e.target.files?.[0];
+      if(!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = ev.target?.result as string;
+        try {
+          await http("/users/me/avatar", {
+            method: "PUT",
+            body: JSON.stringify({ avatarBase64: base64 }),
+          });
+          setAvatar(base64);
+          await refreshUser();
+          setSuccessMsg("Foto profilo aggiornata");
+        } catch(err: unknown) {
+          if(err instanceof Error) setError(err.message);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
     if(loading) {
       return <p className={styles.message}>Caricamento profilo...</p>
     }
 
     return (
       <main className={styles.main}>
+
+        {/* AVATAR */}
+        <section className={styles.avatarSection}>
+          <div className={styles.avatarWrapper}>
+            {avatar ? (
+              <img src={avatar} alt="avatar" className={styles.avatarImg} />
+            ) : (
+              <div className={styles.avatarPlaceholder}>
+                <svg width={40} height={40} viewBox="0 0 24 24" fill="white">
+                  <circle cx={12} cy={8} r={4}/>
+                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                </svg>
+              </div>
+            )}
+          </div>
+          <div>
+            <p className={styles.label}>{nome} {cognome}</p>
+            <p className={styles.hint}>@{nickname}</p>
+            <label className={styles.editBtn} style={{ cursor: "pointer", marginTop: 8, display: "inline-block" }}>
+              Cambia foto
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={handleAvatarUpload}
+              />
+            </label>
+          </div>
+        </section>
 
         {/* INFO ACCOUNT */}
         <section className={styles.section}>

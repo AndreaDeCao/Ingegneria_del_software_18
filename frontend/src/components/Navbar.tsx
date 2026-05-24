@@ -124,10 +124,24 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
           {theme === "dark" ? <SunIcon /> : <MoonIcon />}
         </button>
         <button className={styles.avatar} onClick={() => handleNavigate("/account/profile")}> 
-          <svg width={20} height={20} viewBox="0 0 24 24" fill="white">
-            <circle cx={12} cy={8} r={4}/>
-            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-          </svg>
+          {user?.avatarUrl ? (
+            <img
+              src={user.avatarUrl}
+              alt="avatar"
+              style={{ 
+                width: "40px", 
+                height: "40px", 
+                borderRadius: "50%", 
+                objectFit: "cover",
+                display: "block"
+              }}
+            />
+          ) : (
+            <svg width={20} height={20} viewBox="0 0 24 24" fill="white">
+              <circle cx={12} cy={8} r={4}/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            </svg>
+          )}
         </button>
       </nav>
     </header>

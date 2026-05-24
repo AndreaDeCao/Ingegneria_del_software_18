@@ -12,5 +12,6 @@ router.get("/me", requireAuth, userController.getMe);
 router.put("/me", requireAuth, userController.updateMe);
 router.delete("/me", requireAuth, userController.deleteMe);
 router.get("/verify-email-change/:token", userController.verifyEmailChange);
+router.put("/me/avatar", requireAuth, userController.updateAvatar);
 
 module.exports = router;
