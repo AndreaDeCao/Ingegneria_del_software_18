@@ -395,53 +395,69 @@ export default function TrekDetails() {
   //     setRatingLoading(false);
   //   }
   // }
+  
+  function calcDifficulty(distanceMeters: number, durationSeconds: number): string {
+    const km = distanceMeters / 1000;
+    const ore = durationSeconds / 3600;
+
+    // velocità media in km/h (più è bassa, più il terreno è impegnativo)
+    const speed = km / ore;
+
+    // punteggio composito: penalizza distanze lunghe e velocità bassa
+    const score = km * 0.6 + (1 / speed) * 10;
+
+    if (score < 6) return "Facile";
+    if (score < 12) return "Medio";
+    return "Difficile";
+  }
+
 
   async function handleVote() {
 
-  if (!user || !myVote) return;
+    if (!user || !myVote) return;
 
-  setRatingError(null);
-  setRatingLoading(true);
+    setRatingError(null);
+    setRatingLoading(true);
 
-  try {
+    try {
 
-    const data = await http<{ averageRating: number; ratingCount: number }>(
-      `/treks/${id}/rate`,
-      {
-        method: "PUT",
-        body: JSON.stringify({
-          vote: myVote,
-          note: myNote
-        }),
-      }
-    );
+      const data = await http<{ averageRating: number; ratingCount: number }>(
+        `/treks/${id}/rate`,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            vote: myVote,
+            note: myNote
+          }),
+        }
+      );
 
-    setTrek(prev =>
-      prev
-        ? {
-            ...prev,
-            averageRating: data.averageRating,
-            ratingCount: data.ratingCount
-          }
-        : prev
-    );
+      setTrek(prev =>
+        prev
+          ? {
+              ...prev,
+              averageRating: data.averageRating,
+              ratingCount: data.ratingCount
+            }
+          : prev
+      );
 
-    // reset UI dopo salvataggio
-    setShowNoteBox(false);
-    // mantieni la nota in stato (se vuoi riaprire la textarea)
+      // reset UI dopo salvataggio
+      setShowNoteBox(false);
+      // mantieni la nota in stato (se vuoi riaprire la textarea)
 
-  } catch (err) {
+    } catch (err) {
 
-    const message = err instanceof Error ? err.message : "Errore nel salvataggio del voto";
-    setRatingError(message);
-    console.error("Errore voto:", err);
+      const message = err instanceof Error ? err.message : "Errore nel salvataggio del voto";
+      setRatingError(message);
+      console.error("Errore voto:", err);
 
-  } finally {
+    } finally {
 
-    setRatingLoading(false);
+      setRatingLoading(false);
 
+    }
   }
-}
 
   return (
     <main className={appStyles.main}>
@@ -467,21 +483,31 @@ export default function TrekDetails() {
             <span className={appStyles.sectionCount}>
               Trek details: 
             </span>
-            <span className={appStyles.sectionCount}>
-              🎯 {trek.difficulty}
-            </span>
+            <span>🎯 Difficoltà: {
+              customStart && routeInfo?.distanceMeters && routeInfo?.durationSeconds
+                ? calcDifficulty(routeInfo.distanceMeters, routeInfo.durationSeconds)
+                : trek.difficulty
+            }</span>
 
-            <span className={appStyles.sectionCount}>
-              ⏱ {trek.duration}
-            </span>
+            <span>⏱ Durata: {
+              customStart && routeInfo?.durationSeconds
+                ? `${Math.round(routeInfo.durationSeconds / 60)} minuti (stimati)`
+                : trek.duration
+            }</span>
 
-            <span className={appStyles.sectionCount}>
-              📏 {trek.lengthKm ?? "-"} km
-            </span>
+            <span>📏 Lunghezza: {
+              customStart && routeInfo?.distanceMeters
+                ? `${(routeInfo.distanceMeters / 1000).toFixed(1)} km (calcolati)`
+                : `${trek.lengthKm ?? "-"} km`
+            }</span>
+            <span>⛰ Dislivello: {customStart ? "-" : (trek.elevationGain ?? "-")} m</span>
+            
+            {customStart && (
+              <span style={{ color: "#7c3aed", fontSize: "12px", borderBottom: "none" }}>
+                🟣 Dati aggiornati dalla tua partenza
+              </span>
+            )}
 
-            <span className={appStyles.sectionCount}>
-              ⛰ {trek.elevationGain ?? "-"} m
-            </span>
           </div>
 
           {/* DESCRIPTION */}
@@ -509,7 +535,7 @@ export default function TrekDetails() {
             />
           </div> */}
 
-                    {/* SELEZIONE PARTENZA PERSONALIZZATA */}
+          {/* SELEZIONE PARTENZA PERSONALIZZATA */}
           <div className={styles.customStartBox}>
 
             {/* Banner partenza personalizzata attiva */}
@@ -790,7 +816,7 @@ export default function TrekDetails() {
           <div className={styles.sidebar}>
 
             {/* SUMMARY */}
-            <div className={styles.card}>
+            {/* <div className={styles.card}>
               <h3 className={appStyles.sectionTitle}>Riepilogo</h3>
 
               <div className={styles.summaryList}>
@@ -798,6 +824,33 @@ export default function TrekDetails() {
                 <span>⏱ Durata: {trek.duration}</span>
                 <span>📏 Lunghezza: {trek.lengthKm ?? "-"} km</span>
                 <span>⛰ Dislivello: {trek.elevationGain ?? "-"} m</span>
+              </div>
+            </div> */}
+            <div className={styles.card}>
+              <h3 className={appStyles.sectionTitle}>Riepilogo</h3>
+              <div className={styles.summaryList}>
+                <span>🎯 Difficoltà: {
+                  customStart && routeInfo?.distanceMeters && routeInfo?.durationSeconds
+                    ? calcDifficulty(routeInfo.distanceMeters, routeInfo.durationSeconds)
+                    : trek.difficulty
+                }</span>
+                <span>⏱ Durata: {
+                  customStart && routeInfo?.durationSeconds
+                    ? `${Math.round(routeInfo.durationSeconds / 60)} minuti (stimati)`
+                    : trek.duration
+                }</span>
+                <span>📏 Lunghezza: {
+                  customStart && routeInfo?.distanceMeters
+                    ? `${(routeInfo.distanceMeters / 1000).toFixed(1)} km (calcolati)`
+                    : `${trek.lengthKm ?? "-"} km`
+                }</span>
+                <span>⛰ Dislivello: {customStart ? "-" : (trek.elevationGain ?? "-")} m</span>
+
+                {customStart && (
+                  <span style={{ color: "#7c3aed", fontSize: "12px", borderBottom: "none" }}>
+                    🟣 Dati aggiornati dalla tua partenza
+                  </span>
+                )}
               </div>
             </div>
 

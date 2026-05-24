@@ -568,7 +568,7 @@
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: 1;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -606,4 +606,9 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 14px;
+}
+
+.mapContainer {
+  position: relative;
+  z-index: 0; /* abbassa la mappa sotto il dropdown */
 }
