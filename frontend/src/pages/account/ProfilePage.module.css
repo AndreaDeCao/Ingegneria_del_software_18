@@ -1,10 +1,10 @@
 .main {
-  max-width: 680px;
+  width: 680px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 32px;
 }
 
 .section {
@@ -25,8 +25,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 0;
+  padding: 20px 0;
   border-bottom: 0.5px solid var(--border);
+  gap: 16px;
 }
 
 .rowRight {
@@ -36,18 +37,18 @@
 }
 
 .label {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-primary);
   font-weight: 500;
 }
 
 .value {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-secondary);
 }
 
 .hint {
-  font-size: 12px;
+  font-size: 15px;
   color: var(--text-secondary);
   margin-top: 4px;
 }
@@ -58,28 +59,35 @@
   border-radius: var(--radius-sm);
   border: 0.5px solid var(--border);
   background: var(--card-bg);
-  color:var(--text-primary);
+  color:var(--text-secondary);
   cursor: pointer;
+  font-family: var(--font-body);
   font-weight: 500;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
 .editBtn:hover {
-  background: var(--bg-secondary);
+  background: var(--accent-light);
+  color: var(--accent-text);
 }
 
 .deleteBtn {
   font-size: 13px;
   padding: 6px 14px;
   border-radius: var(--radius-sm);
-  border: none;
-  background: #c0392b;
-  color: #fff;
+  border: 1.5px solid #c0392b;
+  background: var(--card-bg);
+  color: #c0392b;
   cursor: pointer;
   font-weight: 500;
+  font-family: var(--font-body);
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
 .deleteBtn:hover {
-  background: #a93226;
+  background: #c0392b;
+  color: #fff;
 }
 
 .divider {
@@ -89,13 +97,17 @@
 
 .input {
   width: 100%;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  border: 0.5ox solid var(--border);
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  height: 34px;
+  padding: 0 18px;
   font-size: 14px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-primary);
   font-family: var(--font-body);
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
 }
 
 .input:focus {
@@ -116,23 +128,32 @@
   border-radius: var(--radius-sm);
   border: 0.5px solid var(--border);
   background: var(--card-bg);
-  color: var(--text-primary);
+  color: var(--text-secondary);
   cursor: pointer;
+  font-family: var(--font-body);
+  transition: background 0.2s, color 0.2s;
+}
+
+.cancelBtn:hover {
+  background: var(--accent-light);
+  color: var(--accent-text)
 }
 
 .saveBtn {
   font-size: 13px;
   padding: 8px 16px;
   border-radius: var(--radius-sm);
-  border: none;
-  background: var(--accent);
-  color: #fff;
-  cursor: pointer; 
-  font-weight: 500;
+  border: 0.5px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: background 0.2s, color 0.2s;
 }
 
 .saveBtn:hover {
-  opacity: 0.9;
+  background: var(--accent-light);
+  color: var(--accent-text)
 }
 
 .message {
@@ -161,8 +182,8 @@
 }
 
 .avatarWrapper {
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
@@ -175,8 +196,8 @@
 }
 
 .avatarPlaceholder {
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   background: var(--accent);
   display: flex;

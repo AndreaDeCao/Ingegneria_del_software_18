@@ -69,24 +69,47 @@ exports.updateMe = async (req, res) => {
     }
 
     //Aggiorna i campi nome, cognome, nickname
-    user.nome = nome ?? user.nome;
-    user.cognome = cognome ?? user.cognome;
-    user.nickname = nickname ?? user.nickname;
+    user.nome = nome ?.trim() || user.nome;
+    user.cognome = cognome ?.trim() || user.cognome;
 
-    //Aggiorna email + verifica al nuovo nuovo indirizzo
-    if(email && email !== user.email) {
-      const token = crypto.randomBytes(32). toString("hex");
-      user.emailVerificationToken = token;
+    if(nickname?.trim() && nickname.trim() !== user.nickname) {
+      const nicknameExists = await User.findOne({ nickname: nickname.trim() });
+
+    if(nicknameExists && nicknameExists._id.toString() !== req.userId) {
+      return res.status(400).json({ error: "Questo nickname è già in uso" });
+    }
+    user.nickname = nickname.trim();
+  }
+
+    let message = "Profilo aggiornato con successo";
+    let pendingEmail = null;
+
+    // Aggiorna email + verifica al nuovo nuovo indirizzo
+    if(email && email.toLowerCase() !== user.email.toLowerCase()) {
+      const targetEmail = email.toLowerCase();
+
+      //Controllo se email è già stata usata da un altro utente
+      const emailExists = await User.findOne({ email: targetEmail });
+      if(emailExists) {
+        return res.status(400).json({ error: "Questa email è già associata ad un altro account. "});
+      }
+
+      // Generazione token 
+      const token = crypto.randomBytes(32).toString("hex");
+      user.emailVerificationToken = `${token}|${targetEmail}`;
       user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      user.emailVerified = false;
 
-      await sendEmailChangeVerification(email, token);
-
-      user.email = email;
+      pendingEmail = { targetEmail, token };
+      message = "Profilo aggiornato. Controlla la nuova email per confermare il cambio."
     }
 
     await user.save({ validateModifiedOnly: true});
-    res.json({ message: "Profilo aggiornato" });
+
+    if (pendingEmail) {
+      await sendEmailChangeVerification(pendingEmail.targetEmail, pendingEmail.token);
+    }
+
+    res.json({ message });
 
   } catch(err) {
     res.status(400).json({ error: err.message});
@@ -103,25 +126,43 @@ exports.updateMe = async (req, res) => {
  * @returns {Promise<void>} JSON con messaggio di conferma
  */
 exports.verifyEmailChange = async (req, res) => {
+  const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173"; 
   try {
-    const user = await User.findOne({
-      emailVerificationToken: req.params.token,
-      emailVerificationExpires: { $gt: new Date() },
+    const inputToken = req.params.token;
+
+    const rawUser = await User.collection.findOne({
+      emailVerificationToken: { $regex: `^${inputToken}\\|` },
+      emailVerificationExpires: { $gt: new Date()},
     });
 
-    if(!user) {
-      return res.status(400).json({ error: "Token non valido o scaduto" });
+    if(!rawUser) {
+      return res.redirect(`${frontendUrl}/account/profile?email-verified=invalid`);
     }
 
-    user.emailVerified = true;
-    user.emailVerificationToken = undefined;
-    user.emailVerificationExpires = undefined;
+    const user = User.hydrate(rawUser);
+    const parts = user.emailVerificationToken.split("|");
+    const newEmail = parts[1];
 
-    await user.save();
-    res.json({ message: "Email verificata con successo" });
+    if(!newEmail) {
+      return res.redirect(`${frontendUrl}/account/profile?email-verified=invalid`);
+    }
+
+    // Verifica finale su disponibilità email
+    const emailExists = await User.findOne({ email: newEmail });
+    if(emailExists) {
+      return res.redirect(`${frontendUrl}/account/profile?email-verified=taken`);
+    }
+
+    user.email = newEmail;
+    user.emailVerified = true;
+    user.emailVerificationToken = null;
+    user.emailVerificationExpires = null;
+
+    await user.save({ validateModifiedOnly: true });
+    res.redirect(`${frontendUrl}/account/profile?email-verified=success`);
 
   } catch(err) {
-    res.status(500).json({ error: err.message});
+    res.redirect(`${frontendUrl}/account/profile?email-verified?status=error`);
   }
 };
 

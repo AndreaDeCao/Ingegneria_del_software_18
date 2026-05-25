@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
 import Modal from "../../components/Modal/Modal";
 import styles from "./ProfilePage.module.css";
 
+const VERIFY_MESSAGES: Record<string, { text: string; type: "success" | "error" }> = { 
+  success: { text: "Email verificata con successo.",          type: "success" },
+  invalid: { text: "Il link è scaduto o già utilizzato.",     type: "error"   },
+  taken:   { text: "L'email è già in uso da un altro account.", type: "error" },
+  error:   { text: "Qualcosa è andato storto. Riprova.",      type: "error"   },
+};
 
 /**
  * Pagina profilo utente.
@@ -14,6 +21,7 @@ import styles from "./ProfilePage.module.css";
  */
 export default function ProfilePage() {
   const { logout, refreshUser } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [nome, setNome] = useState("");
   const [cognome, setCognome] = useState("");
@@ -33,6 +41,16 @@ export default function ProfilePage() {
   const [tempValue, setTempValue] = useState("");
 
   const [avatar, setAvatar] = useState<string | null>(null);
+
+  const [verifyStatus, setVerifyStatus] = useState<string | null>(
+    () => searchParams.get("email-verified") 
+  );
+
+  useEffect(() => {
+  if (searchParams.get("email-verified")) {
+    setSearchParams({}, { replace: true });
+  }
+}, []);
 
   // Carica dati utente
   useEffect(() => {
@@ -95,7 +113,6 @@ export default function ProfilePage() {
         if(activeModal === "cognome") setCognome(tempValue);
         if(activeModal === "nickname") setNickname(tempValue);
         if(activeModal === "email") {
-          setEmail(tempValue);
           setSuccessMsg("Controlla la tua nuova email per confermare il cambio");
         } else {
           setSuccessMsg("Modificato con successo");
@@ -189,6 +206,10 @@ export default function ProfilePage() {
           </div>
         </section>
 
+         {/* MESSAGGI */}
+        {successMsg && <p className={styles.success}>{successMsg}</p>}
+        {error && <p className={styles.error}>{error}</p>}
+
         {/* INFO ACCOUNT */}
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Informazioni account</h2>
@@ -254,10 +275,6 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/* MESSAGGI */}
-        {successMsg && <p className={styles.success}>{successMsg}</p>}
-        {error && <p className={styles.error}>{error}</p>}
-
         {/* MODIFICA CAMPO NEL MODAL */}
         <Modal
           isOpen={activeModal !== null && activeModal !== "elimina"}
@@ -268,6 +285,7 @@ export default function ProfilePage() {
             className={styles.input}
             value={tempValue}
             onChange={(e) => setTempValue(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSave()}
             type={activeModal === "email" ? "email" : "text"}
             autoFocus
           />
@@ -311,6 +329,28 @@ export default function ProfilePage() {
             </button>
           </div>
         </Modal>
+
+        {/* CONFERMA VERIFICA EMAIL NEL MODAL */}
+        <Modal
+        isOpen={verifyStatus !== null}
+        onClose={() => setVerifyStatus(null)}
+        title={verifyStatus === "success" ? "Email verificata" : "Verifica email"}
+      >
+        {verifyStatus && (
+          <p className={
+            VERIFY_MESSAGES[verifyStatus]?.type === "success"
+              ? styles.success
+              : styles.error
+          }>
+            {VERIFY_MESSAGES[verifyStatus]?.text ?? "Errore sconosciuto"}
+          </p>
+        )}
+        <div className={styles.modalActions}>
+          <button className={styles.saveBtn} onClick={() => setVerifyStatus(null)}>
+            OK
+          </button>
+        </div>
+      </Modal>
 
       </main>
     )
