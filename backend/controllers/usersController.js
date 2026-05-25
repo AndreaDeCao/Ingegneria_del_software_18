@@ -94,3 +94,31 @@ exports.addTrekToFavorites = async (req, res) => {
     });
   }
 };
+
+
+
+exports.getFavoriteTreks = async (req, res) => {
+  try {
+        console.log("hello");
+
+    // utente autenticato
+    const userId = req.userId;
+
+    // trova utente
+    const user = await User.findById(userId)
+      .populate("favoriteTreks");
+
+
+    if (!user) {
+      return res.status(404).json({
+        error: "Utente non trovato",
+      });
+    }
+
+    res.json(user.favoriteTreks);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Errore server" });
+  }
+};
+
