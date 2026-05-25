@@ -269,6 +269,11 @@
   
 }
 
+.saveShareButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* scrollbar sottile */
 .weatherTimeline::-webkit-scrollbar { width: 3px; }
 .weatherTimeline::-webkit-scrollbar-track { background: transparent; }

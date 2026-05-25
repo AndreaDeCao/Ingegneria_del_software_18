@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
+import { useAuth } from "../../auth/AuthProvider";
+import { http } from "../../auth/api";
 import type { Trek } from "../../types/Trek";
 import appStyles from "../../App.module.css";
 import styles from "./TrekDetails.module.css";
@@ -12,6 +14,7 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export default function TrekDetails() {
   const { id } = useParams();
+  const { user } = useAuth(); 
 
   const [trek, setTrek] = useState<Trek | null>(null);
   const [weather, setWeather] = useState<any>(null);
@@ -21,6 +24,13 @@ export default function TrekDetails() {
 
   const [shareOpen, setShareOpen] = useState(false);
   
+  //aggiunge Trek ai preferiti del user
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  const disableSave = !user || favoriteLoading || isFavorite;
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -47,6 +57,22 @@ export default function TrekDetails() {
 
         const weatherData = await weatherResponse.json();
         setWeather(weatherData);
+
+        //FAVORITE TREKS
+        if (user && trekData?.favoriteTreks) {
+          setIsFavorite(
+            trekData.favoriteTreks.includes(user._id)
+          );
+        }
+
+        //ERROR FAV
+        if (favoriteError) {
+          const timer = setTimeout(() => {
+            setFavoriteError("");
+          }, 3000); // 3 secondi
+
+          return () => clearTimeout(timer);
+        }
 
       } catch (err: any) {
         setError(err.message);
@@ -155,6 +181,44 @@ export default function TrekDetails() {
 
     setShareOpen(true);
   }
+
+  
+  async function handleAddToFavorites() {
+
+    if (!user) {
+      setFavoriteError("Devi accedere per salvare un percorso");
+      return;
+    }
+
+    if (!trek?.id) return;
+
+    setFavoriteLoading(true);
+    setFavoriteError(null);
+
+    try {
+
+      await http(`/users/favorites/${trek.id}`, {
+        method: "POST",
+      });
+
+      setIsFavorite(true);
+
+    } catch (err) {
+
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Errore nel salvataggio del percorso";
+
+      setFavoriteError(message);
+
+    } finally {
+
+      setFavoriteLoading(false);
+
+    }
+  }
+
 
   if (loading) {
     return (
@@ -397,9 +461,33 @@ export default function TrekDetails() {
                 Salva il percorso o condividilo con amici.
               </p>
 
-              <button className={styles.saveShareButton}> {/*FIXME: aggiungi funzionalità */}
-                Salva percorso
+              
+              <button
+                className={styles.saveShareButton}
+                onClick={handleAddToFavorites}
+                disabled={disableSave}
+              >
+                {!user
+                  ? "Accedi per salvare"
+                  : favoriteLoading
+                    ? "Salvataggio..."
+                    : isFavorite
+                      ? "Perorso già salvato"
+                      : "Salva percorso"}
               </button>
+
+              {favoriteError && (
+                <p
+                  style={{
+                    marginTop: "0.4rem",
+                    fontSize: "0.8rem",
+                    color: "#b91c1c",
+                  }}
+                >
+                  {favoriteError}
+                </p>
+              )}
+
               <button className={styles.saveShareButton} onClick={shareWithFriends}>
                 Condividi con amici
               </button>

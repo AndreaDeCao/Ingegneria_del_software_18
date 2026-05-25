@@ -5,5 +5,5 @@ export type Activity = {
   //activityDate: string;
   maxParticipants: number;
   status: string;
-
+  favoriteTreks: string[]; // Array di ID dei trek salvati
 };
