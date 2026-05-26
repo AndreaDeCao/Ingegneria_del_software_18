@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
-import TrekCardEsplora from "../../components/TrekCardEsplora";
+import TrekCardFavorite from "../../components/TrekCardFavorite";
 import type { Trek } from "../../types/Trek";
 import styles from "./Treks.module.css";
 import appStyles from "../../App.module.css";
@@ -25,7 +25,7 @@ function parseDuration(duration: string): number {
   return 0;
 }
 
-export default function MyTreks() {
+export default function FavoriteTreks() {
   const { user } = useAuth(); 
 
   /** Trek preferiti */
@@ -56,6 +56,8 @@ export default function MyTreks() {
 
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [sortOpen, setSortOpen] = useState(false);
+
+  
 
   /** Paginazione */
   const [page, setPage] = useState(1);
@@ -459,9 +461,14 @@ export default function MyTreks() {
         {!loading &&
           !error &&
           paginated.map((trek) => (
-            <TrekCardEsplora
+            <TrekCardFavorite
               key={trek.id}
               trek={trek}
+              onRemove={(trekId) => {
+                setTreks((prev) =>
+                  prev.filter((t) => t.id !== trekId)
+                );
+              }}
             />
           ))}
       </div>

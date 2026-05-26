@@ -99,8 +99,6 @@ exports.addTrekToFavorites = async (req, res) => {
 
 exports.getFavoriteTreks = async (req, res) => {
   try {
-        console.log("hello");
-
     // utente autenticato
     const userId = req.userId;
 
@@ -122,3 +120,68 @@ exports.getFavoriteTreks = async (req, res) => {
   }
 };
 
+// REMOVE /users/favorites/:trekId
+exports.removeTrekFromFavorites = async (req, res) => {
+  try {
+    // utente autenticato
+    const userId = req.userId;
+    console.log("u: " + userId);
+
+    // trek da rimuovere
+    const { trekId } = req.params;
+    console.log("t: " + trekId);
+
+    // controlla esistenza trek
+    const trek = await Trek.findOne({ id: Number(trekId) });
+
+    if (!trek) {
+      return res.status(404).json({
+        error: "Trek non trovato",
+      });
+    }
+
+    // trova utente
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        error: "Utente non trovato",
+      });
+    }
+
+    // controlla se è nei preferiti
+    const isFavorite = user.favoriteTreks.some(
+      (id) => id.toString() === trek._id.toString()
+    );
+
+    if (!isFavorite) {
+      return res.status(400).json({
+        error: "Trek non presente nei preferiti",
+      });
+    }
+
+    // rimuovi trek dai preferiti
+    user.favoriteTreks = user.favoriteTreks.filter(
+      (id) => id.toString() !== trek._id.toString()
+    );
+
+    await user.save();
+
+    // ripopola i trek
+    const updatedUser = await User.findById(userId)
+      .populate("favoriteTreks");
+
+    res.status(200).json(updatedUser);
+
+  } catch (err) {
+    if (err.name === "CastError") {
+      return res.status(400).json({
+        error: "ID non valido",
+      });
+    }
+
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+};
