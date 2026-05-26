@@ -330,25 +330,102 @@
 }
 
 /* VISUALIZZA DIARIO */
+.pageLayout {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.pageHeader {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 18px 18px 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent) 6%, var(--card-bg));
+  box-shadow: 0 12px 28px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pageHeaderTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pageTitleInHeader {
+  margin: 0;
+}
+
+.pageSubtitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.pageHeaderActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pageHeaderInColumns {
+  margin: 0;
+  max-width: 100%;
+}
+
+.blocksStack {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
 .newEntryButton {
   padding: 10px 18px;
   border-radius: 12px;
   border: none;
-  background: var(--accent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, white 12%, var(--accent)),
+    var(--accent)
+  );
   color: white;
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
-  transition: transform 0.15s;
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--accent) 22%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
 }
 
-.newEntryButton:hover { transform: translateY(-2px); }
+.newEntryButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.newEntryButton:active {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.newEntryButton:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent),
+    0 12px 26px color-mix(in srgb, var(--accent) 28%, transparent);
+}
 
 .entriesList {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  margin-top: 24px;
+  width: 100%;
+  max-width: 980px;
+  margin: 18px auto 0;
 }
 
 .entryCard {

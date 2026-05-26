@@ -80,12 +80,24 @@ export default function VisualizzaDiarioPage() {
 
   return (
     <main className={appStyles.main}>
-      <div className={appStyles.sectionHead}>
-        <h1 className={styles.pageTitle}>Il mio diario</h1>
-        <button className={styles.newEntryButton} onClick={() => navigate("/diario/crea")}>
-          + Nuova voce
-        </button>
-      </div>
+      <div className={styles.pageLayout}>
+      <header className={styles.pageHeader}>
+        <div className={styles.pageHeaderTop}>
+          <h1 className={`${styles.pageTitle} ${styles.pageTitleInHeader}`}>Il mio diario</h1>
+          <p className={styles.pageSubtitle}>
+            {entries.length === 1 ? "1 voce salvata" : `${entries.length} voci salvate`}
+          </p>
+        </div>
+        <div className={styles.pageHeaderActions}>
+          <button
+            className={styles.newEntryButton}
+            onClick={() => navigate("/diario/crea")}
+            aria-label="Crea una nuova voce del diario"
+          >
+            + Nuova voce
+          </button>
+        </div>
+      </header>
 
       {entries.length === 0 ? (
         <div className={styles.emptyState}>
@@ -242,6 +254,7 @@ export default function VisualizzaDiarioPage() {
           ))}
         </div>
       )}
+      </div>
     </main>
   );
 }

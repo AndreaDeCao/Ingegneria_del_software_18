@@ -286,6 +286,7 @@ export default function DettagliVoceDiarioPage() {
                 )}
                 {entry.completato !== false && <span>✅ Completato</span>}
                 {entry.gpxData && <span>📎 Traccia GPX allegata</span>}
+                {trek?.duration && <span>test</span>}
               </div>
             </div>
 

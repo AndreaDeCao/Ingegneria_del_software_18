@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import TrekCard from "../../components/TrekCard";
 import ActivityCard from "../../components/ActivityCard";
-import DiaryCard from "../../components/Diarycard";
+import DiaryCard from "../../components/DiaryCard";
 
 import type { Trek } from "../../types/Trek";
 import type { DiaryEntry } from "../../types/Diary";
@@ -117,7 +117,7 @@ export default function Homepage() {
           {/* DIARY */}
           <div className={styles.sectionDiary}>
             <div className={styles.sectionHead}>
-              <h2 className={styles.sectionTitle}>Il tuo diario</h2>
+              <h2 className={styles.sectionTitle}><a href="../diario/visualizza">Le tue ultime passeggiate</a></h2> {/* rimando a tutte le voci diario */}
               <span className={styles.sectionCount}>
                 {diaryEntries.length} {diaryEntries.length === 1 ? "voce" : "voci"}
               </span>

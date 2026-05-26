@@ -118,10 +118,14 @@ export default function CreaVoceDiarioPage() {
     <main className={appStyles.main}>
       <div className={appStyles.contentLayout}>
         <section className={appStyles.leftColumn}>
+          <div className={styles.blocksStack}>
 
-          <div className={appStyles.sectionHead}>
-            <h1 className={styles.pageTitle}>Nuova voce del diario</h1>
-          </div>
+          <header className={`${styles.pageHeader} ${styles.pageHeaderInColumns}`}>
+            <div className={styles.pageHeaderTop}>
+              <h1 className={`${styles.pageTitle} ${styles.pageTitleInHeader}`}>Nuova voce del diario</h1>
+              <p className={styles.pageSubtitle}>Compila i campi e salva la tua esperienza</p>
+            </div>
+          </header>
 
           {/* BANNER ERRORI */}
           {errors.length > 0 && (
@@ -306,6 +310,7 @@ export default function CreaVoceDiarioPage() {
             )}
           </div>
 
+          </div>
         </section>
 
         {/* RIGHT */}
