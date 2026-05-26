@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import TrekCard from "../../components/TrekCard";
 import ActivityCard from "../../components/ActivityCard";
+import DiaryCard from "../../components/Diarycard";
 
 import type { Trek } from "../../types/Trek";
 import type { DiaryEntry } from "../../types/Diary";
@@ -61,7 +62,7 @@ export default function Homepage() {
   // Carica voci diario, con token (se l'utente è loggato)
   useEffect(() => {
     fetchAuth<DiaryEntry[]>(`/api/diary`)
-      .then((data) => setDiaryEntries(data))
+      .then((data) => setDiaryEntries(data.slice(0, 3)))   //limito a 3 risultati per maggiore pulizia
       .catch((err: Error) => console.error("Errore diary:", err));
   }, []);
 
@@ -124,14 +125,13 @@ export default function Homepage() {
             {diaryEntries.length === 0 && (
               <p className={styles.message}>Nessuna voce nel diario ancora.</p>
             )}
-            {diaryEntries.slice(0, MAX_DIARY_CARDS).map((entry) => (
-              <div key={entry._id}>
-                <strong>{entry.titolo}</strong>
-                <span> — {new Date(entry.data).toLocaleDateString("it-IT")}</span>
-                {entry.trekId && <span> | {entry.trekId.name}</span>}
-                {entry.valutazione && <span> ⭐ {entry.valutazione}/5</span>}
+            {diaryEntries.length > 0 && (
+              <div className={styles.diaryCardsRow}>
+                {diaryEntries.slice(0, MAX_DIARY_CARDS).map((entry) => (
+                  <DiaryCard key={entry._id} entry={entry} />
+                ))}
               </div>
-            ))}
+            )}
           </div>
 
         </section>

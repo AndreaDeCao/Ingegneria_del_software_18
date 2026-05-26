@@ -360,11 +360,12 @@
   flex-direction: column;
   gap: 12px;
   transition: transform 0.2s, box-shadow 0.2s;
+  animation: slideInCard 0.3s ease-out backwards;
 }
 
 .entryCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.1);
 }
 
 .entryHeader {
@@ -759,4 +760,52 @@
   color: var(--text-secondary);
   font-size: 13px;
   cursor: pointer;
+}
+
+
+
+/* ANIMAZIONI VISUALIZZA DIARIO */
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pageTitle {
+  animation: slideInFromTop 0.4s ease-out;
+}
+
+.entriesList {
+  animation: fadeInEntries 0.6s ease-out;
+}
+
+@keyframes fadeInEntries {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.entryCard {
+  animation: slideInCard 0.3s ease-out backwards;
+}
+
+.entryCard:nth-child(1) { animation-delay: 0.05s; }
+.entryCard:nth-child(2) { animation-delay: 0.1s; }
+.entryCard:nth-child(3) { animation-delay: 0.15s; }
+.entryCard:nth-child(4) { animation-delay: 0.2s; }
+.entryCard:nth-child(5) { animation-delay: 0.25s; }
+
+@keyframes slideInCard {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
