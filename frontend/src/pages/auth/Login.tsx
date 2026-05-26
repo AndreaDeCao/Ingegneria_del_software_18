@@ -142,6 +142,11 @@ export default function Login() {
       <p style={{ marginTop: 16 }}>
         Non hai un account? <Link to="/register" style={{ color: 'blue' }}>Registrati</Link>
       </p>
+
+      <p style={{ marginTop: 16 }}>
+        Password dimenticata? <Link to="/temp" style={{ color: 'blue' }}>Richiedi mail</Link>
+        {/* form di inserimento mail per invio richiesta pwd nuova */}
+      </p>
     </div>
   );
 }

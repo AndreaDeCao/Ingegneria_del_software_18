@@ -189,6 +189,11 @@ export default function Register() {
       <p style={{ marginTop: 16 }}>
         Hai già un account? <Link to="/login" style={{color: 'blue'}}>Accedi</Link>
       </p>
+
+      <p style={{ marginTop: 16 }}>
+        Password dimenticata? <Link to="/temp" style={{ color: 'blue' }}>Richiedi mail</Link>
+        {/* form di inserimento mail per invio richiesta pwd nuova */}
+      </p>
     </div>
   );
 }
