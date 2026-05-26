@@ -125,11 +125,9 @@ exports.removeTrekFromFavorites = async (req, res) => {
   try {
     // utente autenticato
     const userId = req.userId;
-    console.log("u: " + userId);
 
     // trek da rimuovere
     const { trekId } = req.params;
-    console.log("t: " + trekId);
 
     // controlla esistenza trek
     const trek = await Trek.findOne({ id: Number(trekId) });

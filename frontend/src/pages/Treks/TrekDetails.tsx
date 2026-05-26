@@ -12,6 +12,7 @@ import TrekMap from "../../components/TrekMap";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
+
 export default function TrekDetails() {
   const { id } = useParams();
   const { user } = useAuth(); 
@@ -28,51 +29,23 @@ export default function TrekDetails() {
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
-
-  const disableSave = !user || favoriteLoading || isFavorite;
+  
+  const disableSave = !user || favoriteLoading;
 
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
 
-        // TREK
-        const trekResponse = await fetch(
-          `${API_BASE}/treks/${id}`
-        );
-
-        if (!trekResponse.ok)
-          throw new Error("Errore caricamento trek");
-
+        const trekResponse = await fetch(`${API_BASE}/treks/${id}`);
+        if (!trekResponse.ok) throw new Error("Errore caricamento trek");
         const trekData = await trekResponse.json();
         setTrek(trekData);
 
-        // METEO 
-        const weatherResponse = await fetch(
-          `${API_BASE}/api/weather/${trekData._id}`
-        );
-
-        if (!weatherResponse.ok)
-          throw new Error("Errore caricamento meteo");
-
+        const weatherResponse = await fetch(`${API_BASE}/api/weather/${trekData._id}`);
+        if (!weatherResponse.ok) throw new Error("Errore caricamento meteo");
         const weatherData = await weatherResponse.json();
         setWeather(weatherData);
-
-        //FAVORITE TREKS
-        if (user && trekData?.favoriteTreks) {
-          setIsFavorite(
-            trekData.favoriteTreks.includes(user._id)
-          );
-        }
-
-        //ERROR FAV
-        if (favoriteError) {
-          const timer = setTimeout(() => {
-            setFavoriteError("");
-          }, 3000); // 3 secondi
-
-          return () => clearTimeout(timer);
-        }
 
       } catch (err: any) {
         setError(err.message);
@@ -82,7 +55,21 @@ export default function TrekDetails() {
     }
 
     fetchData();
-  }, [id]);
+  }, [id]);  
+
+  useEffect(() => {
+    if (!favoriteError) return;
+    const timer = setTimeout(() => setFavoriteError(null), 3000);
+    return () => clearTimeout(timer);
+  }, [favoriteError]);
+
+  useEffect(() => {
+    if (!user || !trek) return;
+    const alreadySaved = user.favoriteTreks?.some(
+      (fav: any) => fav === (trek as any)._id
+    );
+    setIsFavorite(!!alreadySaved);
+  }, [user, trek]);
 
   function getHourlyList(weather: any) {
     const hourly = weather?.weather?.["180"];
@@ -181,14 +168,17 @@ export default function TrekDetails() {
 
     setShareOpen(true);
   }
-
   
-  async function handleAddToFavorites() {
+  async function toggleFavorite() {
+    console.log(user);
 
     if (!user) {
       setFavoriteError("Devi accedere per salvare un percorso");
       return;
     }
+    
+    console.log("favoriteTreks:", user.favoriteTreks);
+console.log("trek._id:", (trek as any)._id);
 
     if (!trek?.id) return;
 
@@ -197,18 +187,30 @@ export default function TrekDetails() {
 
     try {
 
-      await http(`/users/favorites/${trek.id}`, {
-        method: "POST",
-      });
+      if (isFavorite) {
 
-      setIsFavorite(true);
+        await http(`/users/favorites/${trek.id}`, {
+          method: "DELETE",
+        });
+
+        setIsFavorite(false);
+
+      } else {
+
+        await http(`/users/favorites/${trek.id}`, {
+          method: "POST",
+        });
+
+        setIsFavorite(true);
+
+      }
 
     } catch (err) {
 
       const message =
         err instanceof Error
           ? err.message
-          : "Errore nel salvataggio del percorso";
+          : "Errore gestione preferiti";
 
       setFavoriteError(message);
 
@@ -464,15 +466,15 @@ export default function TrekDetails() {
               
               <button
                 className={styles.saveShareButton}
-                onClick={handleAddToFavorites}
+                onClick={toggleFavorite}
                 disabled={disableSave}
               >
                 {!user
                   ? "Accedi per salvare"
                   : favoriteLoading
-                    ? "Salvataggio..."
+                    ? "Caricamento..."
                     : isFavorite
-                      ? "Perorso già salvato"
+                      ? "Rimuovi dai preferiti"
                       : "Salva percorso"}
               </button>
 
