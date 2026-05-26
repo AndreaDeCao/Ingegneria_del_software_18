@@ -386,7 +386,7 @@ export default function TrekDetails() {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      (pos) => applyCustomStart(pos.coords.latitude, pos.coords.longitude, "📍 La tua posizione"),
+      (pos) => applyCustomStart(pos.coords.latitude, pos.coords.longitude, "La tua posizione"),
       () => setSearchError("Impossibile ottenere la posizione GPS")
     );
   }
@@ -579,27 +579,27 @@ export default function TrekDetails() {
               Trek details: 
             </span>
             <span> — {
-              customStart && routeInfo?.distanceMeters && routeInfo?.durationSeconds
+              (customStart || activeVariantKey) && routeInfo?.distanceMeters && routeInfo?.durationSeconds
                 ? calcDifficulty(routeInfo.distanceMeters, routeInfo.durationSeconds)
                 : trek.difficulty
             }</span>
 
             <span> — {
-              customStart && routeInfo?.durationSeconds
+              (customStart || activeVariantKey) && routeInfo?.durationSeconds
                 ? `${formatDuration(routeInfo.durationSeconds)} (stimati)`
                 : trek.duration
             }</span>
 
             <span> — {
-              customStart && routeInfo?.distanceMeters
+              (customStart || activeVariantKey) && routeInfo?.distanceMeters
                 ? `${(routeInfo.distanceMeters / 1000).toFixed(1)} km (calcolati)`
                 : `${trek.lengthKm ?? "-"} km`
             }</span>
-            <span> — {customStart ? "-" : (trek.elevationGain ?? "-")} m — </span>
+            <span> — {(customStart || activeVariantKey) ? "-" : (trek.elevationGain ?? "-")} m — </span>
             
-            {customStart && (
+            {(customStart || activeVariantKey) && (
               <span style={{ color: "#7c3aed", fontSize: "12px", borderBottom: "none" }}>
-                🟣 Dati aggiornati dalla tua partenza
+                {customStart ? "🟣 Dati aggiornati dalla tua partenza" : "Dati aggiornati in base al tipo di percorso selezionato"}
               </span>
             )}
 
@@ -635,9 +635,9 @@ export default function TrekDetails() {
           {/* ── CAMBIA PUNTO DI PARTENZA (pin viola) ─────────────────── */}
           <div className={styles.customStartBox}>
 
-            {/* Banner partenza attiva */}
+            {/* Banner partenza attiva — sopra, separato */}
             {customStart && (
-              <div className={styles.customStartBanner}>
+              <div className={styles.customStartActiveBadge}>
                 <span>🟣 Partenza: <strong>{customStartLabel}</strong></span>
                 <button className={styles.resetButton} onClick={resetCustomStart}>
                   Ripristina predefinita
@@ -645,49 +645,42 @@ export default function TrekDetails() {
               </div>
             )}
 
-            {/* Bottoni modalità selezione partenza */}
-            {!customStart && (
-              <div className={styles.customStartActions}>
-                <p className={styles.customStartLabel}>Cambia punto di partenza:</p>
-                <div className={styles.customStartButtons}>
-                  <button
-                    className={`${styles.modeButton} ${selectMode === "search" ? styles.modeButtonActive : ""}`}
-                    onClick={() => { setSelectMode(selectMode === "search" ? "none" : "search"); setSearchError(null); }}
-                  >
-                    🔍 Cerca indirizzo
-                  </button>
-
-                  <button
-                    className={`${styles.modeButton} ${selectMode === "gps" ? styles.modeButtonActive : ""}`}
-                    onClick={() => { setSelectMode("gps"); handleGps(); }}
-                  >
-                    📍 Usa GPS
-                  </button>
-
-                  <button
-                    className={`${styles.modeButton} ${selectMode === "map" ? styles.modeButtonActive : ""}`}
-                    onClick={() => {
-                      const next = selectMode !== "map";
-                      setSelectMode(next ? "map" : "none");
-                      setClickToSelect(next);
-                    }}
-                  >
-                    🗺 Seleziona su mappa
-                  </button>
-
-                  <button
-                    className={styles.modeButton}
-                    onClick={handleParking}
-                    disabled={parkingLoading}
-                  >
-                    {parkingLoading ? "Ricerca..." : "🅿 Parcheggio più vicino"}
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* Riga label + bottoni — sempre visibile */}
+            <div className={styles.customStartRow}>
+              <span className={styles.customStartLabel}>Cambia punto di partenza:</span>
+              <button
+                className={`${styles.modeButton} ${selectMode === "search" ? styles.modeButtonActive : ""}`}
+                onClick={() => { setSelectMode(selectMode === "search" ? "none" : "search"); setSearchError(null); }}
+              >
+                🔍 Cerca indirizzo
+              </button>
+              <button
+                className={`${styles.modeButton} ${selectMode === "gps" ? styles.modeButtonActive : ""}`}
+                onClick={() => { setSelectMode("gps"); handleGps(); }}
+              >
+                📍 Usa GPS
+              </button>
+              <button
+                className={`${styles.modeButton} ${selectMode === "map" ? styles.modeButtonActive : ""}`}
+                onClick={() => {
+                  const next = selectMode !== "map";
+                  setSelectMode(next ? "map" : "none");
+                  setClickToSelect(next);
+                }}
+              >
+                🗺 Seleziona su mappa
+              </button>
+              <button
+                className={styles.modeButton}
+                onClick={handleParking}
+                disabled={parkingLoading}
+              >
+                {parkingLoading ? "Ricerca..." : "🅿 Parcheggio più vicino"}
+              </button>
+            </div>
 
             {/* Pannello ricerca */}
-            {selectMode === "search" && !customStart && (
+            {selectMode === "search" && (
               <div className={styles.searchBox}>
                 <div className={styles.searchInputWrapper}>
                   <input
@@ -717,8 +710,7 @@ export default function TrekDetails() {
               </div>
             )}
 
-            {/* Hint click mappa */}
-            {selectMode === "map" && !customStart && (
+            {selectMode === "map" && (
               <p className={styles.mapClickHint}>
                 Clicca sulla mappa per scegliere il punto di partenza
               </p>
@@ -730,50 +722,48 @@ export default function TrekDetails() {
 
           {/* ── TIPO DI PERCORSO (4 varianti, partenza invariata) ─────── */}
           <div className={styles.customStartBox} style={{ marginTop: 8 }}>
-            <div className={styles.customStartActions}>
-              <p className={styles.customStartLabel}>Tipo di percorso:</p>
-              <div className={styles.customStartButtons}>
-                <button
-                  className={`${styles.modeButton} ${variantsOpen ? styles.modeButtonActive : ""}`}
-                  onClick={loadRouteVariants}
-                >
-                  {variantsOpen ? "Nascondi varianti" : "Mostra varianti"}
-                </button>
-                {activeVariantKey && (
-                  <button className={styles.resetButton} onClick={resetVariant} style={{ marginLeft: 4 }}>
-                    Ripristina percorso standard
-                  </button>
-                )}
-              </div>
-            </div>
 
-            {variantsOpen && (
-              <div className={styles.variantsSection}>
-                {variantsLoading && <p className={styles.routeLoading}>Calcolo varianti in corso...</p>}
-                <div className={styles.variantsGrid}>
-                  {routeVariants.map((v) => (
-                    <button
-                      key={v.key}
-                      className={`${styles.variantsCard} ${v.error ? styles.variantsCardDisabled : ""} ${activeVariantKey === v.key ? styles.variantCardActive : ""}`}
-                      disabled={v.error}
-                      title={v.error ? (v.errorMessage ?? "Non disponibile") : v.label}
-                      onClick={() => applyVariant(v)}
-                    >
-                      <span className={styles.variantsLabel}>{v.label}</span>
-                      {v.error ? (
-                        <span className={styles.variantsMeta}>Non disponibile</span>
-                      ) : (
-                        <span className={styles.variantsMeta}>
-                          {v.distanceMeters ? `${(v.distanceMeters / 1000).toFixed(1)} km` : "—"}
-                          {" · "}
-                          {v.durationSeconds ? formatDuration(v.durationSeconds) : "—"}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
+            {/* Banner variante attiva — sparisce quando activeVariantKey è null */}
+            {activeVariantKey !== null && (
+              <div className={styles.customStartActiveBadge}>
+                <span>Variante: <strong>{routeVariants.find(v => v.key === activeVariantKey)?.label ?? activeVariantKey}</strong></span>
+                <button className={styles.resetButton} onClick={resetVariant}>
+                  Ripristina sentiero hiking
+                </button>
               </div>
             )}
+
+            {/* Riga label + bottoni — sempre visibile */}
+            <div className={styles.customStartRow}>
+              <span className={styles.customStartLabel}>Tipo di percorso:</span>
+              {routeVariants.length === 0 && !variantsLoading && (
+                <button
+                  className={styles.modeButton}
+                  onClick={loadRouteVariants}
+                >
+                  Mostra varianti
+                </button>
+              )}
+              {variantsLoading && <span className={styles.routeLoading}>Calcolo varianti...</span>}
+              {routeVariants.map((v) => (
+                <button
+                  key={v.key}
+                  className={`${styles.modeButton} ${activeVariantKey === v.key ? styles.modeButtonActive : ""} ${v.error ? styles.modeButtonDisabled : ""}`}
+                  disabled={!!v.error}
+                  title={v.error ? (v.errorMessage ?? "Non disponibile") : undefined}
+                  onClick={() => {
+                    // se è già attivo o è hiking (default), reset → banner sparisce
+                    if (activeVariantKey === v.key || v.key === "hiking") {
+                      resetVariant();
+                    } else {
+                      applyVariant(v);
+                    }
+                  }}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className={styles.mapContainer}>
@@ -948,25 +938,30 @@ export default function TrekDetails() {
               <h3 className={appStyles.sectionTitle}>Riepilogo</h3>
               <div className={styles.summaryList}>
                 <span>Difficoltà: {
-                  customStart && routeInfo?.distanceMeters && routeInfo?.durationSeconds
+                  (customStart || activeVariantKey) && routeInfo?.distanceMeters && routeInfo?.durationSeconds
                     ? calcDifficulty(routeInfo.distanceMeters, routeInfo.durationSeconds)
                     : trek.difficulty
                 }</span>
                 <span>Durata: {
-                  customStart && routeInfo?.durationSeconds
+                  (customStart || activeVariantKey) && routeInfo?.durationSeconds
                     ? `${formatDuration(routeInfo.durationSeconds)} (stimati)`
                     : trek.duration
                 }</span>
                 <span>Lunghezza: {
-                  customStart && routeInfo?.distanceMeters
+                  (customStart || activeVariantKey) && routeInfo?.distanceMeters
                     ? `${(routeInfo.distanceMeters / 1000).toFixed(1)} km (calcolati)`
                     : `${trek.lengthKm ?? "-"} km`
                 }</span>
-                <span>Dislivello: {customStart ? "-" : (trek.elevationGain ?? "-")} m</span>
+                <span>Dislivello: {(customStart || activeVariantKey) ? "-" : (trek.elevationGain ?? "-")} m</span>
 
-                {customStart && (
+                {(customStart || activeVariantKey) && (
                   <span style={{ color: "#7c3aed", fontSize: "12px", borderBottom: "none" }}>
-                    🟣 Dati aggiornati dalla tua partenza
+                    {/* {customStart && activeVariantKey ? "Dati aggiornati dalla tua partenza" : "Dati aggiornati in base al tipo di percorso selezionato"} */}
+                    {(customStart && activeVariantKey)
+                      ? "Dati aggiornati dalla tua partenza e dal tipo di percorso selezionato"
+                      : customStart
+                        ? "Dati aggiornati dalla tua partenza"
+                        : "Dati aggiornati in base al tipo di percorso selezionato"}
                   </span>
                 )}
               </div>

@@ -350,7 +350,7 @@
   gap: 10px;
 }
 
-.customStartBanner {
+/* .customStartBanner {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -362,6 +362,38 @@
   border: 1px solid color-mix(in srgb, #7c3aed 30%, var(--border));
   font-size: 14px;
   color: var(--text-primary);
+} */
+
+/* ─── CUSTOM START ROW (label + bottoni sulla stessa riga) ─── */
+.customStartRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Badge quando la partenza/variante è attiva */
+.customStartActiveBadge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, #7c3aed 12%, var(--bg-secondary));
+  border: 1px solid color-mix(in srgb, #7c3aed 30%, var(--border));
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+/* Disabilita i modeButton non disponibili */
+.modeButtonDisabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.modeButtonDisabled:hover {
+  transform: none;
+  background: var(--card-bg);
 }
 
 .resetButton {
@@ -392,7 +424,6 @@
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin-top: 6px;
 }
 
 /* ─── MODE BUTTONS ───────────────────────────────────────────── */
