@@ -1,4 +1,3 @@
-const friendship = require("../models/friendship");
 const Friendship = require("../models/friendship");
 const User = require("../models/users");
 
@@ -17,7 +16,7 @@ exports.sendRequest = async (req, res) => {
     const receiverId = req.params.userId;
 
     // Impedisce di inviare richiesta a se stessi
-    if(senderId === req.userId) {
+    if(senderId === receiverId) {
       return res.status(400).json({ error: "Non puoi inviare una richiesta di amicizia a te stesso" });
     }
 
@@ -53,13 +52,13 @@ exports.sendRequest = async (req, res) => {
       }
     }
 
-    const frinedship = new Friendship({
+    const newFriendship = new Friendship({
       sender: senderId,
       receiver: receiverId,
     });
 
-    await friendship.save();
-    res.status(201).json({ message: "Richiesta di amicizia inviata", friendship });
+    await newFriendship.save();
+    res.status(201).json({ message: "Richiesta di amicizia inviata", friendship: newFriendship });
 
   } catch(err) {
     res.status(500).json({ error: err.message });
@@ -69,13 +68,14 @@ exports.sendRequest = async (req, res) => {
 
 /**
  * Accetta richiesta di amicizia ricevuta.
+ * Solo il destinatario della richiesta può accettarla.
  * 
  * @route PUT /api/friendships/accept/:friendshipId
  * @param {import("express").Request} req - Params: { friendshipId }
  * @param {import("express").Response} res
  * @returns {Promise<void>} JSON con la friendship aggiornata
  */
-exports.accepRequest = async (req, res) => {
+exports.acceptRequest = async (req, res) => {
   try {
     const friendship = await Friendship.findById(req.params.friendshipId);
 
@@ -96,6 +96,103 @@ exports.accepRequest = async (req, res) => {
     await friendship.save();
 
     res.json({ message: "Richiesta di amicizia accettata.", friendship });
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/**
+ * Rifiuta richiesta di amicizia ricevuta.
+ * Solo il destinatario della richiesta può rifiutarla.
+ *
+ * @route PUT /api/friendships/decline/:friendshipId
+ * @param {import("express").Request} req - Params: { friendshipId }
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con la friendship aggiornata
+ */
+exports.declineRequest = async (req, res) => {
+  try {
+    const friendship = await Friendship.findById(req.params.friendshipId);
+
+    if(!friendship) {
+      return res.status(404).json({ error: "Richiesta di amicizia non trovata" });
+    }
+
+    if(friendship.receiver.toString() !== req.userId) {
+      return res.status(403).json({ error: "Non autorizzato a rifiutare la richiesta" });
+    }
+
+    if(friendship.status !== "pending") {
+      return res.status(400).json({ error: "La richiesta non è in stato pending" });
+    }
+
+    friendship.status = "declined";
+    await friendship.save();
+
+    res.json({ message: "Richiesta di amicizia rifiutata.", friendship });
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/**
+ * Restituisce la lista degli amici dell'utente.
+ * Mostra i dati base dell'amico e la data di inizio amicizia.
+ * 
+ * @route GET /api/friendships
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con array di oggetti { friendshipId, user, since }
+ */
+exports.getFriends = async (req, res) => {
+  try {
+    const friendships = await Friendship.find({
+      $or: [
+        { sender: req.userId, status: "accepted" },
+        { receiver: req.userId, status: "accepted" },
+      ],
+    })
+    .populate("sender", "nome cognome nickname avatarUrl")
+    .populate("receiver", "nome cognome nickname avatarUrl");
+
+    // Per ogni amicizia mostra dati dell'utente amico
+    const friends = friendships.map((f) => {
+      const isSender = f.sender._id.toString() === req.userId;
+      return {
+        friendshipId: f._id,
+        user: isSender ? f.receiver : f.sender,
+        since: f.updatedAt,
+      };
+    });
+
+    res.json(friends);
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/**
+ * Restituisce le richieste in entrata in stato di pending.
+ * 
+ * @route GET /api/friendships/requests/incoming
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con richieste ricevute
+ */
+exports.getIncomingRequests = async (req, res) => {
+  try {
+    const requests = await Friendship.find({
+      receiver: req.userId,
+      status: "pending",
+    }).populate("sender", "nome cognome nickname avatarUrl");
+
+    res.json(requests);
 
   } catch(err) {
     res.status(500).json({ error: err.message });
@@ -137,7 +234,7 @@ exports.getOutgoingRequests = async (req, res) => {
  */
 exports.removeFriend = async (req, res) => {
   try {
-    const friendship = await Friendship.findById(req.params.frinedshipId);
+    const friendship = await Friendship.findById(req.params.friendshipId);
 
     if(!friendship) {
       return res.status(404).json({ error: "Amicizia non trovata." });
@@ -151,7 +248,7 @@ exports.removeFriend = async (req, res) => {
       return res.status(403).json({ error: "Non autorizzato a rimuovere questa amicizia" });
     }
 
-    await Friendship.findByIdAndDelete(req.params.frinedshipId);
+    await Friendship.findByIdAndDelete(req.params.friendshipId);
     res.json({ message: "Amicizia rimossa" });
       
   } catch(err) {
@@ -186,7 +283,7 @@ exports.searchUsers = async (req, res) => {
       excludedIds.add(f.receiver.toString());
     });
 
-    const user = await User.find({
+    const users = await User.find({
       _id: { $nin: Array.from(excludedIds) },
       $or: [
         { nickname: { $regex: query, $options: "i" }},
