@@ -5,6 +5,8 @@ import type { DiaryEntry } from "../../types/Diary";
 import appStyles from "../../App.module.css";
 import styles from "./Diario.module.css";
 
+type ModalType = "delete" | null;
+
 export default function VisualizzaDiarioPage() {
   const navigate = useNavigate();
   const [entries, setEntries]         = useState<DiaryEntry[]>([]);
@@ -19,6 +21,11 @@ export default function VisualizzaDiarioPage() {
   const [editHover, setEditHover]     = useState<number | null>(null);
   const [saving, setSaving]           = useState(false);
 
+  const [activeModal, setActiveModal] = useState<ModalType>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<DiaryEntry | null>(null);
+  // const [actionMessage, setActionMessage] = useState("");
+
   useEffect(() => {
     http<DiaryEntry[]>("/api/diary")
       .then(setEntries)
@@ -27,15 +34,18 @@ export default function VisualizzaDiarioPage() {
   }, []);
 
   async function handleDelete(id: string) {
-    if (!confirm("Eliminare questa voce?")) return;
     setDeleting(id);
+    setActionLoading(true);
     try {
       await http(`/api/diary/${id}`, { method: "DELETE" });
       setEntries(prev => prev.filter(e => e._id !== id));
+      setActiveModal(null);
+      setEntryToDelete(null);
     } catch (e: any) {
       alert(e.message);
     } finally {
       setDeleting(null);
+      setActionLoading(false);
     }
   }
 
@@ -242,8 +252,8 @@ export default function VisualizzaDiarioPage() {
                   )}
                   <button
                     className={styles.deleteButton}
-                    onClick={(e) => { e.stopPropagation(); handleDelete(entry._id); }}
-                    disabled={deleting === entry._id}
+                    onClick={(e) => { e.stopPropagation(); setEntryToDelete(entry); setActiveModal("delete"); }}
+                    disabled={actionLoading}
                   >
                     {deleting === entry._id ? "..." : "🗑 Elimina"}
                   </button>
@@ -255,6 +265,28 @@ export default function VisualizzaDiarioPage() {
         </div>
       )}
       </div>
+
+
+      {activeModal === "delete" && (
+        <div className={styles.modalOverlay} onClick={() => { setActiveModal(null); setEntryToDelete(null); }}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>⚠️ Elimina voce diario</h2>
+            <p className={styles.modalBody}>
+              Stai per eliminare definitivamente <strong>{entryToDelete?.titolo ?? "questa voce"}</strong> dal tuo diario.
+              <br /><br />
+              <strong>Questa operazione è irreversibile</strong> e non potrà essere annullata.
+            </p>
+            <div className={styles.modalActions}>
+              <button className={appStyles.secondaryButton} onClick={() => { setActiveModal(null); setEntryToDelete(null); }} disabled={actionLoading}>Annulla</button>
+              <button className={styles.dangerButton} onClick={() => entryToDelete && handleDelete(entryToDelete._id)} disabled={actionLoading || !entryToDelete}>
+                {actionLoading ? "Eliminazione in corso..." : "Elimina definitivamente"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </main>
   );
 }
