@@ -134,13 +134,13 @@ export default function VisualizzaDiarioPage() {
                   )}
 
                   <p className={styles.entryMeta}>
-                    {entry.trekId && <span>🥾 {entry.trekId.name} · {entry.trekId.difficulty}</span>}
-                    {entry.percorsoPersonalizzato && <span>🗺 {entry.percorsoPersonalizzato}</span>}
+                    {entry.trekId && <span> {entry.trekId.name} · {entry.trekId.difficulty}</span>}
+                    {entry.percorsoPersonalizzato && <span> {entry.percorsoPersonalizzato}</span>}
                   </p>
                 </div>
 
                 <div className={styles.entryBadges}>
-                  {entry.completato !== false && <span className={styles.badge}>✅ Completato</span>}
+                  {entry.completato !== false && <span className={styles.badge}> Completato ✅</span>}
                   {entry.valutazione && (
                     <span className={styles.badge}>
                       {"★".repeat(entry.valutazione)}{"☆".repeat(5 - entry.valutazione)}
