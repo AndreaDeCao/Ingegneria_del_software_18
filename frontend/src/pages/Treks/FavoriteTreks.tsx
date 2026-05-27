@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
 import TrekCardFavorite from "../../components/TrekCardFavorite";
 import type { Trek } from "../../types/Trek";
 import styles from "./Treks.module.css";
 import appStyles from "../../App.module.css";
-
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -27,6 +26,7 @@ function parseDuration(duration: string): number {
 
 export default function FavoriteTreks() {
   const { user } = useAuth(); 
+  const filtersRef = useRef<HTMLDivElement | null>(null);
 
   /** Trek preferiti */
   const [treks, setTreks] = useState<Trek[]>([]);
@@ -79,8 +79,43 @@ export default function FavoriteTreks() {
       .finally(() => {
         setLoading(false);
       });
-  }, [user]);
+    }, [user]);
 
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setFiltersOpen(false);
+        setSortOpen(false);
+      }
+    }
+
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as Node;
+
+      if (
+        filtersRef.current &&
+        !filtersRef.current.contains(target)
+      ) {
+        setFiltersOpen(false);
+        setSortOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+    };
+  }, []);
   /**
    * Cambia ordinamento
    */
@@ -231,7 +266,7 @@ export default function FavoriteTreks() {
     <main className={styles.page}>
       <h2>I miei percorsi</h2>
 
-      <div className={styles.searchRow}>
+      <div className={styles.searchRow} ref={filtersRef}>
         {/* SINISTRA */}
         <div className={styles.leftGroup}>
           <div className={styles.leftGroupRow}>
