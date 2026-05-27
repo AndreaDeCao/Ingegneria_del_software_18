@@ -118,4 +118,91 @@ const deleteEntry = async (req, res) => {
   }
 };
 
-module.exports = { getDiary, getEntryById, createEntry, updateEntry, deleteEntry };
+
+// Parsea stringhe tipo "6 ore 10 min", "3 ore", "45 min" → minuti totali
+function parseDuration(str) {
+  if (!str) return 0;
+  const ore = str.match(/(\d+)\s*or[ae]/i);
+  const min = str.match(/(\d+)\s*min/i);
+  return (ore ? parseInt(ore[1]) * 60 : 0) + (min ? parseInt(min[1]) : 0);
+}
+
+// GET /api/diary/stats --> statistiche del diario dell'utente loggato
+const getDiaryStats = async (req, res) => {
+  try {
+    const userId = new mongoose.Types.ObjectId(req.userId);
+
+    const entries = await DiaryEntry.aggregate([
+      {
+        $match: {
+          userId,
+          completato: true,
+          trekId: { $ne: null, $exists: true },
+        },
+      },
+      {
+        $lookup: {
+          from: "treks",
+          localField: "trekId",
+          foreignField: "_id",
+          as: "trek",
+        },
+      },
+      { $unwind: "$trek" },
+      {
+        $project: {
+          valutazione: 1,
+          difficulty: "$trek.difficulty",
+          lengthKm: "$trek.lengthKm",
+          duration: "$trek.duration",
+        },
+      },
+    ]);
+
+    if (!entries.length) {
+      return res.json({
+        totaleUscite: 0,
+        totaleKm: 0,
+        totaleOre: 0,
+        totaleMinutiExtra: 0,
+        mediaValutazione: null,
+        percFacile: 0,
+        percMedio: 0,
+        percDifficile: 0,
+      });
+    }
+
+    let totaleKm = 0;
+    let totaleMinuti = 0;
+    let sommaVal = 0;
+    let countVal = 0;
+    const counts = { Facile: 0, Medio: 0, Difficile: 0 };
+
+    for (const e of entries) {
+      totaleKm += e.lengthKm ?? 0;
+      totaleMinuti += parseDuration(e.duration);
+      if (e.valutazione) { sommaVal += e.valutazione; countVal++; }
+      if (e.difficulty in counts) counts[e.difficulty]++;
+    }
+
+    const tot = entries.length;
+    totaleKm = Math.round(totaleKm * 10) / 10;
+
+
+    res.json({
+      totaleUscite: tot,
+      totaleKm,
+      totaleOre: Math.floor(totaleMinuti / 60),
+      totaleMinutiExtra: totaleMinuti % 60,         // es. 6h 40min → ore:6, extra:40
+      mediaValutazione: countVal ? Math.round((sommaVal / countVal) * 10) / 10 : null,
+      percFacile:    Math.round((counts.Facile    / tot) * 100),
+      percMedio:     Math.round((counts.Medio     / tot) * 100),
+      percDifficile: Math.round((counts.Difficile / tot) * 100),
+    });
+  } catch (err) {
+    console.error("Errore getDiaryStats:", err);
+    res.status(500).json({ error: "Errore nel calcolo delle statistiche" });
+  }
+};
+
+module.exports = { getDiary, getEntryById, createEntry, updateEntry, deleteEntry, getDiaryStats};

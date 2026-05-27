@@ -6,6 +6,16 @@ import DiaryCard from "../../components/DiaryCard";
 import type { Trek } from "../../types/Trek";
 import type { DiaryEntry } from "../../types/Diary";
 import type { Activity } from "../../types/Activity";
+type DiaryStats = {
+  totaleUscite: number;
+  totaleOre: number;
+  totaleMinutiExtra: number;
+  totaleKm: number;
+  mediaValutazione: number | null;
+  percFacile: number;
+  percMedio: number;
+  percDifficile: number;
+};
 
 import styles from "../../App.module.css";
 
@@ -23,6 +33,7 @@ export default function Homepage() {
 
 
   const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
+  const [diaryStats, setDiaryStats] = useState<DiaryStats | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,6 +75,12 @@ export default function Homepage() {
     fetchAuth<DiaryEntry[]>(`/api/diary`)
       .then((data) => setDiaryEntries(data.slice(0, 3)))   //limito a 3 risultati per maggiore pulizia
       .catch((err: Error) => console.error("Errore diary:", err));
+  }, []);
+
+  useEffect(() => {
+    fetchAuth<DiaryStats>(`/api/diary/stats`)
+      .then((data) => setDiaryStats(data))
+      .catch((err: Error) => console.error("Errore stats:", err));
   }, []);
 
   return (
@@ -133,6 +150,58 @@ export default function Homepage() {
               </div>
             )}
           </div>
+
+          {/* STATISTICHE DIARIO */}
+          {diaryStats && diaryStats.totaleUscite > 0 && (
+            <div className={styles.sectionStats}>
+              <div className={styles.sectionHead}>
+                <h2 className={styles.sectionTitle}>Le tue statistiche</h2>
+              </div>
+              <div className={styles.statsGrid}>
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Uscite completate</span>
+                  <span className={styles.statValue}>{diaryStats.totaleUscite}</span>
+                </div>
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Tempo in montagna</span>
+                  <span className={styles.statValue}>
+                    {diaryStats.totaleOre}h {diaryStats.totaleMinutiExtra >= 0 ? `${diaryStats.totaleMinutiExtra}min` : ""}
+                  </span>
+                </div>
+                
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Chilometri percorsi</span>
+                  <span className={styles.statValue}>{diaryStats.totaleKm} km</span>
+                </div>
+                {diaryStats.mediaValutazione !== null && (
+                  <div className={styles.statCard}>
+                    <span className={styles.statLabel}>Valutazione media</span>
+                    <span className={styles.statValue}>{'★'.repeat(Math.round(diaryStats.mediaValutazione))} {diaryStats.mediaValutazione}/5</span>
+                  </div>
+                )}
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Difficoltà affrontate</span>
+                  <div className={styles.diffBar}>
+                    {diaryStats.percFacile > 0 && (
+                      <div className={styles.diffFacile} style={{ width: `${diaryStats.percFacile}%` }}>
+                        {diaryStats.percFacile}% Facile
+                      </div>
+                    )}
+                    {diaryStats.percMedio > 0 && (
+                      <div className={styles.diffMedio} style={{ width: `${diaryStats.percMedio}%` }}>
+                        {diaryStats.percMedio}% Medio
+                      </div>
+                    )}
+                    {diaryStats.percDifficile > 0 && (
+                      <div className={styles.diffDifficile} style={{ width: `${diaryStats.percDifficile}%` }}>
+                        {diaryStats.percDifficile}% Difficile
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
         </section>
 
