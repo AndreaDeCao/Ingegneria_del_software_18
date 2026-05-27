@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import TrekCardEsplora from "../../components/TrekCardEsplora";
 import type { Trek } from "../../types/Trek";
 import styles from "./Treks.module.css";
@@ -38,6 +38,8 @@ function parseElevation(elevation?: string): number {
  */
 export default function Treks() {
   /** Elenco completo percorsi (backend) */
+  const filtersRef = useRef<HTMLDivElement | null>(null);
+
   const [treks, setTreks] = useState<Trek[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -75,6 +77,42 @@ export default function Treks() {
       .then((data) => setTreks(data))
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setFiltersOpen(false);
+        setSortOpen(false);
+      }
+    }
+
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as Node;
+
+      if (
+        filtersRef.current &&
+        !filtersRef.current.contains(target)
+      ) {
+        setFiltersOpen(false);
+        setSortOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+    };
   }, []);
 
 
@@ -145,7 +183,7 @@ function handleSort(criterion: typeof sortBy) {
 return (
   <main className={styles.page}>
 
-    <div className={styles.searchRow}>
+    <div className={styles.searchRow} ref={filtersRef}>
        <div className={styles.leftGroup}>
 
       {/*Gruppo sx: Bottone filtro + Barra di ricerca + pannello sotto*/}
