@@ -13,7 +13,7 @@ import StarRating from "../../components/StarRating";
 import starStyles from "../../components/StarRating.module.css";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-function downloadGpx(geojson: any, trekName: string) {
+function downloadGpx(geojson: any, trekName: string, distanceMeters?: number, durationSeconds?: number, routeType?: string ) {
   const coords: [number, number][] =
     geojson?.features?.[0]?.geometry?.coordinates ?? [];
 
@@ -22,14 +22,17 @@ function downloadGpx(geojson: any, trekName: string) {
     .join("\n");
 
   const gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="DoloMate" xmlns="http://www.topografix.com/GPX/1/1">
-  <trk>
-    <name>${trekName}</name>
-    <trkseg>
-${trkpts}
-    </trkseg>
-  </trk>
-</gpx>`;
+  <gpx version="1.1" creator="DoloMate" xmlns="http://www.topografix.com/GPX/1/1">
+    <metadata>
+      ${distanceMeters !== undefined ? `<extensions><distance>${distanceMeters}</distance><duration>${durationSeconds}</duration>${routeType ? `<routeType>${routeType}</routeType>` : ""}</extensions>` : ""}
+    </metadata>
+    <trk>
+      <name>${trekName}</name>
+      <trkseg>
+  ${trkpts}
+      </trkseg>
+    </trk>
+  </gpx>`;
 
   const blob = new Blob([gpx], { type: "application/gpx+xml" });
   const url = URL.createObjectURL(blob);
@@ -656,13 +659,13 @@ export default function TrekDetails() {
                 className={`${styles.modeButton} ${selectMode === "search" ? styles.modeButtonActive : ""}`}
                 onClick={() => { setSelectMode(selectMode === "search" ? "none" : "search"); setSearchError(null); }}
               >
-                🔍 Cerca indirizzo
+                 Cerca un indirizzo
               </button>
               <button
                 className={`${styles.modeButton} ${selectMode === "gps" ? styles.modeButtonActive : ""}`}
                 onClick={() => { setSelectMode("gps"); handleGps(); }}
               >
-                📍 Usa GPS
+                 Usa il GPS
               </button>
               <button
                 className={`${styles.modeButton} ${selectMode === "map" ? styles.modeButtonActive : ""}`}
@@ -672,14 +675,14 @@ export default function TrekDetails() {
                   setClickToSelect(next);
                 }}
               >
-                🗺 Seleziona su mappa
+                Seleziona sulla mappa
               </button>
               <button
                 className={styles.modeButton}
                 onClick={handleParking}
                 disabled={parkingLoading}
               >
-                {parkingLoading ? "Ricerca..." : "🅿 Parcheggio più vicino"}
+                {parkingLoading ? "Ricerca..." : " Parcheggio più vicino"}
               </button>
             </div>
 
@@ -1112,7 +1115,7 @@ export default function TrekDetails() {
                 <button
                   className={styles.saveShareButton}
                   disabled={!routeGeojson} 
-                  onClick={() => downloadGpx(routeGeojson, trek.name)}
+                  onClick={() => downloadGpx(routeGeojson, trek.name, routeInfo?.distanceMeters, routeInfo?.durationSeconds, activeVariantKey ?? "hiking")} 
                 >
                   {routeGeojson ? "⬇ Scarica GPX" : "Caricamento..."}
                 </button>
