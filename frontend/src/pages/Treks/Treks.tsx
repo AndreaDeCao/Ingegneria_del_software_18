@@ -29,13 +29,6 @@ function parseElevationGain(elevationGain: Trek["elevationGain"]): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function parseElevation(elevation?: string): number {
-  if (!elevation) return 0;
-
-  const cleaned = elevation.replace(/[^\d]/g, "");
-  return Number(cleaned) || 0;
-}
-
 /**
  * Pagina Esplora — mostra tutti i percorsi con barra di ricerca e filtri.
  * I filtri vengono applicati lato frontend sui dati già scaricati dal backend.
