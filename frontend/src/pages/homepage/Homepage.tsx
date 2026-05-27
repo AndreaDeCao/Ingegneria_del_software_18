@@ -173,12 +173,13 @@ export default function Homepage() {
                   <span className={styles.statLabel}>Chilometri percorsi</span>
                   <span className={styles.statValue}>{diaryStats.totaleKm} km</span>
                 </div>
+                {/*
                 {diaryStats.mediaValutazione !== null && (
                   <div className={styles.statCard}>
                     <span className={styles.statLabel}>Valutazione media</span>
                     <span className={styles.statValue}>{'★'.repeat(Math.round(diaryStats.mediaValutazione))} {diaryStats.mediaValutazione}/5</span>
                   </div>
-                )}
+                )}*/}
                 <div className={styles.statCard}>
                   <span className={styles.statLabel}>Difficoltà affrontate</span>
                   <div className={styles.diffBar}>
