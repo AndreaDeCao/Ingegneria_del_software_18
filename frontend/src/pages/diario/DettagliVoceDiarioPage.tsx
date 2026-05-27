@@ -146,11 +146,12 @@ export default function DettagliVoceDiarioPage() {
     routeType?: string;
   } | null>(null);
 
-  const typeMap: Record<string, string> = { //TODO: guarda correttezza nominativi
+  const typeMap: Record<string, string> = { 
     bike_mountain: "mountain bike",
     bike_road: "bici da strada",
     walk_road: "camminata prediligendo la strada",
-    hiking_road: "camminata prediligendo i sentieri"
+    hiking_road: "camminata prediligendo i sentieri",
+    hiking:"camminata prediligendo i sentieri"
   };
 
 
