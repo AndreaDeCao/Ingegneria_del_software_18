@@ -81,6 +81,7 @@ export default function FavoriteTreks() {
       });
     }, [user]);
 
+  //premere su esc o cluck su punto casuale pagina
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -421,15 +422,9 @@ export default function FavoriteTreks() {
                 { key: "name", label: "Nome" },
                 { key: "difficulty", label: "Difficoltà" },
                 { key: "lengthKm", label: "Lunghezza" },
-                {
-                  key: "elevationGain",
-                  label: "Dislivello",
-                },
+                { key: "elevationGain", label: "Dislivello", },
                 { key: "duration", label: "Durata" },
-              ] as {
-                key: typeof sortBy;
-                label: string;
-              }[]).map(({ key, label }) => (
+              ] as { key: typeof sortBy; label: string; }[]).map(({ key, label }) => (
                 <button
                   key={key}
                   className={`${styles.sortOption} ${
@@ -442,7 +437,7 @@ export default function FavoriteTreks() {
                     setSortOpen(false);
                   }}
                 >
-                  {label}
+                  {label} {sortBy === key ? (sortDir === "asc" ? "↑" : "↓") : ""}
                 </button>
               ))}
             </div>
