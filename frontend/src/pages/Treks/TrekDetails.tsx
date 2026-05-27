@@ -599,7 +599,11 @@ export default function TrekDetails() {
             
             {(customStart || activeVariantKey) && (
               <span style={{ color: "#7c3aed", fontSize: "12px", borderBottom: "none" }}>
-                {customStart ? "🟣 Dati aggiornati dalla tua partenza" : "Dati aggiornati in base al tipo di percorso selezionato"}
+                {(customStart && activeVariantKey)
+                  ? "Dati aggiornati dalla tua partenza e dal tipo di percorso selezionato"
+                  : customStart
+                    ? "Dati aggiornati dalla tua partenza"
+                    : "Dati aggiornati in base al tipo di percorso selezionato"}
               </span>
             )}
 
