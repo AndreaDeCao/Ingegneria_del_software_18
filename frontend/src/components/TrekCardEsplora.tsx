@@ -1,6 +1,7 @@
 import styles from "./TrekCardEsplora.module.css";
 import type { Trek } from "../types/Trek";
 import { Link } from "react-router-dom";
+import StarRatingDisplay from "./StarRating";
 
 /**
  * In questo componente, definiamo un mapping tra i valori di difficoltà e le classi CSS corrispondenti.
@@ -19,6 +20,8 @@ const difficultyStyle: Record<Trek["difficulty"], string> = {
  * @param {number} rating - Voto medio da 0 a 5
  */
 function StarRating({rating}: {rating: number}) {
+  return <StarRatingDisplay rating={rating} />;
+  /*
   return (
     <div className={styles.stars}>
       {[1, 2, 3, 4, 5].map((star) => (
@@ -38,6 +41,7 @@ function StarRating({rating}: {rating: number}) {
       </span>
     </div>
   );
+  */
 }
 
 /**
@@ -83,7 +87,7 @@ function TrekCardEsplora({ trek }: TrekCardEsploraProps) {
             )}
           </div>
 
-          <StarRating rating={0}/>
+          <StarRating rating={trek.averageRating ?? 0}/>
         </div>
 
         {/* {(trek.friendCount || trek.likes) && (

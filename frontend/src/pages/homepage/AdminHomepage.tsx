@@ -14,6 +14,8 @@ export default function AdminHomepage() {
               <h2 className={styles.sectionTitle}>Benvenuto, Admin!</h2>
               <p className={styles.sectionSubtitle}>
                 Qui puoi gestire i percorsi, le attività e il diario degli utenti.
+                <br /> <br />
+                WORK IN PROGRESS...
               </p>
             </div>
 

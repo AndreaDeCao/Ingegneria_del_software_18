@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth } from "../../auth/AuthProvider";
 
-import GoogleSignInButton from "../components/GoogleSignInButton";
-import TurnstileWidget from "../components/TurnstileWidget";
+import GoogleSignInButton from "../../components/GoogleSignInButton";
+import TurnstileWidget from "../../components/TurnstileWidget";
 
 export default function Login() {
   const { login } = useAuth();

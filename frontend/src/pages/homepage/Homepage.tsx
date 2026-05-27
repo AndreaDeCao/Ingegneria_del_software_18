@@ -20,6 +20,7 @@ export default function Homepage() {
   const [treks, setTreks] = useState<Trek[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
 
+
   const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
 
   const [loading, setLoading] = useState(true);

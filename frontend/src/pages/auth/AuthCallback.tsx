@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { setAccessToken } from "../auth/api";
+import { setAccessToken } from "../../auth/api";
 
 /**
  * Pagina di callback OAuth — viene visitata dopo il login con Google.

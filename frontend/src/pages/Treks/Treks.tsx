@@ -23,6 +23,12 @@ function parseDuration(duration: string): number {
   return 0;
 }
 
+function parseElevationGain(elevationGain: Trek["elevationGain"]): number {
+  if (elevationGain == null) return 0;
+  const n = Number(elevationGain);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function parseElevation(elevation?: string): number {
   if (!elevation) return 0;
 
@@ -140,7 +146,7 @@ function handleSort(criterion: typeof sortBy) {
     if(search && !trek.name.toLowerCase().includes(search.toLowerCase())) return false;
     if(difficulty && trek.difficulty !== difficulty) return false;
     if(maxLength && trek.lengthKm && trek.lengthKm > Number(maxLength)) return false;
-    if(maxElevation && trek.elevationGain && parseElevation(trek.elevationGain) > Number(maxElevation)) return false;
+    if (maxElevation && parseElevationGain(trek.elevationGain) > Number(maxElevation)) return false;
     if (maxDuration && parseDuration(trek.duration) > Number(maxDuration)) return false;
     return true;
   });
@@ -159,7 +165,7 @@ function handleSort(criterion: typeof sortBy) {
       result = order[a.difficulty] - order[b.difficulty];
     }
     else if(sortBy === "lengthKm") result = (a.lengthKm ?? 0) - (b.lengthKm ?? 0);
-    else if(sortBy === "elevationGain") result = parseElevation(a.elevationGain) - parseElevation(b.elevationGain);
+    else if(sortBy === "elevationGain") result = parseElevationGain(a.elevationGain) - parseElevationGain(b.elevationGain);
     else if (sortBy === "duration") result = parseDuration(a.duration) - parseDuration(b.duration);
     return sortDir === "asc" ? result : -result;
   });
