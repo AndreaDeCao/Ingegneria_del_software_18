@@ -16,7 +16,9 @@ export default function CreaAttivitaPage() {
   const [maxParticipants, setMaxParticipants] = useState(10);
   const [activityDate, setActivityDate] = useState("");
   const [description, setDescription] = useState("");
-  const [message, setMessage] = useState("");
+
+  const [error, setError] = useState<string | null>(null);
+
   const [travelMode, setTravelMode] = useState("");
 
   useEffect(() => {
@@ -32,20 +34,13 @@ export default function CreaAttivitaPage() {
         setTreks(sorted);
       } catch (err) {
         console.error(err);
-        showMessage("Errore nel caricamento dei trek");
+        setError("Errore nel caricamento dei trek");
       }
     }
 
     fetchTreks();
   }, []);
 
-  function showMessage(msg: string) {
-    setMessage(msg);
-
-    setTimeout(() => {
-      setMessage("");
-    }, 3000);
-  }
 
   function handleTrekChange(trekID: string) {
     setSelectedTrek(trekID);
@@ -54,18 +49,18 @@ export default function CreaAttivitaPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    showMessage("");
+    setError(null);
 
     const now = new Date();
     const selectedDate = new Date(activityDate);
 
     if (isNaN(selectedDate.getTime())) {
-      showMessage("Data non valida");
+      setError("Data non valida");
       return;
     }
 
     if (selectedDate < now) {
-      showMessage("La data deve essere futura");
+      setError("La data deve essere futura");
       return;
     }
 
@@ -97,7 +92,7 @@ export default function CreaAttivitaPage() {
       navigate(`/attivita/${created._id}`);
     } catch (err: any) {
       console.error(err);
-      showMessage(err.message || "Errore nella creazione attività");
+      setError(err.message || "Errore nella creazione attività");
     }
   }
 
@@ -205,7 +200,22 @@ export default function CreaAttivitaPage() {
               Crea attività
             </button>
 
-            {message && <p className={styles.messageError}>{message}</p>}
+            {error && (
+              <div
+                role="alert"
+                style={{
+                  marginTop: 12,
+                  padding: 12,
+                  borderRadius: 8,
+                  border: "1px solid #f5c6cb",
+                  background: "#fdecea",
+                  color: "#7a1f1f",
+                }}
+              >
+                {error}
+              </div>
+            )}
+
           </form>
 
         </div>
