@@ -164,6 +164,7 @@ export default function VisualizzaAttivitaPage() {
         <Link to="/attivita/crea" className={appStyles.primaryButton}>+ Crea attività</Link>
       </div>
 
+      {/* FILTRI */}
       <div className={styles.filtersBar}>
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Ricerca</label>
@@ -214,6 +215,7 @@ export default function VisualizzaAttivitaPage() {
         )}
       </div>
 
+      {/* BOX ATTIVITA */}
       <section className={styles.activitiesGrid}>
         {filteredActivities.map((activity) => {
           const joinState = getJoinState(activity);
@@ -227,46 +229,49 @@ export default function VisualizzaAttivitaPage() {
           }[joinState];
 
           return (
-            <article key={activity._id} className={styles.activityCard}>
-              <div className={styles.cardTop}>
-                <span className={`${styles.statusBadge} ${getStatusClass(activity.status)}`}>{activity.status}</span>
-                <span className={styles.activityId}>#{activity.id}</span>
-              </div>
+            <Link to={`/attivita/${activity._id}`}>
 
-              <h3 className={styles.activityTitle}>{activity.title}</h3>
-
-              <div className={styles.trekName}>
-                <b>Trek:</b> {treksMap[activity.trekID] ?? "Trek sconosciuto"}
-              </div>
-
-              <p className={styles.activityDescription}>{activity.description}</p>
-
-              <div className={styles.activityInfo}>
-                <div className={styles.infoItem}>
-                  <span className={styles.infoLabel}>Data</span>
-                  <span className={styles.infoValue}>{new Date(activity.activityDate).toLocaleDateString("it-IT")}</span>
+              <article key={activity._id} className={styles.activityCard}>
+                <div className={styles.cardTop}>
+                  <span className={`${styles.statusBadge} ${getStatusClass(activity.status)}`}>{activity.status}</span>
+                  <span className={styles.activityId}>#{activity.id}</span>
                 </div>
-                <div className={styles.infoItem}>
-                  <span className={styles.infoLabel}>Partecipanti</span>
-                  <span className={styles.infoValue}>{(activity.partecipantList ?? []).length} / {activity.maxParticipants}</span>
+
+                <h3 className={styles.activityTitle}>{activity.title}</h3>
+
+                <div className={styles.trekName}>
+                  <b>Trek:</b> {treksMap[activity.trekID] ?? "Trek sconosciuto"}
                 </div>
-              </div>
 
-              {joinMessage?.id === activity._id && (
-                <p className={styles.message}>{joinMessage.text}</p>
-              )}
+                <p className={styles.activityDescription}>{activity.description}</p>
 
-              <div className={styles.cardActions}>
-                <Link to={`/attivita/${activity._id}`} className={appStyles.secondaryButton}>Dettagli</Link>
-                <button
-                  className={appStyles.primaryButtonSmall}
-                  disabled={isDisabled}
-                  onClick={() => !isDisabled && setJoinModal({ activity })}
-                >
-                  {buttonLabel}
-                </button>
-              </div>
-            </article>
+                <div className={styles.activityInfo}>
+                  <div className={styles.infoItem}>
+                    <span className={styles.infoLabel}>Data</span>
+                    <span className={styles.infoValue}>{new Date(activity.activityDate).toLocaleDateString("it-IT")}</span>
+                  </div>
+                  <div className={styles.infoItem}>
+                    <span className={styles.infoLabel}>Partecipanti</span>
+                    <span className={styles.infoValue}>{(activity.partecipantList ?? []).length} / {activity.maxParticipants}</span>
+                  </div>
+                </div>
+
+                {joinMessage?.id === activity._id && (
+                  <p className={styles.message}>{joinMessage.text}</p>
+                )}
+
+                <div className={styles.cardActions}>
+                  <Link to={`/attivita/${activity._id}`} className={appStyles.secondaryButton}>Dettagli</Link>
+                  <button
+                    className={appStyles.primaryButtonSmall}
+                    disabled={isDisabled}
+                    onClick={() => !isDisabled && setJoinModal({ activity })}
+                  >
+                    {buttonLabel}
+                  </button>
+                </div>
+              </article>
+            </Link>
           );
         })}
       </section>
