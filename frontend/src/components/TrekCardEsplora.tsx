@@ -38,9 +38,9 @@ function getDurationStyle(duration: string): string {
  */
 function getLengthStyle(lengthKm: number): string {
 
-  if (lengthKm < 3)  return styles.badgeEasy;    // < 1 ora      → verde
-  if (lengthKm <= 7.5) return styles.badgeMedium; // 1 ora a 2 ore 30 min   → giallo
-  return styles.badgeHard;                     // > 2ora e 30 min    → rosso
+  if (lengthKm < 3.5)  return styles.badgeEasy;    // < 3 km       → verde
+  if (lengthKm <= 8) return styles.badgeMedium; // da 3 km a 7,5 km   → giallo
+  return styles.badgeHard;                     // > 7,5 km    → rosso
 }
 
 /**
@@ -52,9 +52,9 @@ function getElevationGainStyle(elevationGain: string): string {
   // console.log(elevationGain);
   const elevation = parseInt(elevationGain);
 
-  if (elevation < 300)  return styles.badgeEasy;    // < 1 ora      → verde
-  if (elevation <= 700) return styles.badgeMedium; // 1 ora a 2 ore 30 min   → giallo
-  return styles.badgeHard;                     // > 2ora e 30 min    → rosso
+  if (elevation < 300)  return styles.badgeEasy;    // < 300 m      → verde
+  if (elevation <= 700) return styles.badgeMedium; // da 300 m a 700 m   → giallo
+  return styles.badgeHard;                     // > 700 m    → rosso
 }
 
 /**
