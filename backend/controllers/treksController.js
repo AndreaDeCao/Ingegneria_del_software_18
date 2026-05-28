@@ -29,7 +29,7 @@ exports.createTrek = async (req, res) => {
 
 exports.getTreksById = async (req, res) => {
   try {
-    const trek = await Trek.findOne({id: parseInt(req.params.id)});
+    const trek = await Trek.findById(req.params.id);
     if(!trek){
       return res.status(404).json({error: "Percorso non trovato"});
     }
