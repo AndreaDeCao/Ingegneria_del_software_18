@@ -42,8 +42,10 @@ export default function CreaVoceDiarioPage() {
   const [errors, setErrors]     = useState<string[]>([]);
   const [success, setSuccess]   = useState(false);
 
+  const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:3000"}/treks`)
+    fetch(`${API_BASE}/treks`)
       .then(r => r.json()).then(setTreks).catch(() => {});
   }, []);
 
