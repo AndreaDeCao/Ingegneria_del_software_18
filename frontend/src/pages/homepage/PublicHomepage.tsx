@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import TrekCard from "../../components/TrekCard";
 import ActivityCard from "../../components/ActivityCard";
 
@@ -56,9 +57,9 @@ export default function PublicHomepage() {
           <div className={styles.sectionTreks}>
 
             <div className={styles.sectionHead}>
-              <h2 className={styles.sectionTitle}>
+              <Link to="/treks" className={styles.sectionTitle}>
                 Di tendenza nelle vicinanze
-              </h2>
+              </Link>
 
               {!loading && !error && (
                 <span className={styles.sectionCount}>
