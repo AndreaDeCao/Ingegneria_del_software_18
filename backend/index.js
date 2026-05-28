@@ -45,12 +45,18 @@ app.use((req, _res, next) => {
   next();
 });
 
+app.get("/test-eventi", (req, res) => {
+  res.json({ ok: true });
+});
+
 const userRoutes = require("./routes/usersRoutes");
 const trekRoutes = require("./routes/treksRoutes");
 const authRoutes = require("./routes/authRoutes");
 const activityRoutes = require("./routes/activityRoutes"); //!!!
 const diaryRoutes = require("./routes/diaryRoutes");
+const eventRoutes = require("./routes/eventRoutes");
 
+const routeRoutes = require("./routes/routeRoutes");
 
 app.use("/treks", trekRoutes);
 app.use("/users", userRoutes);
@@ -58,6 +64,8 @@ app.use("/api/auth", authRoutes);
 app.use("/activities", activityRoutes); 
 app.use("/api/weather", weatherRoutes); 
 app.use("/api/diary", diaryRoutes);
+app.use("/api/trento-events", eventRoutes);
+app.use("/api/route", routeRoutes);
 
 // Connessione a MongoDB
 mongoose.connect(process.env.MONGODB_URI, { family: 4 })  // Imposta family: 4 per forzare l'uso di IPv4
