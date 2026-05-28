@@ -267,31 +267,31 @@ export default function DettagliAttivita() {
             {isOrganizer && (
               <>
                 <div className={styles.organizerBadge}>✅ Sei l'organizzatore di questa attività</div>
-                {activity.status !== "Annullato" && (
-                  <button className={styles.dangerButton} onClick={() => setActiveModal("cancel")}>
-                    Annulla attività
+                <div className={styles.buttonActions}>
+                  {activity.status !== "Annullato" && (
+                    <button className={styles.dangerButton} onClick={() => setActiveModal("cancel")}>
+                      Annulla attività
+                    </button>
+                  )}
+                  {activity.status === "Annullato" && (
+                    <button className={styles.dangerButton} onClick={() => setActiveModal("uncancel")}>
+                      Riattiva attività
+                    </button>
+                  )}
+                  {activity.status !== "Annullato" && activity.status === "Chiuso" && participantCount < activity.maxParticipants && (
+                    <button className={styles.dangerButton} onClick={() => handleAction("open", "PATCH")}>
+                      Apri attività
+                    </button>
+                  )}
+                  {activity.status !== "Annullato" && activity.status === "Aperto" && (
+                    <button className={styles.dangerButton} onClick={() => handleAction("close", "PATCH")}>
+                      Chiudi attività
+                    </button>
+                  )}
+                  <button className={styles.dangerButton} onClick={() => setActiveModal("delete")}>
+                    Elimina attività
                   </button>
-                )}
-                {activity.status === "Annullato" && ( 
-                  <button className={styles.dangerButton} onClick={() => setActiveModal("uncancel")}>
-                    Riattiva attività
-                  </button>
-                )}
-
-                {activity.status !== "Annullato" && activity.status === "Chiuso" && participantCount < activity.maxParticipants && ( 
-                  <button className={styles.dangerButton} onClick={() => handleAction("open", "PATCH")}>
-                    Apri attività
-                  </button>
-                )}
-                {activity.status !== "Annullato" && activity.status === "Aperto" && ( 
-                  <button className={styles.dangerButton} onClick={() => handleAction("close", "PATCH")}>
-                    Chiudi attività
-                  </button>
-                )}
-
-                <button className={styles.dangerButton} onClick={() => setActiveModal("delete")}>
-                  Elimina attività
-                </button>  
+                </div>
               </>
             )}
 
@@ -313,9 +313,11 @@ export default function DettagliAttivita() {
             {isParticipant && (
               <>
                 <div className={styles.alreadyJoinedBadge}>✅ Partecipi già a questa attività</div>
-                <button className={styles.leaveButton} onClick={() => setActiveModal("leave")}>
-                  Lascia attività
-                </button>
+                <div className={styles.buttonActions}>
+                  <button className={styles.leaveButton} onClick={() => setActiveModal("leave")}>
+                    Lascia attività
+                  </button>
+                </div>
               </>
             )}
 

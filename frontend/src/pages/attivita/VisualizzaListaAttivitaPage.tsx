@@ -57,6 +57,21 @@ export default function VisualizzaAttivitaPage() {
     return "join";
   }
 
+  const hasActiveFilters =
+    search !== "" ||
+    statusFilter !== "Tutti" ||
+    travelModeFilter !== "Tutti" ||
+    selectedDate !== "" ||
+    participationFilter !== "Tutte";
+
+  function resetFilters() {
+    setSearch("");
+    setStatusFilter("Tutti");
+    setTravelModeFilter("Tutti");
+    setSelectedDate("");
+    setParticipationFilter("Tutte");
+  }
+
   const getStatusClass = (status: string) => {
     switch (status) {
       case "Annullato": return styles.statusCancelled;
@@ -188,6 +203,15 @@ export default function VisualizzaAttivitaPage() {
             <option value="Non partecipo">A cui non partecipo</option>
           </select>
         </div>
+
+        {hasActiveFilters && (
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>&nbsp;</label>
+            <button className={styles.resetFiltersButton} onClick={resetFilters}>
+              ✕ Azzera filtri
+            </button>
+          </div>
+        )}
       </div>
 
       <section className={styles.activitiesGrid}>
