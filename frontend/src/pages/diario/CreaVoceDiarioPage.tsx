@@ -127,10 +127,14 @@ export default function CreaVoceDiarioPage() {
     setFoto(prev => prev.filter((_, idx) => idx !== i));
   }
 
+  const today = new Date();
+  const selectedDate = new Date(data);
+
   function validate(): string[] {
     const errs: string[] = [];
     if (!titolo.trim()) errs.push("Il titolo è obbligatorio");
-    if (!data) errs.push("La data è obbligatoria");
+    if (!selectedDate) errs.push("La data è obbligatoria");
+    if (selectedDate > today) errs.push("Non è possibile creare una voce diario con data futura");
     if (modalitaPercorso === "predefinito" && !trekId) errs.push("Seleziona un percorso predefinito");
     if (modalitaPercorso === "personalizzato" && !percorsoPersonalizzato.trim()) errs.push("Inserisci il nome del percorso personalizzato");
     if (gpxData && gpxData.length > 5 * 1024 * 1024) errs.push("Il file GPX è troppo grande (max 5MB)");
@@ -267,6 +271,7 @@ export default function CreaVoceDiarioPage() {
               <input
                 className={styles.input}
                 type="date"
+                lang="it-IT"
                 value={data}
                 onChange={e => setData(e.target.value)}
               />
@@ -418,15 +423,15 @@ export default function CreaVoceDiarioPage() {
             <div className={styles.actionCard}>
               <h3 className={styles.actionTitle}>Riepilogo</h3>
               <div className={styles.riepilogoList}>
-                <span>📍 {modalitaPercorso === "predefinito"
-                  ? (treks.find(t => t.id === trekId)?.name ?? "Nessun percorso selezionato")
+                <span>Nome del percorso: {modalitaPercorso === "predefinito"
+                  ? (treks.find(t => String(t.id) === trekId)?.name ?? "Nessun percorso selezionato")
                   : (percorsoPersonalizzato || "Percorso personalizzato")
                 }</span>
-                {titolo && <span>📝 {titolo}</span>}
-                {data && <span>📅 {new Date(data).toLocaleDateString("it-IT")}</span>}
-                {valutazione && <span>⭐ {valutazione}/5</span>}
-                {completato && <span>✅ Completato</span>}
-                {segnalazioneAttiva && segnalazioneTipo && <span>⚠ {segnalazioneTipo}</span>}
+                {titolo && <span>Titolo: {titolo}</span>}
+                {data && <span>Data scelta: {new Date(data).toLocaleDateString("it-IT")}</span>}
+                {valutazione && <span>Valutazione: {valutazione}/5</span>}
+                {completato && <span>Percorso completato</span>}
+                {segnalazioneAttiva && segnalazioneTipo && <span>Segnalazione effettuata: {segnalazioneTipo}</span>}
               </div>
 
               <button className={styles.saveButton} onClick={handleSubmit} disabled={loading}>
