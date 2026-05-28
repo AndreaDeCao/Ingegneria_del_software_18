@@ -140,9 +140,9 @@ export default function Homepage() {
         <section className={styles.rightColumn}>
 
           <div className={styles.sectionHead}>
-            <h2 className={styles.sectionTitle}>
+            <Link to="/attivita/visualizza" className={styles.sectionTitle}>
               Attività in programma
-            </h2>
+            </Link>
 
             {!loading && !error && (
               <span className={styles.sectionCount}>
@@ -171,22 +171,12 @@ export default function Homepage() {
             <div className={styles.activitiesColumn}>
               {activities.slice(0, MAX_ACTIVITY_CARDS).map((activity) => (
                 <ActivityCard
-                  key={activity.id}
+                  key={activity._id}
                   activity={activity}
                 />
               ))}
             </div>
           )}
-
-          
-            <div className={styles.buttonBox}>
-              <Link to="/attivita/visualizza" className={styles.primaryButton}>
-                Lista attività
-              </Link>
-              <Link to="/attivita/crea" className={styles.primaryButton}>
-                + Crea attività
-              </Link>
-            </div>
 
         </section>
 
