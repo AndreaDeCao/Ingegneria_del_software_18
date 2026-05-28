@@ -6,16 +6,8 @@ import DiaryCard from "../../components/DiaryCard";
 import type { Trek } from "../../types/Trek";
 import type { DiaryEntry } from "../../types/Diary";
 import type { Activity } from "../../types/Activity";
-type DiaryStats = {
-  totaleUscite: number;
-  totaleOre: number;
-  totaleMinutiExtra: number;
-  totaleKm: number;
-  mediaValutazione: number | null;
-  percFacile: number;
-  percMedio: number;
-  percDifficile: number;
-};
+import type { DiaryStats } from "../../types/DiaryStats";
+
 
 import styles from "../../App.module.css";
 
