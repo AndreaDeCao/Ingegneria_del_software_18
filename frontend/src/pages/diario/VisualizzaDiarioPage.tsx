@@ -344,7 +344,7 @@ export default function VisualizzaDiarioPage() {
       {activeModal === "delete" && (
         <div className={styles.modalOverlay} onClick={() => { setActiveModal(null); setEntryToDelete(null); }}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-            <h2 className={styles.modalTitle}>⚠️ Elimina voce diario</h2>
+            <h2 className={styles.modalTitle}>Elimina voce diario</h2>
             <p className={styles.modalBody}>
               Stai per eliminare definitivamente <strong>{entryToDelete?.titolo ?? "questa voce"}</strong> dal tuo diario.
               <br /><br />
