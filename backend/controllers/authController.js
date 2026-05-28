@@ -188,9 +188,11 @@ exports.requestTemporaryPassword = async (req, res) => {
 
     const user = await User.findOne({ email }).select("+passwordHash");
     if (!user) return res.status(404).json({ error: "Utente non trovato" });
-    // if (user.googleId || user.githubId) {
-    //   return res.status(400).json({ error: "Richiesta non disponibile per account social" });
-    // }
+    if (user.googleId || user.githubId) {
+      if(!user.emailVerified)
+        user.emailVerified = true;
+        // console.log("changing bool on db")   //TEST raggiungimento e cambiamento
+    }
 
     const tempPassword = generateTemporaryPassword(12);
     const saltedRound = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) : 15;
