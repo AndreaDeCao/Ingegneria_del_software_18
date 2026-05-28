@@ -79,15 +79,19 @@ export default function VisualizzaAttivitaPage() {
     return matchesSearch && matchesStatus && matchesDate && matchesTravelMode && matchesParticipation;
   });
 
+  const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const resActivities = await fetch("http://localhost:3000/activities");
+        // const resActivities = await fetch("http://localhost:3000/activities");
+        const resActivities = await fetch(`${API_BASE}/activities/`);
         if (!resActivities.ok) throw new Error("Errore nel recupero attività");
         const activitiesData: Activity[] = await resActivities.json();
         setActivities(activitiesData);
 
-        const resTreks = await fetch("http://localhost:3000/treks");
+        // const resTreks = await fetch("http://localhost:3000/treks");
+        const resTreks = await fetch(`${API_BASE}/treks/`);
         if (!resTreks.ok) throw new Error("Errore nel recupero trek");
         const treksData: Trek[] = await resTreks.json();
         const map: Record<string, string> = {};
@@ -105,7 +109,8 @@ export default function VisualizzaAttivitaPage() {
   async function confirmJoin(activity: Activity) {
     setJoinLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/activities/${activity._id}/join`, {
+      // const res = await fetch(`http://localhost:3000/activities/${activity._id}/join`, {
+      const res = await fetch(`${API_BASE}/activities/${activity._id}/join`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

@@ -10,6 +10,8 @@ export default function CreaAttivitaPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
   const [treks, setTreks] = useState<Trek[]>([]);
   const [title, setTitle] = useState("");
   const [selectedTrek, setSelectedTrek] = useState("");
@@ -24,7 +26,9 @@ export default function CreaAttivitaPage() {
   useEffect(() => {
     async function fetchTreks() {
       try {
-        const res = await fetch("http://localhost:3000/treks");
+        // const res = await fetch("http://localhost:3000/treks");
+        const res = await fetch(`${API_BASE}/treks/`);
+        
         const data = await res.json();
 
         const sorted = data.sort((a: Trek, b: Trek) =>
@@ -76,7 +80,8 @@ export default function CreaAttivitaPage() {
         organizerID: user?._id,
       };
 
-      const res = await fetch("http://localhost:3000/activities", {
+      // const res = await fetch("http://localhost:3000/activities", {
+      const res = await fetch(`${API_BASE}/activities/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

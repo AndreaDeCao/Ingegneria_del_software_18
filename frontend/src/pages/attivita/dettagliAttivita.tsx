@@ -36,6 +36,8 @@ type ActivityPopulated = Omit<Activity, "partecipantList"> & {
 
 type ModalType = "join" | "leave" | "cancel" | "uncancel" | "delete" | null;
 
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
 export default function DettagliAttivita() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -54,7 +56,8 @@ export default function DettagliAttivita() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const resActivity = await fetch(`http://localhost:3000/activities/${id}`);
+        // const resActivity = await fetch(`http://localhost:3000/activities/${id}`);
+        const resActivity = await fetch(`${API_BASE}/activities/${id}`);
         if (!resActivity.ok) {
           const err = await resActivity.json().catch(() => ({}));
           throw new Error(err.error || err.message || `Errore ${resActivity.status}`);
@@ -64,12 +67,12 @@ export default function DettagliAttivita() {
         setActivity(activityData);
 
         if (activityData.trekID) {
-          const resTrek = await fetch(`http://localhost:3000/treks/${activityData.trekID}`);
+          const resTrek = await fetch(`${API_BASE}/treks/${activityData.trekID}`);
           if (resTrek.ok) setTrek(await resTrek.json());
         }
 
         if (activityData.organizerID) {
-          const resOrg = await fetch(`http://localhost:3000/users/${activityData.organizerID}`);
+          const resOrg = await fetch(`${API_BASE}/users/${activityData.organizerID}`);
           if (resOrg.ok) setOrganizer(await resOrg.json());
         }
       } catch (err: any) {
@@ -90,7 +93,7 @@ export default function DettagliAttivita() {
   async function handleAction(endpoint: string, method: string) {
     setActionLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/activities/${id}/${endpoint}`, {
+      const res = await fetch(`${API_BASE}/activities/${id}/${endpoint}`, {
         method,
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -124,7 +127,7 @@ export default function DettagliAttivita() {
   async function handleDelete() {
     setActionLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/activities/${id}`, {
+      const res = await fetch(`${API_BASE}/activities/${id}`, {
         method: "DELETE",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
