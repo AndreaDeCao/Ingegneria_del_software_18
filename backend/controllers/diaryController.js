@@ -264,7 +264,7 @@ const getDiaryStats = async (req, res) => {
       totaleUscite: tot,
       totaleKm,
       totaleOre: Math.floor(totaleMinuti / 60),
-      totaleMinutiExtra: totaleMinuti % 60,
+      totaleMinutiExtra: Math.floor(totaleMinuti % 60),
       mediaValutazione: countVal ? Math.round((sommaVal / countVal) * 10) / 10 : null,
       // percentuali calcolate solo sulle uscite con difficoltà nota
       percFacile:    totConDifficolta ? Math.round((counts.Facile    / totConDifficolta) * 100) : 0,
