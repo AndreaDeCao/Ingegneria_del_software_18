@@ -15,6 +15,7 @@ router.post("/refresh", requireCsrf, authController.refresh); // endpoint per ri
 
 router.post("/register", verifyTurnstile, authController.register);
 router.post("/login", verifyTurnstile, authController.login);
+router.post("/request-temp-password", verifyTurnstile, authController.requestTemporaryPassword);
 router.post("/logout", requireCsrf, authController.logout);
 router.get("/verify-email/:token", authController.verifyEmail);
 router.get("/me", authenticate, authController.me);
