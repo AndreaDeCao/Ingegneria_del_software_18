@@ -32,6 +32,32 @@ function getDurationStyle(duration: string): string {
 }
 
 /**
+ * funzione per applicare il badge corretto in base alla lunghezza
+ * @param lengthKm contiene la lunghezza in chilometri del percorso
+ * @returns lo stile da applicare
+ */
+function getLengthStyle(lengthKm: number): string {
+
+  if (lengthKm < 3)  return styles.badgeEasy;    // < 1 ora      → verde
+  if (lengthKm <= 7.5) return styles.badgeMedium; // 1 ora a 2 ore 30 min   → giallo
+  return styles.badgeHard;                     // > 2ora e 30 min    → rosso
+}
+
+/**
+ * funzione per applicare il badge corretto in base al dislivello
+ * @param elevationGain contiene il dislivello in metri del percorso
+ * @returns lo stile da applicare
+ */
+function getElevationGainStyle(elevationGain: string): string {
+  // console.log(elevationGain);
+  const elevation = parseInt(elevationGain);
+
+  if (elevation < 300)  return styles.badgeEasy;    // < 1 ora      → verde
+  if (elevation <= 700) return styles.badgeMedium; // 1 ora a 2 ore 30 min   → giallo
+  return styles.badgeHard;                     // > 2ora e 30 min    → rosso
+}
+
+/**
  * Rating percorso con stelle
  * @param {number} rating - Voto medio da 0 a 5
  */
@@ -92,13 +118,13 @@ function TrekCardEsplora({ trek }: TrekCardEsploraProps) {
             )}
 
             {trek.lengthKm && (
-              <span className={`${styles.badge} ${styles.badgeInfo}`}>
+              <span className={`${styles.badge} ${getLengthStyle(trek.lengthKm)}`}>
                 {trek.lengthKm} km
               </span>
             )}
 
             {trek.elevationGain && (
-              <span className={`${styles.badge} ${styles.badgeInfo}`}>
+              <span className={`${styles.badge} ${getElevationGainStyle(trek.elevationGain)}`}>
                 {trek.elevationGain} m
               </span>
             )}
