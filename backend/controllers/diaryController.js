@@ -179,18 +179,33 @@ function parseGpxStats(gpxString) {
   }
 }
 
+function calcDifficulty(distanceMeters, durationSeconds) { //uguale in dettagli voce diario
+  const km = distanceMeters / 1000;
+  const ore = durationSeconds / 3600;
+  const speed = km / ore;
+  const score = km * 0.6 + (1 / speed) * 10;
+  if (score < 6)
+    return "Facile";
+  if (score < 12) 
+    return "Medio"; 
+  return "Difficile"; 
+}
+
 // GET /api/diary/stats --> statistiche del diario dell'utente loggato
 const getDiaryStats = async (req, res) => {
   try {
     const userId = new mongoose.Types.ObjectId(req.userId);
 
-    // Recupera TUTTE le voci completate, con left-join opzionale ai trek
+    // Recupera tutte le voci completate
     const entries = await DiaryEntry.aggregate([
       {
-        $match: { userId, completato: true },
+        $match: {
+          userId,
+          completato: true,
+        },
       },
       {
-        // left join: restituisce anche le voci senza trekId
+        // left join con treks
         $lookup: {
           from: "treks",
           localField: "trekId",
@@ -199,17 +214,20 @@ const getDiaryStats = async (req, res) => {
         },
       },
       {
-        // trek può essere array vuoto se non c'è trekId → lo portiamo a null
-        $addFields: { trek: { $arrayElemAt: ["$trek", 0] } },
+        // trek -> oggetto singolo oppure null
+        $addFields: {
+          trek: { $arrayElemAt: ["$trek", 0] },
+        },
       },
       {
         $project: {
           valutazione: 1,
           gpxData: 1,
-          // campi dal trek (null se assente)
+
+          // dati trek
           difficulty: "$trek.difficulty",
-          lengthKm:   "$trek.lengthKm",
-          duration:   "$trek.duration",
+          lengthKm: "$trek.lengthKm",
+          duration: "$trek.duration",
         },
       },
     ]);
@@ -229,51 +247,125 @@ const getDiaryStats = async (req, res) => {
 
     let totaleKm = 0;
     let totaleMinuti = 0;
+
     let sommaVal = 0;
     let countVal = 0;
-    const counts = { Facile: 0, Medio: 0, Difficile: 0 };
+
+    const counts = {
+      Facile: 0,
+      Medio: 0,
+      Difficile: 0,
+    };
 
     for (const e of entries) {
-      // --- km e durata ---
-      // Priorità: GPX sempre. DB solo se gpxData è assente.
+
+      // KM + DURATA
+
       if (e.gpxData) {
+        // priorità ai dati GPX
         const gpx = parseGpxStats(e.gpxData);
+
         if (gpx) {
+
+          // km
           totaleKm += gpx.km;
-          if (gpx.minuti != null) totaleMinuti += gpx.minuti;
+
+          // minuti
+          if (gpx.minuti != null) {
+            totaleMinuti += gpx.minuti;
+          }
+
+          // DIFFICOLTÀ CALCOLATA (solo se manca trekId)
+          if (
+            !e.difficulty &&
+            gpx.km &&
+            gpx.minuti
+          ) {
+            const difficulty = calcDifficulty(
+              gpx.km * 1000,      // metri
+              gpx.minuti * 60     // secondi
+            );
+
+            if (difficulty in counts) {
+              counts[difficulty]++;
+            }
+          }
         }
+
       } else if (e.lengthKm != null) {
-        // fallback DB: solo se non c'è gpxData
+
+        // fallback ai dati DB
         totaleKm += e.lengthKm;
-        if (e.duration) totaleMinuti += parseDuration(e.duration);
+
+        if (e.duration) {
+          totaleMinuti += parseDuration(e.duration);
+        }
       }
 
-      // --- valutazione ---
-      if (e.valutazione) { sommaVal += e.valutazione; countVal++; }
+      // DIFFICOLTÀ DAL DB
+      if (
+        e.difficulty &&
+        e.difficulty in counts
+      ) {
+        counts[e.difficulty]++;
+      }
 
-      // --- difficoltà (solo percorsi DB) ---
-      if (e.difficulty && e.difficulty in counts) counts[e.difficulty]++;
+      // VALUTAZIONE
+      if (e.valutazione != null) {
+        sommaVal += e.valutazione;
+        countVal++;
+      }
     }
 
-    const tot = entries.length;
-    // conta solo le voci con difficoltà nota per le percentuali
-    const totConDifficolta = counts.Facile + counts.Medio + counts.Difficile;
+    const totaleUscite = entries.length;
+
+    const totConDifficolta =
+      counts.Facile +
+      counts.Medio +
+      counts.Difficile;
+
     totaleKm = Math.round(totaleKm * 10) / 10;
 
     res.json({
-      totaleUscite: tot,
+      totaleUscite,
+
       totaleKm,
+
       totaleOre: Math.floor(totaleMinuti / 60),
-      totaleMinutiExtra: Math.floor(totaleMinuti % 60),
-      mediaValutazione: countVal ? Math.round((sommaVal / countVal) * 10) / 10 : null,
-      // percentuali calcolate solo sulle uscite con difficoltà nota
-      percFacile:    totConDifficolta ? Math.round((counts.Facile    / totConDifficolta) * 100) : 0,
-      percMedio:     totConDifficolta ? Math.round((counts.Medio     / totConDifficolta) * 100) : 0,
-      percDifficile: totConDifficolta ? Math.round((counts.Difficile / totConDifficolta) * 100) : 0,
+
+      totaleMinutiExtra: Math.floor(
+        totaleMinuti % 60
+      ),
+
+      mediaValutazione: countVal
+        ? Math.round((sommaVal / countVal) * 10) / 10
+        : null,
+
+      percFacile: totConDifficolta
+        ? Math.round(
+            (counts.Facile / totConDifficolta) * 100
+          )
+        : 0,
+
+      percMedio: totConDifficolta
+        ? Math.round(
+            (counts.Medio / totConDifficolta) * 100
+          )
+        : 0,
+
+      percDifficile: totConDifficolta
+        ? Math.round(
+            (counts.Difficile / totConDifficolta) * 100
+          )
+        : 0,
     });
+
   } catch (err) {
     console.error("Errore getDiaryStats:", err);
-    res.status(500).json({ error: "Errore nel calcolo delle statistiche" });
+
+    res.status(500).json({
+      error: "Errore nel calcolo delle statistiche",
+    });
   }
 };
 
