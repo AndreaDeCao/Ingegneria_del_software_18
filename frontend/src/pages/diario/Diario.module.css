@@ -157,6 +157,11 @@
   background: color-mix(in srgb, var(--accent) 6%, var(--bg-secondary));
 }
 
+.fileLabelActive {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-secondary));
+}
+
 /* FOTO */
 .fotoInputRow {
   display: flex;
@@ -185,7 +190,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 8px;
+  margin-top: 18px;
 }
 
 .fotoItem {

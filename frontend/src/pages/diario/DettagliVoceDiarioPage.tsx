@@ -6,6 +6,8 @@ import appStyles from "../../App.module.css";
 import styles from "./DettagliDiario.module.css";
 import TrekMap from "../../components/TrekMap";
 
+//TODO: aggiungere possibilità di download del tracciato gpx allegato per percorsi personalizzati
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 function areCoordsClose(
@@ -128,6 +130,23 @@ function formatDuration(seconds: number): string {
   if (hours === 0) return `${minutes} min`;
   if (minutes === 0) return `${hours} h`;
   return `${hours} h ${minutes} min`;
+}
+
+function downloadGpx(entry: DiaryEntry | null) {
+  if (!entry?.gpxData) return;
+  const blob = new Blob([entry.gpxData], { type: "application/gpx+xml" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const fileName = entry.titolo
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "") || "tracciato";
+  link.href = url;
+  link.download = `${fileName}.gpx`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 export default function DettagliVoceDiarioPage() {
@@ -343,7 +362,7 @@ export default function DettagliVoceDiarioPage() {
           {/* FOTO */}
           {entry.foto && entry.foto.length > 0 && (
             <div className={styles.section}>
-              <h2 className={appStyles.sectionTitle}>📸 Foto</h2>
+              <h2 className={appStyles.sectionTitle}> Foto del percorso</h2>
               <div className={styles.fotoGrid}>
                 {entry.foto.map((url, i) => (
                   <img
@@ -424,6 +443,14 @@ export default function DettagliVoceDiarioPage() {
               >
                 ← Torna al diario
               </button>
+              {entry.gpxData && (
+                <button
+                  className={styles.actionButtonSecondary}
+                  onClick={() => downloadGpx(entry)}
+                >
+                  Scarica GPX
+                </button>
+              )}
               {trek?.id && (
                 <button
                   className={styles.actionButtonSecondary}

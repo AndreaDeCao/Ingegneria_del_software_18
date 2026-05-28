@@ -31,8 +31,8 @@ export default function CreaVoceDiarioPage() {
   const [gpxData, setGpxData]         = useState("");
   const [gpxFileName, setGpxFileName] = useState("");
 
-  const [fotoUrl, setFotoUrl]         = useState("");
   const [foto, setFoto]               = useState<string[]>([]);
+  const [dragActive, setDragActive] = useState(false);
 
   const [segnalazioneAttiva, setSegnalazioneAttiva] = useState(false);
   const [segnalazioneTipo, setSegnalazioneTipo]     = useState("");
@@ -57,10 +57,70 @@ export default function CreaVoceDiarioPage() {
     reader.readAsText(file);
   }
 
-  function addFoto() {
-    if (!fotoUrl.trim()) return;
-    setFoto(prev => [...prev, fotoUrl.trim()]);
-    setFotoUrl("");
+  async function readFileAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error("Impossibile leggere il file immagine"));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function processImageFiles(files: File[]) {
+    const errorsList: string[] = [];
+    const nextPhotos: string[] = [];
+
+    for (const file of files) {
+      if (!file.type.startsWith("image/")) {
+        errorsList.push(`Il file ${file.name} non è un'immagine valida.`);
+        continue;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        errorsList.push("Foto troppo grande: il limite massimo è 5 MB.");
+        continue;
+      }
+      try {
+        nextPhotos.push(await readFileAsDataUrl(file));
+      } catch {
+        errorsList.push(`Impossibile leggere ${file.name}.`);
+      }
+    }
+
+    if (errorsList.length) {
+      setErrors(errorsList);
+      return;
+    }
+
+    setFoto(prev => [...prev, ...nextPhotos]);
+  }
+
+  async function handleFotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    await processImageFiles(files);
+    e.target.value = "";
+  }
+
+  async function handleDrop(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    setDragActive(false);
+    const files = Array.from(e.dataTransfer.files ?? []);
+    if (!files.length) return;
+    await processImageFiles(files);
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+  }
+
+  function handleDragEnter(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    setDragActive(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    setDragActive(false);
   }
 
   function removeFoto(i: number) {
@@ -130,9 +190,9 @@ export default function CreaVoceDiarioPage() {
           {/* BANNER ERRORI */}
           {errors.length > 0 && (
             <div className={styles.errorBanner}>
-              <span className={styles.errorBannerIcon}>⚠</span>
+              {/* <span className={styles.errorBannerIcon}>⚠</span> */}
               <div>
-                <p className={styles.errorBannerTitle}>Correggi i seguenti errori:</p>
+                {/* <p className={styles.errorBannerTitle}>Correggi i seguenti errori:</p> */}
                 <ul className={styles.errorBannerList}>
                   {errors.map((e, i) => <li key={i}>{e}</li>)}
                 </ul>
@@ -150,7 +210,7 @@ export default function CreaVoceDiarioPage() {
 
           {/* PERCORSO */}
           <div className={styles.card}>
-            <h2 className={appStyles.sectionTitle}>📍 Percorso</h2>
+            <h2 className={appStyles.sectionTitle}>Informazioni sul percorso</h2>
             <div className={styles.toggleRow}>
               <button
                 className={`${styles.toggleButton} ${modalitaPercorso === "predefinito" ? styles.toggleActive : ""}`}
@@ -192,7 +252,7 @@ export default function CreaVoceDiarioPage() {
 
           {/* DETTAGLI */}
           <div className={styles.card}>
-            <h2 className={appStyles.sectionTitle}>📝 Dettagli</h2>
+            <h2 className={appStyles.sectionTitle}>Dettagli del percorso</h2>
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Titolo *</label>
               <input
@@ -238,24 +298,29 @@ export default function CreaVoceDiarioPage() {
 
           {/* FOTO */}
           <div className={styles.card}>
-            <h2 className={appStyles.sectionTitle}>📸 Foto</h2>
-            <p className={styles.hint}>Aggiungi URL di foto del percorso</p>
-            <div className={styles.fotoInputRow}>
+            <h2 className={appStyles.sectionTitle}>Foto del percorso</h2>
+            <p className={styles.hint}>Carica foto reali del percorso</p>
+            <label
+              className={`${styles.fileLabel} ${dragActive ? styles.fileLabelActive : ""}`}
+              onDragEnter={handleDragEnter}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+               Trascina qui le immagini o clicca per selezionare (max 5MB ciascuna)
               <input
-                className={styles.input}
-                type="url"
-                placeholder="https://..."
-                value={fotoUrl}
-                onChange={e => setFotoUrl(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && addFoto()}
+                type="file"
+                accept="image/*"
+                multiple
+                style={{ display: "none" }}
+                onChange={handleFotoUpload}
               />
-              <button className={styles.addButton} onClick={addFoto}>Aggiungi</button>
-            </div>
+            </label>
             {foto.length > 0 && (
               <div className={styles.fotoGrid}>
-                {foto.map((url, i) => (
+                {foto.map((src, i) => (
                   <div key={i} className={styles.fotoItem}>
-                    <img src={url} alt={`foto ${i + 1}`} className={styles.fotoThumb} />
+                    <img src={src} alt={`foto ${i + 1}`} className={styles.fotoThumb} />
                     <button className={styles.fotoRemove} onClick={() => removeFoto(i)}>✕</button>
                   </div>
                 ))}
@@ -265,7 +330,7 @@ export default function CreaVoceDiarioPage() {
 
           {/* SEGNALAZIONE */}
           <div className={styles.card}>
-            <h2 className={appStyles.sectionTitle}>⚠ Segnalazione</h2>
+            <h2 className={appStyles.sectionTitle}>Qualcosa da segnalare ?</h2>
             <p className={styles.hint}>Avvisa altri utenti di problemi sul percorso</p>
 
             <div
