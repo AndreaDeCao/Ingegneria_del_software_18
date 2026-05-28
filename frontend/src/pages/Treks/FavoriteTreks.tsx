@@ -131,6 +131,14 @@ export default function FavoriteTreks() {
     setPage(1);
   }
 
+  function clearAllFilters() {
+    setDifficulty("");
+    setMaxLength("");
+    setMaxElevation("");
+    setMaxDuration("");
+    setPage(1);
+  }
+
   /**
    * Filtri
    */
@@ -457,6 +465,10 @@ export default function FavoriteTreks() {
               {tag.label} ✕
             </button>
           ))}
+          
+          <button className={styles.clearAll} onClick={clearAllFilters}>
+            Rimuovi tutti ✕
+          </button>
         </div>
       )}
 
