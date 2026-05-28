@@ -153,7 +153,7 @@ export default function Register() {
       </p>
 
       <p className={styles.caption}>
-        Password dimenticata? <Link to="/temp" className={styles.link}>Richiedi password provvisoria</Link>
+        Password dimenticata? <Link to="/forgotten-password" className={styles.link}>Richiedi password provvisoria</Link>
       </p>
     </div>
   );
