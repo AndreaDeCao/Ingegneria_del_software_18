@@ -185,20 +185,33 @@ export default function Homepage() {
                   <div className={styles.diffBar}>
                     {diaryStats.percFacile > 0 && (
                       <div className={styles.diffFacile} style={{ width: `${diaryStats.percFacile}%` }}>
-                        {diaryStats.percFacile}% Facile
+                        {diaryStats.percFacile}%
                       </div>
                     )}
                     {diaryStats.percMedio > 0 && (
                       <div className={styles.diffMedio} style={{ width: `${diaryStats.percMedio}%` }}>
-                        {diaryStats.percMedio}% Medio
+                        {diaryStats.percMedio}%
                       </div>
                     )}
                     {diaryStats.percDifficile > 0 && (
                       <div className={styles.diffDifficile} style={{ width: `${diaryStats.percDifficile}%` }}>
-                        {diaryStats.percDifficile}% Difficile
+                        {diaryStats.percDifficile}%
                       </div>
                     )}
                   </div>
+
+                  {/*
+
+                  <span className={styles.statLabel}>
+                    {diaryStats.percFacile}% Facile - {diaryStats.percMedio}% Medio - {diaryStats.percDifficile}% Difficile
+                  </span> */}
+
+                  <span className={styles.statLabel}>
+                    🟢 Facile - 🟠 Medio - 🔴 Difficile
+                  </span>
+
+                    
+
                 </div>
               </div>
             </div>

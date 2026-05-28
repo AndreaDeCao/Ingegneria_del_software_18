@@ -127,20 +127,70 @@ function parseDuration(str) {
   return (ore ? parseInt(ore[1]) * 60 : 0) + (min ? parseInt(min[1]) : 0);
 }
 
+// Distanza in km tra due coordinate (formula Haversine) — fallback per GPX senza metadata
+// formula Haversine: calcola la distanza più breve tra due punti sulla superficie terrestre usando latitudine e longitudine, considerando la Terra come una sfera
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Estrae { km, minuti } da una stringa GPX.
+// Prima legge <distance> e <duration> dalle extensions dei metadata
+// (formato DoloMate: distance in metri, duration in secondi).
+// Se assenti, calcola i km via Haversine dai trkpt (durata non disponibile).
+function parseGpxStats(gpxString) {
+  if (!gpxString) return null;
+  try {
+    const distMatch = gpxString.match(/<distance>([\d.]+)<\/distance>/);
+    const durMatch  = gpxString.match(/<duration>([\d.]+)<\/duration>/);
+
+    if (distMatch) {
+      return {
+        km:     parseFloat(distMatch[1]) / 1000,
+        minuti: durMatch ? parseFloat(durMatch[1]) / 60 : null,
+      };
+    }
+
+    // Fallback Haversine (GPX vecchi senza extensions)
+    const regex = /<trkpt[^>]+lat="([\d.\-]+)"[^>]*lon="([\d.\-]+)"/g;
+    const points = [];
+    let m;
+    while ((m = regex.exec(gpxString)) !== null) {
+      points.push({ lat: parseFloat(m[1]), lon: parseFloat(m[2]) });
+    }
+    if (points.length < 2) return null;
+    let total = 0;
+    for (let i = 1; i < points.length; i++) {
+      total += haversineKm(
+        points[i - 1].lat, points[i - 1].lon,
+        points[i].lat,     points[i].lon
+      );
+    }
+    return { km: total, minuti: null };
+  } catch {
+    return null;
+  }
+}
+
 // GET /api/diary/stats --> statistiche del diario dell'utente loggato
 const getDiaryStats = async (req, res) => {
   try {
     const userId = new mongoose.Types.ObjectId(req.userId);
 
+    // Recupera TUTTE le voci completate, con left-join opzionale ai trek
     const entries = await DiaryEntry.aggregate([
       {
-        $match: {
-          userId,
-          completato: true,
-          trekId: { $ne: null, $exists: true },
-        },
+        $match: { userId, completato: true },
       },
       {
+        // left join: restituisce anche le voci senza trekId
         $lookup: {
           from: "treks",
           localField: "trekId",
@@ -148,13 +198,18 @@ const getDiaryStats = async (req, res) => {
           as: "trek",
         },
       },
-      { $unwind: "$trek" },
+      {
+        // trek può essere array vuoto se non c'è trekId → lo portiamo a null
+        $addFields: { trek: { $arrayElemAt: ["$trek", 0] } },
+      },
       {
         $project: {
           valutazione: 1,
+          gpxData: 1,
+          // campi dal trek (null se assente)
           difficulty: "$trek.difficulty",
-          lengthKm: "$trek.lengthKm",
-          duration: "$trek.duration",
+          lengthKm:   "$trek.lengthKm",
+          duration:   "$trek.duration",
         },
       },
     ]);
@@ -179,25 +234,42 @@ const getDiaryStats = async (req, res) => {
     const counts = { Facile: 0, Medio: 0, Difficile: 0 };
 
     for (const e of entries) {
-      totaleKm += e.lengthKm ?? 0;
-      totaleMinuti += parseDuration(e.duration);
+      // --- km e durata ---
+      // Priorità: GPX sempre. DB solo se gpxData è assente.
+      if (e.gpxData) {
+        const gpx = parseGpxStats(e.gpxData);
+        if (gpx) {
+          totaleKm += gpx.km;
+          if (gpx.minuti != null) totaleMinuti += gpx.minuti;
+        }
+      } else if (e.lengthKm != null) {
+        // fallback DB: solo se non c'è gpxData
+        totaleKm += e.lengthKm;
+        if (e.duration) totaleMinuti += parseDuration(e.duration);
+      }
+
+      // --- valutazione ---
       if (e.valutazione) { sommaVal += e.valutazione; countVal++; }
-      if (e.difficulty in counts) counts[e.difficulty]++;
+
+      // --- difficoltà (solo percorsi DB) ---
+      if (e.difficulty && e.difficulty in counts) counts[e.difficulty]++;
     }
 
     const tot = entries.length;
+    // conta solo le voci con difficoltà nota per le percentuali
+    const totConDifficolta = counts.Facile + counts.Medio + counts.Difficile;
     totaleKm = Math.round(totaleKm * 10) / 10;
-
 
     res.json({
       totaleUscite: tot,
       totaleKm,
       totaleOre: Math.floor(totaleMinuti / 60),
-      totaleMinutiExtra: totaleMinuti % 60,         // es. 6h 40min → ore:6, extra:40
+      totaleMinutiExtra: totaleMinuti % 60,
       mediaValutazione: countVal ? Math.round((sommaVal / countVal) * 10) / 10 : null,
-      percFacile:    Math.round((counts.Facile    / tot) * 100),
-      percMedio:     Math.round((counts.Medio     / tot) * 100),
-      percDifficile: Math.round((counts.Difficile / tot) * 100),
+      // percentuali calcolate solo sulle uscite con difficoltà nota
+      percFacile:    totConDifficolta ? Math.round((counts.Facile    / totConDifficolta) * 100) : 0,
+      percMedio:     totConDifficolta ? Math.round((counts.Medio     / totConDifficolta) * 100) : 0,
+      percDifficile: totConDifficolta ? Math.round((counts.Difficile / totConDifficolta) * 100) : 0,
     });
   } catch (err) {
     console.error("Errore getDiaryStats:", err);
