@@ -265,8 +265,8 @@ export default function CreaAttivitaPage() {
                 setInvitedUsers([]);
               }}
             >
-              <option value="public">Pubblica - visibile a tutti</option>
-              <option value="private">Privata — solo invitati</option>
+              <option value="public">Pubblica</option>
+              <option value="private">Privata</option>
             </select>
           </div>
 
