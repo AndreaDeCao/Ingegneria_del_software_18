@@ -14,6 +14,22 @@ const difficultyStyle: Record<Trek["difficulty"], string> = {
   Difficile:   styles.badgeHard,
 };
 
+/**
+ * funzione per applicare il badge corretto in base alla durata
+ * @param duration contiene la durata del trek con formato 'hh ore mm min'
+ * @returns lo stile da applicare
+ */
+function getDurationStyle(duration: string): string {
+  const hours   = parseInt(duration.match(/(\d+)\s*or[ae]/)?.[1]  ?? "0");
+  const minutes = parseInt(duration.match(/(\d+)\s*min/)?.[1]     ?? "0");
+  const total   = hours * 60 + minutes;
+
+  // console.log("ore:", hours, "minuti:", minutes, "totale:", total);
+
+  if (total < 60)  return styles.badgeEasy;    // < 1 ora      → verde
+  if (total <= 150) return styles.badgeMedium; // 1 ora a 2 ore 30 min   → giallo
+  return styles.badgeHard;                     // > 2ora e 30 min    → rosso
+}
 
 /**
  * Rating percorso con stelle
@@ -69,7 +85,8 @@ function TrekCardEsplora({ trek }: TrekCardEsploraProps) {
             </span>
 
             {trek.duration && (
-              <span className={`${styles.badge} ${styles.badgeDuration}`}>
+              // <span className={`${styles.badge} ${styles.badgeDuration}`}>
+              <span className={`${styles.badge} ${getDurationStyle(trek.duration)}`}>
                 {trek.duration}
               </span>
             )}
