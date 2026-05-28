@@ -431,6 +431,19 @@ select:focus {
   margin-top: 8px;
 }
 
+.buttonActions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+}
+
+.buttonActions > button {
+  flex: 1;
+  min-width: 140px;
+}
+
 .detailActions .primaryButton,
 .detailActions .dangerButton,
 .detailActions .leaveButton {
@@ -501,6 +514,8 @@ select:focus {
   border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .organizerBadge {
