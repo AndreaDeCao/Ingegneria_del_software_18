@@ -46,9 +46,9 @@ function DiaryCard({ entry }: DiaryCardProps) {
             {entry.trekId && (
               <>
                 <span className={styles.metaItem}> {entry.trekId.name}</span>
-                <span className={`${styles.badge} ${styles.difficultyBadge}`}>
+                {/* <span className={`${styles.badge} ${styles.difficultyBadge}`}>
                   {entry.trekId.difficulty}
-                </span>
+                </span> */}
               </>
             )}
             {entry.percorsoPersonalizzato && !entry.trekId && (
@@ -68,11 +68,14 @@ function DiaryCard({ entry }: DiaryCardProps) {
       {/* FOOTER con Badge */}
       <div className={styles.cardFooter}>
         {entry.completato !== false && (
-          <span className={styles.badge}> Completato ✅</span>
+          <span className={styles.badge}> Percorso completato </span>
+        )}
+        {entry.completato == false && (
+          <span className={`${styles.badge} ${styles.badgeUncomplete}`}> Percorso non completato </span>
         )}
         {entry.segnalazione?.tipo && (
           <span className={`${styles.badge} ${styles.badgeWarn}`}>
-            ⚠ {entry.segnalazione.tipo}
+             {entry.segnalazione.tipo}
           </span>
         )}
       </div>
