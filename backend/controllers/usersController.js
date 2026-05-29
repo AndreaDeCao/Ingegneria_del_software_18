@@ -62,7 +62,7 @@ exports.addTrekToFavorites = async (req, res) => {
 
     // controlla se già nei preferiti
     const alreadyFavorite = user.favoriteTreks.some(
-      (id) => id.toString() === trekId
+      (id) => id.toString() === trek._id.toString()
     );
 
     if (alreadyFavorite) {
