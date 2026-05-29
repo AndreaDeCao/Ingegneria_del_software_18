@@ -176,7 +176,7 @@ export default function Homepage() {
                   <span className={styles.statValue}>{diaryStats.totaleUscite}</span>
                 </div>
                 <div className={styles.statCard}>
-                  <span className={styles.statLabel}>Tempo in montagna</span>
+                  <span className={styles.statLabel}>Tempo impiegato</span>
                   <span className={styles.statValue}>
                     {diaryStats.totaleOre}h {diaryStats.totaleMinutiExtra >= 0 ? `${diaryStats.totaleMinutiExtra}min` : ""}
                     
@@ -195,7 +195,7 @@ export default function Homepage() {
                   </div>
                 )}*/}
                 <div className={styles.statCard}>
-                  <span className={styles.statLabel}>Difficoltà affrontate</span>
+                  <span className={styles.statLabel}>Tipologie di percorsi affrontati</span>
                   <div className={styles.diffBar}>
                     {diaryStats.percFacile > 0 && (
                       <div className={styles.diffFacile} style={{ width: `${diaryStats.percFacile}%` }}>
