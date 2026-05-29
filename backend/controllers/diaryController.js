@@ -157,7 +157,9 @@ function parseGpxStats(gpxString) {
       const km = parseFloat(distMatch[1]) / 1000;
       return {
         km,
-        minuti: durMatch ? parseFloat(durMatch[1]) / 60 : (km / DEFAULT_HIKING_SPEED_KMH) * 60,
+        //problema di differenza tra diario e statistiche //FIXME controlla
+        // minuti: durMatch ? parseFloat(durMatch[1]) / 60 : (km / DEFAULT_HIKING_SPEED_KMH) * 60,
+        minuti: (km / DEFAULT_HIKING_SPEED_KMH) * 60,
       };
     }
 
@@ -202,6 +204,9 @@ function roundPercent(value) {
 }
 
 function calcDifficultyPercentages(counts) {
+  //per verificare
+  // console.log(counts + " \nFacile: " + counts.Facile + "\t medio: "+ counts.Medio + "\t difficile: " + counts.Difficile);
+
   const total = counts.Facile + counts.Medio + counts.Difficile;
   if (!total) {
     return {
