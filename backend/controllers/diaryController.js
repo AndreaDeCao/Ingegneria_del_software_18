@@ -196,8 +196,9 @@ function calcDifficulty(distanceMeters, durationSeconds) { //uguale in dettagli 
   return "Difficile"; 
 }
 
+//impostazione cifre decimali
 function roundPercent(value) {
-  return Math.round(value * 10) / 10;
+  return Math.round(value * 100) / 100;
 }
 
 function calcDifficultyPercentages(counts) {
@@ -212,6 +213,7 @@ function calcDifficultyPercentages(counts) {
 
   const percFacile = roundPercent((counts.Facile / total) * 100);
   const percMedio = roundPercent((counts.Medio / total) * 100);
+  //per essere sicuri di non sforare il 100%
   const percDifficile = roundPercent(100 - percFacile - percMedio);
 
   return {
