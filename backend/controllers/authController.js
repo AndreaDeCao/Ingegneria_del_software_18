@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/users");
 const {OAuth2Client } = require("google-auth-library"); 
 const crypto = require("crypto");
-const {sendVerificationEmail} = require("../services/emailService");
+const { sendVerificationEmail, sendTemporaryPasswordEmail } = require("../services/emailService");
 
 
 function getJwtSecret() {
@@ -28,6 +28,18 @@ function safeUser(userDoc) {
     nickname: userDoc.nickname,
     role: userDoc.role,
   };
+}
+
+function generateTemporaryPassword(length = 12) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let password = "";
+  while (password.length < length) {
+    const byte = crypto.randomBytes(1)[0];
+    if (byte < chars.length * Math.floor(256 / chars.length)) {
+      password += chars[byte % chars.length];
+    }
+  }
+  return password;
 }
 
 // Setta il refresh token in un cookie httpOnly e restituisce l'access token nel body
@@ -162,6 +174,36 @@ exports.register = async (req, res) => {
 
     res.status(201).json({ message: "Registrazione completata! Controlla la tua email per verificare l'account." });
 
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.requestTemporaryPassword = async (req, res) => {
+  try {
+    const { email } = req.body ?? {};
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ error: "Email mancante" });
+    }
+
+    const user = await User.findOne({ email }).select("+passwordHash");
+    if (!user) return res.status(404).json({ error: "Utente non trovato" });
+    if ((user.googleId || user.githubId) && !user.emailVerified) {
+        user.emailVerified = true;
+        /* console.log("changing bool on db") */  //TEST raggiungimento e cambiamento
+    }
+
+    const tempPassword = generateTemporaryPassword(12);
+    const saltedRound = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) : 15;
+    const tempPasswordHash = await bcrypt.hash(tempPassword, saltedRound);
+
+    user.passwordHash = tempPasswordHash;
+    user.tempPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // valida per 1 ora
+    await user.save();
+
+    await sendTemporaryPasswordEmail(email, tempPassword);
+
+    res.json({ message: "Password provvisoria inviata via email. Controlla la tua casella di posta." });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

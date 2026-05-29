@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import TrekCard from "../../components/TrekCard";
 import ActivityCard from "../../components/ActivityCard";
+import EventCard from "../../components/EventCard";
 import DiaryCard from "../../components/DiaryCard";
 
 import type { Trek } from "../../types/Trek";
 import type { DiaryEntry } from "../../types/Diary";
 import type { Activity } from "../../types/Activity";
+import type { Event } from "../../types/Events";
 
 import styles from "../../App.module.css";
 
@@ -21,6 +23,7 @@ export default function Homepage() {
   const [treks, setTreks] = useState<Trek[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
 
+  const [events, setEvents] = useState<Event[]>([]);
 
   const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
 
@@ -30,6 +33,7 @@ export default function Homepage() {
   const MAX_TREK_CARDS = 11;
   const MAX_ACTIVITY_CARDS = 7;
   const MAX_DIARY_CARDS = 5;
+  const MAX_EVENT_CARDS = 11;
 
   // Carica percorsi, senza token
   useEffect(() => {
@@ -66,6 +70,19 @@ export default function Homepage() {
       .catch((err: Error) => console.error("Errore diary:", err));
   }, []);
 
+
+  useEffect(() => {
+      fetch(`${API_BASE}/api/trento-events`).then((res) => {
+        if(!res.ok) {
+          throw new Error("Errore eventi: " + res.status);
+        }
+        return res.json();
+      })
+      .then((data) => setEvents(data)).catch((err: Error) => {
+        console.error("Errore fetch eventi:", err);
+      });
+    }, []);
+
   return (
     <main className={styles.main}>
 
@@ -74,45 +91,45 @@ export default function Homepage() {
         {/* COLONNA SINISTRA */}
         <section className={styles.leftColumn}>
 
-          {/* TREKS */}
-          <div className={styles.sectionTreks}>
+        {/* TREKS */}
+        <div className={styles.sectionTreks}>
 
-            <div className={styles.sectionHead}>
-              <h2 className={styles.sectionTitle}>
-                Di tendenza nelle vicinanze
-              </h2>
-
-              {!loading && !error && (
-                <span className={styles.sectionCount}>
-                  {MAX_TREK_CARDS} percorsi
-                </span>
-              )}
-            </div>
-
-            {loading && (
-              <p className={styles.message}>Caricamento percorsi...</p>
-            )}
-
-            {error && (
-              <p className={styles.messageError}>
-                Impossibile caricare i percorsi: {error}
-              </p>
-            )}
-
-            {!loading && !error && treks.length === 0 && (
-              <p className={styles.message}>
-                Nessun percorso trovato nelle vicinanze.
-              </p>
-            )}
+          <div className={styles.sectionHead}>
+            <h2 className={styles.sectionTitle}>
+              Di tendenza nelle vicinanze
+            </h2>
 
             {!loading && !error && (
-              <div className={styles.cardsRow}>
-                {treks.slice(0, MAX_TREK_CARDS).map((trek) => (
-                  <TrekCard key={trek.id} trek={trek} />
-                ))}
-              </div>
+              <span className={styles.sectionCount}>
+                {MAX_TREK_CARDS} percorsi
+              </span>
             )}
           </div>
+
+          {loading && (
+            <p className={styles.message}>Caricamento percorsi...</p>
+          )}
+
+          {error && (
+            <p className={styles.messageError}>
+              Impossibile caricare i percorsi: {error}
+            </p>
+           )}
+
+           {!loading && !error && treks.length === 0 && (
+            <p className={styles.message}>
+               Nessun percorso trovato nelle vicinanze.
+             </p>
+           )}
+
+            {!loading && !error && (
+             <div className={styles.cardsRow}>
+               {treks.slice(0, MAX_TREK_CARDS).map((trek) => (
+                <TrekCard key={trek.id} trek={trek} />
+               ))}
+             </div>
+          )}
+         </div>
 
           {/* DIARY */}
           <div className={styles.sectionDiary}>
@@ -129,6 +146,76 @@ export default function Homepage() {
               <div className={styles.diaryCardsRow}>
                 {diaryEntries.slice(0, MAX_DIARY_CARDS).map((entry) => (
                   <DiaryCard key={entry._id} entry={entry} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          { /* EVENTI */}
+          <div className={styles.sectionEvents}>
+
+            <div className={styles.sectionHead}>
+              <h2 className={styles.sectionTitle}>
+                Eventi a Trento
+              </h2>
+              
+              {/* Link sito eventi comune di Trento */}
+              <a
+              href="https://eventi.comune.trento.it"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.seeMore}
+              >
+                Scopri tutti gli eventi
+              </a>
+            </div>
+
+            {events.length === 0 && (
+              <p className={styles.message}>Nessun evento disponibile.</p>
+            )}
+
+            {events.length > 0 && (
+              <div className={styles.cardsRow}>
+                {events.slice(0, MAX_EVENT_CARDS).map((event) => (
+                  <EventCard 
+                    key={event._id}
+                    event={event}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          { /* EVENTI */}
+          <div className={styles.sectionEvents}>
+
+            <div className={styles.sectionHead}>
+              <h2 className={styles.sectionTitle}>
+                Eventi a Trento
+              </h2>
+              
+              {/* Link sito eventi comune di Trento */}
+              <a
+              href="https://eventi.comune.trento.it"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.seeMore}
+              >
+                Scopri tutti gli eventi
+              </a>
+            </div>
+
+            {events.length === 0 && (
+              <p className={styles.message}>Nessun evento disponibile.</p>
+            )}
+
+            {events.length > 0 && (
+              <div className={styles.cardsRow}>
+                {events.slice(0, MAX_EVENT_CARDS).map((event) => (
+                  <EventCard 
+                    key={event._id}
+                    event={event}
+                  />
                 ))}
               </div>
             )}
