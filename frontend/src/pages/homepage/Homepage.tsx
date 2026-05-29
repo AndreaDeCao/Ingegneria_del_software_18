@@ -186,41 +186,6 @@ export default function Homepage() {
             )}
           </div>
 
-          { /* EVENTI */}
-          <div className={styles.sectionEvents}>
-
-            <div className={styles.sectionHead}>
-              <h2 className={styles.sectionTitle}>
-                Eventi a Trento
-              </h2>
-              
-              {/* Link sito eventi comune di Trento */}
-              <a
-              href="https://eventi.comune.trento.it"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.seeMore}
-              >
-                Scopri tutti gli eventi
-              </a>
-            </div>
-
-            {events.length === 0 && (
-              <p className={styles.message}>Nessun evento disponibile.</p>
-            )}
-
-            {events.length > 0 && (
-              <div className={styles.cardsRow}>
-                {events.slice(0, MAX_EVENT_CARDS).map((event) => (
-                  <EventCard 
-                    key={event._id}
-                    event={event}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
         </section>
 
         {/* COLONNA DESTRA */}
