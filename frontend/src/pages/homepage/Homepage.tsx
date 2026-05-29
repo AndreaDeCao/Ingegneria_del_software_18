@@ -71,7 +71,11 @@ export default function Homepage() {
 
   useEffect(() => {
     fetchAuth<DiaryStats>(`/api/diary/stats`)
-      .then((data) => setDiaryStats(data))
+      .then((data) => {
+        setDiaryStats(data),
+        console.log(data) //TODO delete this
+      })
+
       .catch((err: Error) => console.error("Errore stats:", err));
   }, []);
 
@@ -158,6 +162,7 @@ export default function Homepage() {
                   <span className={styles.statLabel}>Tempo in montagna</span>
                   <span className={styles.statValue}>
                     {diaryStats.totaleOre}h {diaryStats.totaleMinutiExtra >= 0 ? `${diaryStats.totaleMinutiExtra}min` : ""}
+                    
                   </span>
                 </div>
                 

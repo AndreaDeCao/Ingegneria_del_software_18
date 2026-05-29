@@ -141,10 +141,12 @@ function haversineKm(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+const DEFAULT_HIKING_SPEED_KMH = 3.5;
+
 // Estrae { km, minuti } da una stringa GPX.
 // Prima legge <distance> e <duration> dalle extensions dei metadata
 // (formato DoloMate: distance in metri, duration in secondi).
-// Se assenti, calcola i km via Haversine dai trkpt (durata non disponibile).
+// Se assenti, calcola i km via Haversine dai trkpt e stima la durata.
 function parseGpxStats(gpxString) {
   if (!gpxString) return null;
   try {
@@ -152,9 +154,10 @@ function parseGpxStats(gpxString) {
     const durMatch  = gpxString.match(/<duration>([\d.]+)<\/duration>/);
 
     if (distMatch) {
+      const km = parseFloat(distMatch[1]) / 1000;
       return {
-        km:     parseFloat(distMatch[1]) / 1000,
-        minuti: durMatch ? parseFloat(durMatch[1]) / 60 : null,
+        km,
+        minuti: durMatch ? parseFloat(durMatch[1]) / 60 : (km / DEFAULT_HIKING_SPEED_KMH) * 60,
       };
     }
 
@@ -173,7 +176,7 @@ function parseGpxStats(gpxString) {
         points[i].lat,     points[i].lon
       );
     }
-    return { km: total, minuti: null };
+    return { km: total, minuti: (total / DEFAULT_HIKING_SPEED_KMH) * 60 };
   } catch {
     return null;
   }
@@ -182,13 +185,40 @@ function parseGpxStats(gpxString) {
 function calcDifficulty(distanceMeters, durationSeconds) { //uguale in dettagli voce diario
   const km = distanceMeters / 1000;
   const ore = durationSeconds / 3600;
+  if (!km || !ore) return null;
   const speed = km / ore;
+  if (!speed) return null;
   const score = km * 0.6 + (1 / speed) * 10;
   if (score < 6)
     return "Facile";
   if (score < 12) 
     return "Medio"; 
   return "Difficile"; 
+}
+
+function roundPercent(value) {
+  return Math.round(value * 10) / 10;
+}
+
+function calcDifficultyPercentages(counts) {
+  const total = counts.Facile + counts.Medio + counts.Difficile;
+  if (!total) {
+    return {
+      percFacile: 0,
+      percMedio: 0,
+      percDifficile: 0,
+    };
+  }
+
+  const percFacile = roundPercent((counts.Facile / total) * 100);
+  const percMedio = roundPercent((counts.Medio / total) * 100);
+  const percDifficile = roundPercent(100 - percFacile - percMedio);
+
+  return {
+    percFacile,
+    percMedio,
+    percDifficile,
+  };
 }
 
 // GET /api/diary/stats --> statistiche del diario dell'utente loggato
@@ -258,6 +288,7 @@ const getDiaryStats = async (req, res) => {
     };
 
     for (const e of entries) {
+      let difficultyForStats = null;
 
       // KM + DURATA
 
@@ -275,20 +306,15 @@ const getDiaryStats = async (req, res) => {
             totaleMinuti += gpx.minuti;
           }
 
-          // DIFFICOLTÀ CALCOLATA (solo se manca trekId)
+          // Difficolta calcolata dal GPX, anche per trek con partenza custom.
           if (
-            !e.difficulty &&
             gpx.km &&
             gpx.minuti
           ) {
-            const difficulty = calcDifficulty(
+            difficultyForStats = calcDifficulty(
               gpx.km * 1000,      // metri
               gpx.minuti * 60     // secondi
             );
-
-            if (difficulty in counts) {
-              counts[difficulty]++;
-            }
           }
         }
 
@@ -300,14 +326,20 @@ const getDiaryStats = async (req, res) => {
         if (e.duration) {
           totaleMinuti += parseDuration(e.duration);
         }
+
+        difficultyForStats = e.difficulty;
       }
 
-      // DIFFICOLTÀ DAL DB
+      // Fallback alla difficolta del trek quando il GPX non basta.
+      if (!difficultyForStats) {
+        difficultyForStats = e.difficulty;
+      }
+
       if (
-        e.difficulty &&
-        e.difficulty in counts
+        difficultyForStats &&
+        difficultyForStats in counts
       ) {
-        counts[e.difficulty]++;
+        counts[difficultyForStats]++;
       }
 
       // VALUTAZIONE
@@ -319,12 +351,8 @@ const getDiaryStats = async (req, res) => {
 
     const totaleUscite = entries.length;
 
-    const totConDifficolta =
-      counts.Facile +
-      counts.Medio +
-      counts.Difficile;
-
     totaleKm = Math.round(totaleKm * 10) / 10;
+    const difficultyPercentages = calcDifficultyPercentages(counts);
 
     res.json({
       totaleUscite,
@@ -341,23 +369,7 @@ const getDiaryStats = async (req, res) => {
         ? Math.round((sommaVal / countVal) * 10) / 10
         : null,
 
-      percFacile: totConDifficolta
-        ? Math.round(
-            (counts.Facile / totConDifficolta) * 100
-          )
-        : 0,
-
-      percMedio: totConDifficolta
-        ? Math.round(
-            (counts.Medio / totConDifficolta) * 100
-          )
-        : 0,
-
-      percDifficile: totConDifficolta
-        ? Math.round(
-            (counts.Difficile / totConDifficolta) * 100
-          )
-        : 0,
+      ...difficultyPercentages,
     });
 
   } catch (err) {
