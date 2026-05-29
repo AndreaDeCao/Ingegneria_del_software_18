@@ -210,7 +210,10 @@ export default function Friends() {
             className={styles.input}
             placeholder="Cerca per nickname o nome..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              if (e.target.value.trim().length < 2) setSearchResults([]);
+            }}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
           <button 

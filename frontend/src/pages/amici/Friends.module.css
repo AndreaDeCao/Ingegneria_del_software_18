@@ -43,6 +43,7 @@
   color: white;
   font-size: 12px;
   font-weight: 600;
+  line-height: 1;
 }
 
 .pendingBadge {
@@ -171,6 +172,7 @@
   color: white;
   cursor: pointer;
   transition: opacity 0.2s;
+  transform: none;
 }
 
 .btnPrimary:hover {
