@@ -89,8 +89,8 @@ export default function Homepage() {
   useEffect(() => {
     fetchAuth<DiaryStats>(`/api/diary/stats`)
       .then((data) => {
-        setDiaryStats(data),
-        console.log(data) //TODO delete this
+        setDiaryStats(data)
+        // console.log(data) 
       })
 
       .catch((err: Error) => console.error("Errore stats:", err));
