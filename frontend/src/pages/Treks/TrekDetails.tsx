@@ -63,12 +63,27 @@ export default function TrekDetails() {
     return () => clearTimeout(timer);
   }, [favoriteError]);
 
+  //controlla i trek gia messi nei preferiti
   useEffect(() => {
     if (!user || !trek) return;
-    const alreadySaved = user.favoriteTreks?.some(
-      (fav: any) => fav === (trek as any)._id
-    );
-    setIsFavorite(!!alreadySaved);
+
+    const checkFavorite = () => {
+      http<Trek[]>("/users/favorites")
+        .then((favorites) => {
+          const alreadySaved = favorites.some(
+            (fav: any) => fav._id === (trek as any)._id
+          );
+          setIsFavorite(alreadySaved);
+        })
+        .catch(() => {
+          // silenzioso, non blocca la pagina
+        });
+    };
+
+    checkFavorite();
+
+    window.addEventListener("focus", checkFavorite);
+    return () => window.removeEventListener("focus", checkFavorite);
   }, [user, trek]);
 
   function getHourlyList(weather: any) {
