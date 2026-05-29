@@ -5,6 +5,67 @@ import type { DiaryEntry } from "../../types/Diary";
 import appStyles from "../../App.module.css";
 import styles from "./Diario.module.css";
 
+type ModalType = "delete" | null;
+
+function parseGpxDistanceDuration(gpxText: string): { distanceMeters: number; durationSeconds: number } | null {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(gpxText, "application/xml");
+    const trkpts = Array.from(doc.querySelectorAll("trkpt"));
+    if (!trkpts.length) return null;
+
+    const distanceEl = doc.querySelector("metadata extensions distance");
+    const durationEl = doc.querySelector("metadata extensions duration");
+
+    let distanceMeters = distanceEl ? parseFloat(distanceEl.textContent ?? "") : NaN;
+    let durationSeconds = durationEl ? parseFloat(durationEl.textContent ?? "") : NaN;
+
+    if (!Number.isFinite(distanceMeters)) {
+      const coords = trkpts.map(pt => [
+        parseFloat(pt.getAttribute("lon") ?? "0"),
+        parseFloat(pt.getAttribute("lat") ?? "0"),
+      ]);
+      distanceMeters = calcDistanceFromCoords(coords);
+    }
+
+    if (!Number.isFinite(durationSeconds) && Number.isFinite(distanceMeters)) {
+      durationSeconds = (distanceMeters / 3500) * 3600;
+    }
+
+    if (!Number.isFinite(distanceMeters) || !Number.isFinite(durationSeconds)) return null;
+    return { distanceMeters, durationSeconds };
+  } catch {
+    return null;
+  }
+}
+
+function calcDistanceFromCoords(coords: number[][]): number {
+  let total = 0;
+  for (let i = 1; i < coords.length; i++) {
+    const [lon1, lat1] = coords[i - 1];
+    const [lon2, lat2] = coords[i];
+    const R = 6371000;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) ** 2;
+    total += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+  return total;
+}
+
+function formatDuration(seconds: number): string {
+  const totalMinutes = Math.round(seconds / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours === 0) return `${minutes} min`;
+  if (minutes === 0) return `${hours} h`;
+  return `${hours} h ${minutes} min`;
+}
+
 export default function VisualizzaDiarioPage() {
   const navigate = useNavigate();
   const [entries, setEntries]         = useState<DiaryEntry[]>([]);
@@ -19,6 +80,11 @@ export default function VisualizzaDiarioPage() {
   const [editHover, setEditHover]     = useState<number | null>(null);
   const [saving, setSaving]           = useState(false);
 
+  const [activeModal, setActiveModal] = useState<ModalType>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<DiaryEntry | null>(null);
+  // const [actionMessage, setActionMessage] = useState("");
+
   useEffect(() => {
     http<DiaryEntry[]>("/api/diary")
       .then(setEntries)
@@ -27,15 +93,18 @@ export default function VisualizzaDiarioPage() {
   }, []);
 
   async function handleDelete(id: string) {
-    if (!confirm("Eliminare questa voce?")) return;
     setDeleting(id);
+    setActionLoading(true);
     try {
       await http(`/api/diary/${id}`, { method: "DELETE" });
       setEntries(prev => prev.filter(e => e._id !== id));
+      setActiveModal(null);
+      setEntryToDelete(null);
     } catch (e: any) {
       alert(e.message);
     } finally {
       setDeleting(null);
+      setActionLoading(false);
     }
   }
 
@@ -109,8 +178,10 @@ export default function VisualizzaDiarioPage() {
         </div>
       ) : (
         <div className={styles.entriesList}>
-          {entries.map(entry => (
-            <div key={entry._id} className={styles.entryCard} onClick={() => navigate(`/diario/${entry._id}`)} style={{ cursor: "pointer" }}>
+          {entries.map(entry => {
+            const customRouteInfo = entry.gpxData ? parseGpxDistanceDuration(entry.gpxData) : null;
+            return (
+              <div key={entry._id} className={styles.entryCard} onClick={() => navigate(`/diario/${entry._id}`)} style={{ cursor: "pointer" }}>
 
               {/* HEADER */}
               <div className={styles.entryHeader}>
@@ -197,6 +268,18 @@ export default function VisualizzaDiarioPage() {
                       <span>{entry.trekId.lengthKm ?? "-"} km</span>
                     </div>
                   )}
+                  {entry.percorsoPersonalizzato && customRouteInfo && (
+                    <>
+                      <div className={styles.detailRow}>
+                        <span className={styles.detailLabel}>Durata stimata</span>
+                        <span>{formatDuration(customRouteInfo.durationSeconds)}</span>
+                      </div>
+                      <div className={styles.detailRow}>
+                        <span className={styles.detailLabel}>Lunghezza</span>
+                        <span>{(customRouteInfo.distanceMeters / 1000).toFixed(1)} km</span>
+                      </div>
+                    </>
+                  )}
                   {entry.segnalazione?.tipo && (
                     <div className={styles.segnalazioneBox}>
                       <p className={styles.segnalazioneTitle}>⚠ Segnalazione: {entry.segnalazione.tipo}</p>
@@ -242,8 +325,8 @@ export default function VisualizzaDiarioPage() {
                   )}
                   <button
                     className={styles.deleteButton}
-                    onClick={(e) => { e.stopPropagation(); handleDelete(entry._id); }}
-                    disabled={deleting === entry._id}
+                    onClick={(e) => { e.stopPropagation(); setEntryToDelete(entry); setActiveModal("delete"); }}
+                    disabled={actionLoading}
                   >
                     {deleting === entry._id ? "..." : "🗑 Elimina"}
                   </button>
@@ -251,10 +334,33 @@ export default function VisualizzaDiarioPage() {
               </div>
 
             </div>
-          ))}
+          );
+          })}
         </div>
       )}
       </div>
+
+
+      {activeModal === "delete" && (
+        <div className={styles.modalOverlay} onClick={() => { setActiveModal(null); setEntryToDelete(null); }}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Elimina voce diario</h2>
+            <p className={styles.modalBody}>
+              Stai per eliminare definitivamente <strong>{entryToDelete?.titolo ?? "questa voce"}</strong> dal tuo diario.
+              <br /><br />
+              <strong>Questa operazione è irreversibile</strong> e non potrà essere annullata.
+            </p>
+            <div className={styles.modalActions}>
+              <button className={appStyles.secondaryButton} onClick={() => { setActiveModal(null); setEntryToDelete(null); }} disabled={actionLoading}>Annulla</button>
+              <button className={styles.dangerButton} onClick={() => entryToDelete && handleDelete(entryToDelete._id)} disabled={actionLoading || !entryToDelete}>
+                {actionLoading ? "Eliminazione in corso..." : "Elimina definitivamente"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </main>
   );
 }

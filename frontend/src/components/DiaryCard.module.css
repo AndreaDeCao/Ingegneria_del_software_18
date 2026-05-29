@@ -89,7 +89,9 @@
   border-radius: 99px;
   background: var(--bg-secondary);
   border: 0.5px solid var(--border);
-  color: var(--text-secondary);
+  /* color: var(--text-secondary); */
+  color: var(--accent);
+  font-weight: bold;
   width: fit-content;
   white-space: nowrap;
 }
@@ -100,6 +102,13 @@
   color: var(--accent);
   font-weight: 600;
 }
+
+.badgeUncomplete {
+  background: color-mix(in srgb, #f134346c 12%, var(--bg-secondary));
+  border: 0.5px solid color-mix(in srgb, #f59e0b 30%, var(--border));
+  color: #b81d1d;
+}
+
 
 .badgeWarn {
   background: color-mix(in srgb, #f59e0b 12%, var(--bg-secondary));

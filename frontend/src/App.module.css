@@ -8,13 +8,14 @@
   display: flex;
   align-items: baseline;
   gap: 10px;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
+  margin-top: 1.5rem;
 }
 
 .sectionTitle {
   padding: 2px 8px;
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 500;
   color: var(--text-primary);
 }
@@ -33,6 +34,10 @@
 }
 
 .sectionTreks {
+}
+
+.sectionEvents {
+  margin-bottom: 2.5rem;
 }
 
 .cardsRow {
@@ -97,6 +102,19 @@
   padding-right: 6px;
 }
 
+.seeMore {
+  display: inline-block;
+  margin-top: 11px;
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.seeMore:hover {
+  text-decoration: underline;
+}
+
 .sectionDiary {
   margin-top: 40px;
   margin-bottom: 20px;
@@ -107,6 +125,24 @@
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
   margin-top: 16px;
+}
+
+.secondaryButton {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.secondaryButton:hover {
+  background: var(--bg-secondary);
+  border-color: var(--accent);
 }
 
 

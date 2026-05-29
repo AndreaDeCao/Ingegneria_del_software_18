@@ -12,6 +12,7 @@ import ProtectedRoute from "./auth/ProtectedRoute";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import AuthCallback from "./pages/auth/AuthCallback";
+import RequestTemporaryPassword from "./pages/auth/RequestTemporaryPassword";
 
 import Treks from "./pages/Treks/Treks";
 import MyTreks from "./pages/Treks/MyTreks";
@@ -88,7 +89,8 @@ export default function App() {
                   {/* Auth */}
                   <Route path="/login"    element={<AppLayout><Login /></AppLayout>} />
                   <Route path="/register" element={<AppLayout><Register /></AppLayout>} />
-        
+                  <Route path="/forgotten-password" element={<AppLayout><RequestTemporaryPassword /></AppLayout>} />
+
                   {/* Treks — pubblica */}
                   <Route path="/treks" element={<AppLayout><Treks /></AppLayout>} />
         
