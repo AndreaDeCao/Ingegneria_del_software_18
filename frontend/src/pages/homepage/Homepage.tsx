@@ -79,7 +79,7 @@ export default function Homepage() {
 
             <div className={styles.sectionHead}>
               <Link to="/treks" className={styles.sectionTitle}>
-                Di tendenza nelle vicinanze
+                Di tendenza 
               </Link>
 
               {!loading && !error && (
