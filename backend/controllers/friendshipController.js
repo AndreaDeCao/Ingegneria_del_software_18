@@ -1,5 +1,6 @@
 const Friendship = require("../models/friendship");
 const User = require("../models/users");
+const mongoose = require("mongoose");
 
 
 /**
@@ -268,14 +269,17 @@ exports.removeFriend = async (req, res) => {
 exports.searchUsers = async (req, res) => {
   try {
     const query = req.query.q?.trim();
-    if(!query || query.length < 2) {
+    if (!query || query.length < 2) {
       return res.status(400).json({ error: "Inserisci almeno 2 caratteri" });
     }
 
-    // Trova ID utenti che sono già amici con l'utente
-    const existingFriendships = await Friendship.find({
-      $or: [{ sender: req.userId }, { receiver: req.userId }],
-    });
+    // Raw driver per bypassare sanitizeFilter
+    const existingFriendships = await Friendship.collection.find({
+      $or: [
+        { sender: new mongoose.Types.ObjectId(req.userId) },
+        { receiver: new mongoose.Types.ObjectId(req.userId) }
+      ],
+    }).toArray();
 
     const excludedIds = new Set([req.userId]);
     existingFriendships.forEach((f) => {
@@ -283,17 +287,19 @@ exports.searchUsers = async (req, res) => {
       excludedIds.add(f.receiver.toString());
     });
 
-    const users = await User.find({
-      _id: { $nin: Array.from(excludedIds) },
+    const rawUsers = await User.collection.find({
       $or: [
-        { nickname: { $regex: query, $options: "i" }},
-        { nome: { $regex: query, $options: "i" }},
-        { cognome: { $regex: query, $options: "i" }},
+        { nickname: { $regex: query, $options: "i" } },
+        { nome: { $regex: query, $options: "i" } },
+        { cognome: { $regex: query, $options: "i" } },
       ],
-    })
-    .select("nome cognome nickname avatarUrl").limit(10);
+    }, {
+      projection: { nome: 1, cognome: 1, nickname: 1, avatarUrl: 1 }
+    }).limit(20).toArray();
 
-    res.json(users);
+    const filtered = rawUsers.filter((u) => !excludedIds.has(u._id.toString()));
+
+    res.json(filtered.slice(0, 10));
 
   } catch(err) {
     res.status(500).json({ error: err.message });

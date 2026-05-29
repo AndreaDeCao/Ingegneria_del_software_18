@@ -46,6 +46,7 @@ export default function CreaAttivitaPage() {
   const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [friends, setFriends] = useState<Friend[]>([]);
   const [invitedUsers, setInvitedUsers] = useState<string[]>([]);
+  const [friendSearch, setFriendSearch] = useState("");
 
   useEffect(() => {
     async function fetchTreks() {
@@ -281,8 +282,22 @@ export default function CreaAttivitaPage() {
                 Non hai ancora amici da invitare
               </p>
             ) : (
+              <>
+              <input 
+                className={styles.input}
+                placeholder="Cerca un amico..."
+                value={friendSearch}
+                onChange={(e) => setFriendSearch(e.target.value)}
+              />
+
               <div className={styles.friendsList}>
-                {friends.map(({ friendshipId, user: friend }) => {
+                {friends
+                  .filter(({ user: f }) =>
+                  `${f.nome} ${f.cognome} ${f.nickname}`
+                  .toLowerCase()
+                  .includes(friendSearch.toLowerCase())
+                )
+                .map(({ friendshipId, user: friend }) => {
                   const isSelected = invitedUsers.includes(friend._id);
                   return (
                     <div
@@ -321,6 +336,7 @@ export default function CreaAttivitaPage() {
                   );
                 })}
               </div>
+              </>
             )}
           </div>
 

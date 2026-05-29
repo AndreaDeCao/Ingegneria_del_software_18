@@ -18,7 +18,7 @@ router.get("/requests/incoming", friendshipController.getIncomingRequests);
 router.get("/requests/outgoing", friendshipController.getOutgoingRequests);
 
 // Invia richiesta di amicizia
-router.post("/requests/:userId", friendshipController.sendRequest);
+router.post("/request/:userId", friendshipController.sendRequest);
 
 // Accetta richiesta di amicizia
 router.put("/accept/:friendshipId", friendshipController.acceptRequest);
