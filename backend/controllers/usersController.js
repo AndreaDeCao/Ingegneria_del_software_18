@@ -3,6 +3,8 @@ const User = require("../models/users");
 const crypto = require("crypto");
 const { sendEmailChangeVerification } = require("../services/emailService");
 
+const bcrypt = require("bcryptjs");
+
 // GET tutti gli utenti
 exports.getUsers = async (req, res) => {
   try {
@@ -210,6 +212,51 @@ exports.updateAvatar = async (req, res) => {
 
     res.json({ message: "Avatar aggiornato" });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/**
+ * Aggiorna password dell'utente autenticato.
+ *
+ * @route PUT /api/users/me/password
+ * @param {import("express").Request} req - Body: { currentPassword, newPassword }
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con messaggio di conferma
+ */
+exports.updatePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if(!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "Campi obbligatori mancanti" });
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,32}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({ error: "La password deve essere tra 6 e 32 caratteri e contenere almeno un numero, una lettera maiuscola e una minuscola" });
+    }
+
+    const user = await User.findById(req.userId).select("+password");
+    if(!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+    if(!user.password) {
+      return res.status(400).json({ error: "Questo account non usa una password locale" });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if(!isMatch) {
+      return res.status(401).json({ error: "Password attuale non corretta" });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 12);
+    await user.save({ validateModifiedOnly: true});
+
+    res.json({ message: "Password aggiornata con successo" });
+
+  } catch(err) {
     res.status(500).json({ error: err.message });
   }
 };

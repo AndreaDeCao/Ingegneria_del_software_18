@@ -34,7 +34,7 @@ export default function ProfilePage() {
 
   // Stato del modal
   const [activeModal, setActiveModal] = useState<
-    "nome" | "cognome" | "nickname" | "email" | "elimina" | null
+    "nome" | "cognome" | "nickname" | "email" | "password" | "elimina" | null
   >(null);
 
   // Valori temp nel modal
@@ -45,6 +45,18 @@ export default function ProfilePage() {
   const [verifyStatus, setVerifyStatus] = useState<string | null>(
     () => searchParams.get("email-verified") 
   );
+
+  const [passwordForm, setPasswordForm] = useState({
+    current: "",
+    next: "",
+    confirm: "",
+  });
+
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    next: false,
+    confirm: false,
+  });
 
   useEffect(() => {
   if (searchParams.get("email-verified")) {
@@ -138,6 +150,41 @@ export default function ProfilePage() {
         await logout();
       } catch (err: unknown) {
           if (err instanceof Error) setError(err.message);
+      }
+    }
+
+/**
+ * Aggiorna password dell'utente autenticato.
+ * Prima della richiesta valida i requisiti e chiede la conferma.
+ *
+ * @returns {Promise<void>}
+ */
+    async function handlePasswordSave() {
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,32}$/;
+
+      if(passwordForm.next !== passwordForm.confirm) {
+        setError("Le nuove password non coincidono");
+        return;
+      }
+      if(!passwordRegex.test(passwordForm.next)) {
+        setError("La password deve essere tra 6 e 32 caratteri e contenere almeno un numero, una lettera maiuscola e una minuscola");
+        return;
+      }
+
+      try {
+        await http<{ message: string }>("/users/me/password", {
+          method: "PUT",
+          body: JSON.stringify({
+            currentPassword: passwordForm.current,
+            newPassword: passwordForm.next,
+          }),
+        });
+        setSuccessMsg("Password aggiornata con successo");
+        setPasswordForm({ current: "", next: "", confirm: "" });
+        setActiveModal(null);
+
+      } catch(err: unknown) {
+        if (err instanceof Error) setError(err.message);
       }
     }
 
@@ -254,6 +301,24 @@ export default function ProfilePage() {
             </div>
           </div>
 
+          <div className={styles.row}>
+            <span className={styles.label}>Password</span>
+            <div className={styles.rowRight}>
+              <span className={styles.value}>••••••••</span>
+              <button 
+                className={styles.editBtn} 
+                onClick={() => {
+                  setPasswordForm({ current: "", next: "", confirm: ""});
+                  setActiveModal("password");
+                  setSuccessMsg(null);
+                  setError(null);
+                }}
+              >
+                Modifica
+              </button>
+            </div>
+          </div>
+
         </section>
 
         <hr className={styles.divider}/>
@@ -275,9 +340,76 @@ export default function ProfilePage() {
           </div>
         </section>
 
+        {/* CAMBIO PASSWORD NEL MODAL */}
+        <Modal
+          isOpen={activeModal === "password"}
+          onClose={() => setActiveModal(null)}
+          title="Cambia password"
+        >
+          <label className={styles.fieldLabel}>Password attuale</label>
+          <div className={styles.inputWrapper}>
+            <input
+              className={styles.input}
+              type={showPasswords.current ? "text" : "password"}
+              autoComplete="current-password"
+              value={passwordForm.current}
+              onChange={(e) => setPasswordForm((p) => ({ ...p, current: e.target.value }))}
+              autoFocus
+            />
+            <button
+              type="button"
+              className={styles.eyeBtn}
+              onClick={() => setShowPasswords((p) => ({ ...p, current: !p.current }))}
+              aria-label={showPasswords.current ? "Nascondi password" : "Mostra password"}
+            >
+              <i className={showPasswords.current ? "ti ti-eye-off" : "ti ti-eye"} aria-hidden="true" />
+            </button>
+          </div>
+
+          <label className={styles.fieldLabel}>Nuova password</label>
+          <div className={styles.inputWrapper}>
+            <input
+              className={styles.input}
+              type={showPasswords.next ? "text" : "password"}
+              autoComplete="new-password"
+              value={passwordForm.next}
+              onChange={(e) => setPasswordForm((p) => ({ ...p, next: e.target.value }))}
+            />
+            <button
+              type="button"
+              className={styles.eyeBtn}
+              onClick={() => setShowPasswords((p) => ({ ...p, next: !p.next }))}
+              aria-label={showPasswords.next ? "Nascondi password" : "Mostra password"}
+            >
+              <i className={showPasswords.next ? "ti ti-eye-off" : "ti ti-eye"} aria-hidden="true" />
+            </button>
+          </div>
+
+          <label className={styles.fieldLabel}>Conferma nuova password</label>
+          <input
+            className={styles.input}
+            type="password"
+            autoComplete="new-password"
+            value={passwordForm.confirm}
+            onChange={(e) => setPasswordForm((p) => ({ ...p, confirm: e.target.value }))}
+            onKeyDown={(e) => e.key === "Enter" && handlePasswordSave()}
+          />
+
+          {error && <p className={styles.errorBanner}>{error}</p>}
+
+          <div className={styles.modalActions}>
+            <button className={styles.cancelBtn} onClick={() => setActiveModal(null)}>
+              Annulla
+            </button>
+            <button className={styles.saveBtn} onClick={handlePasswordSave}>
+              Salva
+            </button>
+          </div>
+        </Modal>
+
         {/* MODIFICA CAMPO NEL MODAL */}
         <Modal
-          isOpen={activeModal !== null && activeModal !== "elimina"}
+          isOpen={activeModal !== null && activeModal !== "password" && activeModal !== "elimina"}
           onClose={() => setActiveModal(null)}
           title={`Modifica ${activeModal ?? ""}`}
         >
