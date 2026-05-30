@@ -144,7 +144,7 @@ exports.getNearestParkingRoute = async (req, res) => {
     let parkingLat = null, parkingLon = null, parkingLabel = null;
 
     try {
-      const overpass = await getNearestParking(baseLat, baseLon);
+      const overpass = await getNearestParking(baseLat, baseLon); //FIXME sezione parcheggio 
       const elements = overpass?.elements ?? [];
       if (elements.length > 0) {
         const node = elements[0];
@@ -170,7 +170,7 @@ exports.getNearestParkingRoute = async (req, res) => {
     const summary = geojson?.features?.[0]?.properties?.summary ?? {};
 
     res.json({
-      label: `🅿 ${parkingLabel}`,
+      label: `${parkingLabel}`,
       startLat: parkingLat,
       startLon: parkingLon,
       distanceMeters: summary.distance ?? null,
