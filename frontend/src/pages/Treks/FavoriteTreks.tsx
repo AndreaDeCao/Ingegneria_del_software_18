@@ -411,6 +411,7 @@ export default function FavoriteTreks() {
               </div>
             </div>
           )}
+          
           {/* TAG ATTIVI */}
           {activeTags.length > 0 && (
             <div className={styles.activeTags}>
