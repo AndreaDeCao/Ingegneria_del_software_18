@@ -78,6 +78,7 @@ export default function TrekDetails() {
   const [routeLoading, setRouteLoading] = useState(false);
   const [clickToSelect, setClickToSelect] = useState(false);
   const [parkingLoading, setParkingLoading] = useState(false);
+  const [lastParkingCoords, setLastParkingCoords] = useState<{ lat: number; lon: number } | null>(null);
 
   // varianti di percorso (4 tipi: 2 a piedi + 2 in bici) — NON cambiano la partenza
   const [routeVariants, setRouteVariants] = useState<any[]>([]);
@@ -96,6 +97,9 @@ export default function TrekDetails() {
   const [isFavorite, setIsFavorite] = useState(false);
   
   const disableSave = !user || favoriteLoading;
+
+  const alreadyAtParking = !!lastParkingCoords && customStart?.lat === lastParkingCoords.lat && customStart?.lon === lastParkingCoords.lon;
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -314,6 +318,7 @@ export default function TrekDetails() {
     setVariantsOpen(false);
     setRouteVariants([]);
     setActiveVariantKey(null);
+    setLastParkingCoords(null);
     try {
       const res = await fetch(
         `${API_BASE}/api/route/${id}/custom?startLat=${lat}&startLon=${lon}`
@@ -340,6 +345,7 @@ export default function TrekDetails() {
     setRouteVariants([]);
     setActiveVariantKey(null);
     setVariantsOpen(false);
+    setLastParkingCoords(null);
     try {
       const res = await fetch(`${API_BASE}/api/route/${id}`);
       if (res.ok) {
@@ -354,15 +360,27 @@ export default function TrekDetails() {
 
   // parcheggio più vicino → cambia punto di partenza (pin viola), stesso pannello delle altre modalità
   async function handleParking() {
+    // Se la partenza corrente coincide con l'ultimo parcheggio, non fare nulla
+    if ( lastParkingCoords && customStart?.lat === lastParkingCoords.lat && customStart?.lon === lastParkingCoords.lon ) {
+      return; // oppure rendi button non cliccabile
+    }
+
     setSearchError(null);
     setParkingLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/route/${id}/parking`);
+      const start = customStart ?? { lat: trek!.coordinates.lat, lon: trek!.coordinates.lon };
+      const res = await fetch(
+        `${API_BASE}/api/route/${id}/parking?startLat=${start.lat}&startLon=${start.lon}`
+      );
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error ?? "Parcheggio non trovato");
       }
       const data = await res.json();
+
+      // Salva le coordinate del parcheggio trovato
+      setLastParkingCoords({ lat: data.startLat, lon: data.startLon });
+
       setCustomStart({ lat: data.startLat, lon: data.startLon });
       setCustomStartLabel(data.label);
       setRouteGeojson(data.geojson);
@@ -376,7 +394,7 @@ export default function TrekDetails() {
     } finally {
       setParkingLoading(false);
     }
-  }
+}
 
   function handleSearchInput(value: string) {
     setSearchQuery(value);
@@ -763,12 +781,14 @@ console.log("trek._id:", (trek as any)._id);
               >
                 Seleziona sulla mappa
               </button>
+
               <button
-                className={styles.modeButton}
+                className={`${styles.modeButton} ${alreadyAtParking ? styles.modeButtonDisabled : ""}`}
                 onClick={handleParking}
-                disabled={parkingLoading}
+                disabled={parkingLoading || alreadyAtParking}
+                title={alreadyAtParking ? "Sei già partito dal parcheggio più vicino" : undefined}
               >
-                {parkingLoading ? "Ricerca..." : " Parcheggio più vicino"}
+                {parkingLoading ? "Ricerca..." : alreadyAtParking ? "Già al parcheggio" : "Parcheggio più vicino"}
               </button>
             </div>
 

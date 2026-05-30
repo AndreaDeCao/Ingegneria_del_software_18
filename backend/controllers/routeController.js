@@ -138,8 +138,8 @@ exports.getNearestParkingRoute = async (req, res) => {
     if (!trek) return res.status(404).json({ error: "Percorso non trovato" });
 
     const { lat: endLat, lon: endLon } = trek.endCoordinates ?? trek.coordinates;
-    const baseLat = trek.coordinates.lat;
-    const baseLon = trek.coordinates.lon;
+    const baseLat = req.query.startLat ? parseFloat(req.query.startLat) : trek.coordinates.lat;
+    const baseLon = req.query.startLon ? parseFloat(req.query.startLon) : trek.coordinates.lon;
 
     let parkingLat = null, parkingLon = null, parkingLabel = null;
 
