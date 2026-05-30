@@ -4,6 +4,7 @@ import ActivityCard from "../../components/ActivityCard";
 
 import type { Trek } from "../../types/Trek";
 import type { Activity } from "../../types/Activity";
+import { Link } from "react-router-dom";
 
 import styles from "../../App.module.css";
 
@@ -86,7 +87,7 @@ export default function PublicHomepage() {
             {!loading && !error && (
               <div className={styles.cardsRow}>
                 {treks.slice(0, MAX_TREK_CARDS).map((trek) => (
-                  <TrekCard key={trek.id} trek={trek} />
+                  <TrekCard key={trek._id} trek={trek} />
                 ))}
               </div>
             )}
@@ -99,9 +100,9 @@ export default function PublicHomepage() {
         <section className={styles.rightColumn}>
 
           <div className={styles.sectionHead}>
-            <h2 className={styles.sectionTitle}>
+            <Link to="/attivita/visualizza" className={styles.sectionTitle}>
               Attività in programma
-            </h2>
+            </Link>
 
             {!loading && !error && (
               <span className={styles.sectionCount}>
@@ -130,7 +131,7 @@ export default function PublicHomepage() {
             <div className={styles.activitiesColumn}>
               {activities.slice(0, MAX_ACTIVITY_CARDS).map((activity) => (
                 <ActivityCard
-                  key={activity.id}
+                  key={activity._id}
                   activity={activity}
                 />
               ))}

@@ -7,7 +7,16 @@ interface ActivityCardProps {
   activity: Activity;
 }
 
-function ActivityCard({ activity }: ActivityCardProps) {
+  function ActivityCard({ activity }: ActivityCardProps) {
+
+  const formatTravelMode = (mode: string) => {
+    switch (mode) {
+      case "walking":   return "A piedi";
+      case "bicycling": return "In bicicletta";
+      default:          return mode;
+    }
+  };
+
   return (
     <Link to={`/attivita/${activity._id}`} className={styles.cardLink}>
       <article className={styles.card}>
@@ -23,11 +32,23 @@ function ActivityCard({ activity }: ActivityCardProps) {
 
           <div className={styles.cardMeta}>
             <span className={styles.badge}>
-              👥 {activity.maxParticipants}
+              Partecipanti: {activity.partecipantList?.length}/{activity.maxParticipants}
             </span>
 
             <span className={styles.badge}>
-              📅 {new Date().toLocaleDateString()}
+              Modalità: {formatTravelMode(activity.travelMode ?? "")}
+            </span>
+
+            <span className={styles.badge}>
+              Data:{" "}
+              {new Date(activity.activityDate).toLocaleString("it-IT", {
+                timeZone: "Europe/Rome",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </span>
           </div>
 

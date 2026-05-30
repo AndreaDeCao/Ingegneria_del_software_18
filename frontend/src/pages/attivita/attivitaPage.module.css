@@ -401,12 +401,6 @@ select:focus {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
-.detailCardIcon {
-  font-size: 22px;
-  line-height: 1;
-  margin-top: 2px;
-}
-
 .detailCard > div {
   display: flex;
   flex-direction: column;
@@ -518,6 +512,7 @@ select:focus {
 .organizerTag {
   font-size: 13px;
   margin-left: 4px;
+  color: var(--text-secondary);;
 }
 
 

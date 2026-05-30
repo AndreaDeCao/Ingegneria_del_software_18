@@ -157,8 +157,8 @@ export default function DettagliAttivita() {
 
   const formatTravelMode = (mode: string) => {
     switch (mode) {
-      case "walking":   return "🚶 A piedi";
-      case "bicycling": return "🚴 In bicicletta";
+      case "walking":   return "A piedi";
+      case "bicycling": return "In bicicletta";
       default:          return mode;
     }
   };
@@ -193,6 +193,13 @@ export default function DettagliAttivita() {
 
         {/* ── SINISTRA ── */}
         <div className={appStyles.leftColumn}>
+          <div style={{ paddingBottom: "20px" }}>
+            {isOrganizer && (
+                <>
+                  <div className={styles.organizerBadge}>✅ Sei l'organizzatore di questa attività</div>
+                </>
+            )}
+          </div>
 
           {/* Hero */}
           <div className={styles.detailHero}>
@@ -203,14 +210,13 @@ export default function DettagliAttivita() {
               <span className={styles.activityId}>#{activity._id}</span>
             </div>
             <h1 className={styles.detailTitle}>{activity.title}</h1>
-            {trek && <div className={styles.detailTrekName}>🗺 Trek: <strong>{trek.name}</strong></div>}
+            {trek && <div className={styles.detailTrekName}>Trek: <strong>{trek.name}</strong></div>}
             {activity.description && <p className={styles.detailDescription}>{activity.description}</p>}
           </div>
 
           {/* Info grid */}
           <div className={styles.detailGrid}>
             <div className={styles.detailCard}>
-              <span className={styles.detailCardIcon}>📅</span>
               <div>
                 <span className={styles.detailCardLabel}>Data</span>
                 <span className={styles.detailCardValue}>{formatDate(activity.activityDate)}</span>
@@ -219,7 +225,6 @@ export default function DettagliAttivita() {
             </div>
 
             <div className={styles.detailCard}>
-              <span className={styles.detailCardIcon}>🏃</span>
               <div>
                 <span className={styles.detailCardLabel}>Modalità</span>
                 <span className={styles.detailCardValue}>{formatTravelMode(activity.travelMode ?? "")}</span>
@@ -227,7 +232,6 @@ export default function DettagliAttivita() {
             </div>
 
             <div className={styles.detailCard}>
-              <span className={styles.detailCardIcon}>👥</span>
               <div>
                 <span className={styles.detailCardLabel}>Partecipanti</span>
                 <span className={styles.detailCardValue}>{participantCount} / {activity.maxParticipants}</span>
@@ -238,7 +242,6 @@ export default function DettagliAttivita() {
             </div>
 
             <div className={styles.detailCard}>
-              <span className={styles.detailCardIcon}>👤</span>
               <div>
                 <span className={styles.detailCardLabel}>Organizzatore</span>
                 <span className={styles.detailCardValue}>{organizerName}</span>
@@ -266,7 +269,6 @@ export default function DettagliAttivita() {
             {/* Organizzatore */}
             {isOrganizer && (
               <>
-                <div className={styles.organizerBadge}>✅ Sei l'organizzatore di questa attività</div>
                 <div className={styles.buttonActions}>
                   {activity.status !== "Annullato" && (
                     <button className={styles.dangerButton} onClick={() => setActiveModal("cancel")}>
@@ -312,7 +314,7 @@ export default function DettagliAttivita() {
             {/* Già partecipante */}
             {isParticipant && (
               <>
-                <div className={styles.alreadyJoinedBadge}>✅ Partecipi già a questa attività</div>
+                <div className={styles.alreadyJoinedBadge}>✔ Partecipi già a questa attività</div>
                 <div className={styles.buttonActions}>
                   <button className={styles.leaveButton} onClick={() => setActiveModal("leave")}>
                     Lascia attività
@@ -352,7 +354,7 @@ export default function DettagliAttivita() {
                     <div className={styles.participantInfo}>
                       <span className={styles.participantNickname}>
                         {p.nickname}
-                        {i === 0 && <span className={styles.organizerTag}> 👑</span>}
+                        {i === 0 && <span className={styles.organizerTag}> (organizzatore) </span>}
                       </span>
                       {isOrganizer && <span className={styles.participantEmail}>{p.email}</span>}
                     </div>
