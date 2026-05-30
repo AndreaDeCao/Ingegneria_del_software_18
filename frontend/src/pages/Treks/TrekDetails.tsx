@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { useAuth } from "../../auth/AuthProvider";
 
 import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
@@ -57,7 +56,7 @@ export default function TrekDetails() {
 
   const [hoverVote, setHoverVote] = useState<number | null>(null);
   
-  const { user } = useAuth(); 
+  // const { user } = useAuth(); 
 
   const [myVote, setMyVote] = useState<number | null>(null);
   const [ratingLoading, setRatingLoading] = useState(false);
