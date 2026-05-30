@@ -26,8 +26,39 @@ function normalizeCoord(
   return { lat: coord.lat, lon };
 }
 
-// converte il GPX XML in GeoJSON minimale per TrekMap
-function gpxToGeojson(gpxText: string): any | null {
+// converte il GPX XML in GeoJSON minimale per TrekMap senza info su percorso
+// function gpxToGeojson(gpxText: string): any | null {
+//   try {
+//     const parser = new DOMParser();
+//     const doc = parser.parseFromString(gpxText, "application/xml");
+//     const trkpts = Array.from(doc.querySelectorAll("trkpt"));
+//     if (!trkpts.length) return null;
+
+//     const coordinates = trkpts.map(pt => [
+//       parseFloat(pt.getAttribute("lon") ?? "0"),
+//       parseFloat(pt.getAttribute("lat") ?? "0"),
+//     ]);
+
+//     return {
+//       type: "FeatureCollection",
+//       features: [{
+//         type: "Feature",
+//         geometry: { type: "LineString", coordinates },
+//         properties: {}
+//       }]
+//     };
+//   } catch {
+//     return null;
+//   }
+// }
+
+// converte il GPX XML in GeoJSON minimale per TrekMap con info su percorso prese da metadati
+function gpxToGeojson(gpxText: string): {
+  geojson: any;
+  distanceMeters?: number;
+  durationSeconds?: number;
+  routeType?: string;
+} | null {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(gpxText, "application/xml");
@@ -39,7 +70,7 @@ function gpxToGeojson(gpxText: string): any | null {
       parseFloat(pt.getAttribute("lat") ?? "0"),
     ]);
 
-    return {
+    const geojson = {
       type: "FeatureCollection",
       features: [{
         type: "Feature",
@@ -47,9 +78,73 @@ function gpxToGeojson(gpxText: string): any | null {
         properties: {}
       }]
     };
+
+    const distanceEl = doc.querySelector("metadata extensions distance");
+    const durationEl = doc.querySelector("metadata extensions duration");
+    const routeTypeEl = doc.querySelector("metadata extensions routeType");
+
+    const distanceMeters = distanceEl ? parseFloat(distanceEl.textContent ?? "") : undefined;
+    const durationSeconds = durationEl ? parseFloat(durationEl.textContent ?? "") : undefined;
+    const routeType = routeTypeEl?.textContent ?? undefined;
+
+    return { geojson, distanceMeters, durationSeconds, routeType };
   } catch {
     return null;
   }
+}
+
+function calcDistanceFromCoords(coords: number[][]): number {
+  let total = 0;
+  for (let i = 1; i < coords.length; i++) {
+    const [lon1, lat1] = coords[i - 1];
+    const [lon2, lat2] = coords[i];
+    const R = 6371000;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) ** 2;
+    total += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+  return total;
+}
+
+function calcDifficulty(distanceMeters: number, durationSeconds: number): string {
+  const km = distanceMeters / 1000;
+  const ore = durationSeconds / 3600;
+  const speed = km / ore;
+  const score = km * 0.6 + (1 / speed) * 10;
+  if (score < 6) return "Facile";
+  if (score < 12) return "Medio";
+  return "Difficile";
+}
+
+function formatDuration(seconds: number): string {
+  const totalMinutes = Math.round(seconds / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours === 0) return `${minutes} min`;
+  if (minutes === 0) return `${hours} h`;
+  return `${hours} h ${minutes} min`;
+}
+
+function downloadGpx(entry: DiaryEntry | null) {
+  if (!entry?.gpxData) return;
+  const blob = new Blob([entry.gpxData], { type: "application/gpx+xml" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const fileName = entry.titolo
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "") || "tracciato";
+  link.href = url;
+  link.download = `${fileName}.gpx`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 export default function DettagliVoceDiarioPage() {
@@ -61,6 +156,20 @@ export default function DettagliVoceDiarioPage() {
   const [error, setError]           = useState<string | null>(null);
   const [routeGeojson, setRouteGeojson] = useState<any>(null);
   const [lightboxUrl, setLightboxUrl]   = useState<string | null>(null);
+
+  const [routeInfo, setRouteInfo] = useState<{
+    distanceMeters: number;
+    durationSeconds: number;
+    routeType?: string;
+  } | null>(null);
+
+  const typeMap: Record<string, string> = { 
+    bike_mountain: "mountain bike",
+    bike_road: "bici da strada",
+    walk_road: "camminata prediligendo la strada",
+    hiking_road: "camminata prediligendo i sentieri",
+    hiking:"camminata prediligendo i sentieri"
+  };
 
 
   const gpxCoordinates = routeGeojson?.features?.[0]?.geometry?.coordinates || [];
@@ -99,10 +208,27 @@ export default function DettagliVoceDiarioPage() {
 
         // MAPPA: preferisci GPX caricato, poi fallback su route API
         if (data.gpxData) {
-          const geojson = gpxToGeojson(data.gpxData);
-          if (geojson) { setRouteGeojson(geojson); return; }
+          const result = gpxToGeojson(data.gpxData);
+          if (result) { 
+            setRouteGeojson(result.geojson); 
+            
+            if (result.distanceMeters && result.durationSeconds) {
+              setRouteInfo({
+                distanceMeters: result.distanceMeters,
+                durationSeconds: result.durationSeconds,
+                routeType: result.routeType,
+              });      
+            } else {
+              // fallback calcolo da coordinate
+              const coords = result.geojson.features[0].geometry.coordinates;
+              const distanceMeters = calcDistanceFromCoords(coords);
+              const durationSeconds = (distanceMeters / 3500) * 3600;
+              setRouteInfo({ distanceMeters, durationSeconds });
+            }
+            return;
+          }
         }
-
+        // Nessun GPX → carica solo la geometria per la mappa, senza toccare routeInfo
         const trekNumericId = data.trekId?.id;
         if (trekNumericId) {
           const routeRes = await fetch(`${API_BASE}/api/route/${trekNumericId}`);
@@ -166,18 +292,13 @@ export default function DettagliVoceDiarioPage() {
         {/* LEFT */}
         <section className={appStyles.leftColumn}>
 
-          {/* BACK */}
-          {/* <button className={styles.backButton} onClick={() => navigate("/diario/visualizza")}>
-            ← Torna al diario
-          </button> */}
-
           {/* TITOLO */}
           <div className={appStyles.sectionHead}>
             <h1 className={styles.pageTitle}>{entry.titolo}</h1>
           </div>
 
           {/* BADGES */}
-          <div className={styles.badges}>
+          {/* <div className={styles.badges}>
             <span className={appStyles.sectionCount}>📅 {dataFormatted}</span>
             {entry.completato !== false && (
               <span className={appStyles.sectionCount}>✅ Completato</span>
@@ -187,10 +308,10 @@ export default function DettagliVoceDiarioPage() {
                 {"★".repeat(entry.valutazione)}{"☆".repeat(5 - entry.valutazione)}
               </span>
             )}
-            {trek && <span className={appStyles.sectionCount}>🎯 {trek.difficulty}</span>}
-            {trek?.duration && <span className={appStyles.sectionCount}>⏱ {trek.duration}</span>}
-            {trek?.lengthKm && <span className={appStyles.sectionCount}>📏 {trek.lengthKm} km</span>}
-          </div>
+            {trek && <span className={appStyles.sectionCount}> {routeInfo ? calcDifficulty(routeInfo.distanceMeters, routeInfo.durationSeconds) : trek.difficulty} </span>}
+            {(trek?.duration || routeInfo) && <span className={appStyles.sectionCount}>{routeInfo ? formatDuration(routeInfo.durationSeconds) : trek!.duration}</span>}
+            {(trek?.lengthKm || routeInfo) && <span className={appStyles.sectionCount}>{routeInfo ? `${(routeInfo.distanceMeters / 1000).toFixed(1)} km` : `${trek!.lengthKm} km`}</span>}
+          </div> */}
 
           {/* NOTE */}
           {entry.note && (
@@ -210,12 +331,6 @@ export default function DettagliVoceDiarioPage() {
               customStart={customStart}
             />
           </div>
-          {/* <div className={styles.mapLegend}>
-            {trek?.coordinates && <span>🟢 Partenza</span>}
-            {trek?.endCoordinates && <span>🔴 Arrivo</span>}
-            {routeGeojson && <span>🔵 Percorso</span>}
-            {entry.gpxData && <span>📎 Traccia GPX</span>}
-          </div> */}
 
           <div className={styles.mapLegend}>
             {trekStart && <span>🟢 Partenza</span>}
@@ -228,7 +343,7 @@ export default function DettagliVoceDiarioPage() {
 
             {routeGeojson && <span>🔵 Percorso</span>}
 
-            {entry.gpxData && <span>📎 Traccia GPX</span>}
+            {entry.gpxData && <span> Traccia GPX</span>}
           </div>
 
           {/* SEGNALAZIONE */}
@@ -245,7 +360,7 @@ export default function DettagliVoceDiarioPage() {
           {/* FOTO */}
           {entry.foto && entry.foto.length > 0 && (
             <div className={styles.section}>
-              <h2 className={appStyles.sectionTitle}>📸 Foto</h2>
+              <h2 className={appStyles.sectionTitle}> Foto del percorso</h2>
               <div className={styles.fotoGrid}>
                 {entry.foto.map((url, i) => (
                   <img
@@ -270,22 +385,50 @@ export default function DettagliVoceDiarioPage() {
             <div className={styles.card}>
               <h3 className={appStyles.sectionTitle}>Riepilogo</h3>
               <div className={styles.summaryList}>
-                {trek ? (
+                {trek ? ( //percorso predefinito
                   <>
-                    <span>🥾 {trek.name}</span>
-                    <span>🎯 Difficoltà: {trek.difficulty}</span>
-                    <span>⏱ Durata: {trek.duration}</span>
-                    <span>📏 Lunghezza: {trek.lengthKm ?? "-"} km</span>
+                    <span> {trek.name}</span>
+                    <span> {dataFormatted}</span>
+                    <span>Difficoltà: {routeInfo ? calcDifficulty(routeInfo.distanceMeters, routeInfo.durationSeconds) : trek.difficulty}</span>
+                    <span> Durata: {routeInfo ? formatDuration(routeInfo.durationSeconds) : trek.duration}</span>
+                    <span> Lunghezza: {routeInfo ? `${(routeInfo.distanceMeters / 1000).toFixed(1)} km` : `${trek.lengthKm ?? "-"} km`}</span>
+                    <span> Tracciato per: camminata prediligendo i sentieri</span>
+
+                    {/* {entry.valutazione && <span> Valutazione: {entry.valutazione} / 5 </span>} */}
+                    {entry.valutazione && (
+                      <span className={appStyles.sectionCount}>
+                        Valutazione: {"★".repeat(entry.valutazione)}{"☆".repeat(5 - entry.valutazione)}
+                      </span>
+                    )}
+                    {entry.completato !== false && <span style={{color:"#2d6a4f"}}> Percorso completato </span>}
+                  </>
+                ) : routeInfo ? (
+                  // nessun trek collegato ma abbiamo il GPX
+                  <>
+                    {entry.percorsoPersonalizzato && <span> {entry.percorsoPersonalizzato}</span>}
+                    <span> {dataFormatted}</span>
+                    {/* {entry.valutazione && <span> Valutazione: {entry.valutazione} / 5 </span>} */}
+                    {entry.valutazione && (
+                      <span className={appStyles.sectionCount}>
+                        Valutazione: {"★".repeat(entry.valutazione)}{"☆".repeat(5 - entry.valutazione)}
+                      </span>
+                    )}
+                    {entry.completato !== false && <span style={{color:"#2d6a4f"}}> Percorso completato</span>}
+                    {entry.gpxData && <span> Traccia GPX allegata</span>}
+                    {routeInfo?.routeType && (
+                      <span> Tracciato per: {typeMap[routeInfo.routeType] ?? routeInfo.routeType}</span>
+                    )}
+                    <span style={{ color: "#7c3aed", fontSize: "12px", borderBottom: "none" }}>
+                      Dati calcolati dal GPX allegato
+                    </span>
+                    <span> Difficoltà: {calcDifficulty(routeInfo.distanceMeters, routeInfo.durationSeconds)}</span>
+                    <span> Durata: {formatDuration(routeInfo.durationSeconds)}</span>
+                    <span> Lunghezza: {(routeInfo.distanceMeters / 1000).toFixed(1)} km</span>
                   </>
                 ) : entry.percorsoPersonalizzato ? (
-                  <span>🗺 {entry.percorsoPersonalizzato}</span>
+                  <span> {entry.percorsoPersonalizzato}</span>
                 ) : null}
-                <span>📅 {dataFormatted}</span>
-                {entry.valutazione && (
-                  <span>⭐ Valutazione: {entry.valutazione}/5</span>
-                )}
-                {entry.completato !== false && <span>✅ Completato</span>}
-                {entry.gpxData && <span>📎 Traccia GPX allegata</span>}
+
               </div>
             </div>
 
@@ -298,12 +441,20 @@ export default function DettagliVoceDiarioPage() {
               >
                 ← Torna al diario
               </button>
+              {entry.gpxData && (
+                <button
+                  className={styles.actionButtonSecondary}
+                  onClick={() => downloadGpx(entry)}
+                >
+                  Scarica GPX
+                </button>
+              )}
               {trek?.id && (
                 <button
                   className={styles.actionButtonSecondary}
                   onClick={() => navigate(`/treks/${trek.id}`)}
                 >
-                  🥾 Vai al percorso
+                   Vai al percorso
                 </button>
               )}
             </div>
