@@ -72,4 +72,28 @@ async function sendEmailChangeVerification(toEmail, token) {
     });
 }
 
-module.exports = { sendVerificationEmail, sendEmailChangeVerification };
+async function sendTemporaryPasswordEmail(toEmail, tempPassword) {
+  await transporter.sendMail({
+    from: `"DoloMate" <${process.env.GMAIL_USER}>`,
+    to: toEmail,
+    subject: "Password temporanea DoloMate",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 500px; margin: auto;">
+        <h2>Richiesta password temporanea</h2>
+        <p>Abbiamo ricevuto una richiesta di password temporanea per il tuo account.</p>
+        <p>Usa questa password per accedere:</p>
+        <p style="font-size: 18px; font-weight: 700; background: #f3f4f6; padding: 12px; border-radius: 8px;">
+          ${tempPassword}
+        </p>
+        <p>La password è valida per <strong>1 ora</strong>. Dopo l&apos;accesso, ti consigliamo di cambiare la password nelle impostazioni dell&apos;account.</p>
+        <p style="margin-top:24px; color:#888; font-size:12px;">
+          Se non hai richiesto questa password, ignora questa mail.
+        </p>
+      </div>
+    `,
+  });
+}
+
+// module.exports = { sendVerificationEmail, sendTemporaryPasswordEmail };
+
+module.exports = { sendVerificationEmail, sendEmailChangeVerification, sendTemporaryPasswordEmail };
