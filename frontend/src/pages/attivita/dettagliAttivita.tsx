@@ -159,7 +159,8 @@ export default function DettagliAttivita() {
   const isParticipant = !isOrganizer && activity.partecipantList.some((p) => p._id === currentUserID);
   const participantCount = activity.partecipantList.length;
   const spotsLeft = activity.maxParticipants - participantCount;
-  const canJoin = !isOrganizer && !isParticipant && activity.status === "Aperto" && spotsLeft > 0;
+  const isExpired = new Date(activity.activityDate).getTime() < Date.now();
+  const canJoin = !isOrganizer && !isParticipant && activity.status === "Aperto" && spotsLeft > 0 && !isExpired;
 
   const organizerName = organizer?.nickname ||
     `${organizer?.nome ?? ""} ${organizer?.cognome ?? ""}`.trim() ||
@@ -182,14 +183,19 @@ export default function DettagliAttivita() {
                 <div className={styles.alreadyJoinedBadge}>Partecipi a questa attività</div>
                 </>
             )}
+            {isExpired && (
+                <div className={styles.errorBox}>
+                  Questa attività è scaduta — la data era il {new Date(activity.activityDate).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" })}
+                </div>
+            )}
           </div>
 
           {/* Hero */}
           <div className={styles.detailHero}>
             <div className={styles.detailHeroTop}>
-              <span className={`${styles.statusBadge} ${getStatusClass(activity.status ?? "")}`}>
-                {activity.status ?? "—"}
-              </span>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                {(() => { const effectiveStatus = (activity.status === "Aperto" && isExpired) ? "Chiuso" : activity.status; return <span className={`${styles.statusBadge} ${getStatusClass(effectiveStatus ?? "")}`}>{effectiveStatus ?? "—"}</span>; })()}
+              </div>
               <span className={styles.activityId}>#{activity._id}</span>
             </div>
             <h1 className={styles.detailTitle}>{activity.title}</h1>
@@ -254,28 +260,25 @@ export default function DettagliAttivita() {
               <>
                 <div className={styles.buttonActions}>
                   {activity.status !== "Annullato" && (
-                    <button className={styles.dangerButton} onClick={() => setActiveModal("cancel")}>
+                    <button className={styles.dangerButton} disabled={isExpired} onClick={() => setActiveModal("cancel")}>
                       Annulla attività
                     </button>
                   )}
                   {activity.status === "Annullato" && (
-                    <button className={styles.dangerButton} onClick={() => setActiveModal("uncancel")}>
+                    <button className={styles.dangerButton} disabled={isExpired} onClick={() => setActiveModal("uncancel")}>
                       Riattiva attività
                     </button>
                   )}
                   {activity.status !== "Annullato" && activity.status === "Chiuso" && participantCount < activity.maxParticipants && (
-                    <button className={styles.dangerButton} onClick={() => handleAction("open", "PATCH")}>
+                    <button className={styles.dangerButton} disabled={isExpired} onClick={() => handleAction("open", "PATCH")}>
                       Apri attività
                     </button>
                   )}
                   {activity.status !== "Annullato" && activity.status === "Aperto" && (
-                    <button className={styles.dangerButton} onClick={() => handleAction("close", "PATCH")}>
+                    <button className={styles.dangerButton} disabled={isExpired} onClick={() => handleAction("close", "PATCH")}>
                       Chiudi attività
                     </button>
                   )}
-                  <button className={styles.dangerButton} onClick={() => setActiveModal("delete")}>
-                    Elimina attività
-                  </button>
                 </div>
               </>
             )}
@@ -298,7 +301,7 @@ export default function DettagliAttivita() {
             {isParticipant && (
               <>
                 <div className={styles.buttonActions}>
-                  <button className={styles.leaveButton} onClick={() => setActiveModal("leave")}>
+                  <button className={styles.leaveButton} disabled={isExpired} onClick={() => setActiveModal("leave")}>
                     Lascia attività
                   </button>
                 </div>

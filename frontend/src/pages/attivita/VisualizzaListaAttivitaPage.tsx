@@ -27,12 +27,12 @@ export default function VisualizzaAttivitaPage() {
 
   const [joinModal, setJoinModal] = useState<JoinModal>(null);
   const [joinLoading, setJoinLoading] = useState(false);
-  const [joinMessage, setJoinMessage] = useState<{ id: string; text: string } | null>(null);
 
   const currentUserID = user?._id;
 
   // Determina lo stato del bottone Partecipa per una singola attività
-  function getJoinState(activity: Activity): "join" | "organizer" | "participant" | "closed" | "full" {
+  function getJoinState(activity: Activity): "join" | "organizer" | "participant" | "closed" | "full" | "expired" {
+    if (new Date(activity.activityDate).getTime() < Date.now()) return "expired";
     if (activity.status !== "Aperto") return "closed";
     if (activity.organizerID === currentUserID) return "organizer";
     const list = activity.partecipantList ?? [];
@@ -122,11 +122,7 @@ export default function VisualizzaAttivitaPage() {
       const updated = await res.json();
       // aggiorna l'attività nella lista
       setActivities((prev) => prev.map((a) => a._id === activity._id ? { ...a, partecipantList: updated.partecipantList?.map((p: any) => p._id ?? p) ?? [] } : a));
-      setJoinMessage({ id: activity._id, text: "Iscrizione confermata" });
-      setTimeout(() => setJoinMessage(null), 3000);
     } catch (err: any) {
-      setJoinMessage({ id: activity._id, text: err.message || "Errore" });
-      setTimeout(() => setJoinMessage(null), 3000);
     } finally {
       setJoinLoading(false);
       setJoinModal(null);
@@ -203,6 +199,8 @@ export default function VisualizzaAttivitaPage() {
       <section className={styles.activitiesGrid}>
         {filteredActivities.map((activity) => {
           const joinState = getJoinState(activity);
+          const isExpired = joinState === "expired";
+          const effectiveStatus = isExpired && activity.status === "Aperto" ? "Chiuso" : activity.status;
           const isDisabled = joinState !== "join";
           const buttonLabel = {
             join: "Partecipa",
@@ -210,6 +208,7 @@ export default function VisualizzaAttivitaPage() {
             participant: "Già iscritto",
             closed: "Non disponibile",
             full: "Al completo",
+            expired: "Scaduta",
           }[joinState];
 
           return (
@@ -217,7 +216,7 @@ export default function VisualizzaAttivitaPage() {
 
               <article key={activity._id} className={styles.activityCard}>
                 <div className={styles.cardTop}>
-                  <span className={`${styles.statusBadge} ${getStatusClass(activity.status)}`}>{activity.status}</span>
+                  <span className={`${styles.statusBadge} ${getStatusClass(effectiveStatus)}`}>{effectiveStatus}</span>
                   <span className={styles.activityId}>#{activity._id}</span>
                 </div>
 
@@ -239,10 +238,6 @@ export default function VisualizzaAttivitaPage() {
                     <span className={styles.infoValue}>{(activity.partecipantList ?? []).length} / {activity.maxParticipants}</span>
                   </div>
                 </div>
-
-                {joinMessage?.id === activity._id && (
-                  <p className={styles.message}>{joinMessage.text}</p>
-                )}
 
                 <div className={styles.cardActions}>
                   <button

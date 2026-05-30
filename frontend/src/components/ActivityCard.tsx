@@ -7,13 +7,23 @@ interface ActivityCardProps {
   activity: Activity;
 }
 
-  function ActivityCard({ activity }: ActivityCardProps) {
+function ActivityCard({ activity }: ActivityCardProps) {
+  const activityDate = new Date(activity.activityDate);
+
+  const isExpired =
+    activity.status === "Aperto" &&
+    activityDate.getTime() < Date.now();
+
+  const effectiveStatus = isExpired ? "Chiuso" : activity.status;
 
   const formatTravelMode = (mode: string) => {
     switch (mode) {
-      case "walking":   return "A piedi";
-      case "bicycling": return "In bicicletta";
-      default:          return mode;
+      case "walking":
+        return "A piedi";
+      case "bicycling":
+        return "In bicicletta";
+      default:
+        return mode;
     }
   };
 
@@ -21,10 +31,7 @@ interface ActivityCardProps {
     <Link to={`/attivita/${activity._id}`} className={styles.cardLink}>
       <article className={styles.card}>
         <div className={styles.cardBody}>
-
-          <h3 className={styles.cardTitle}>
-            {activity.title}
-          </h3>
+          <h3 className={styles.cardTitle}>{activity.title}</h3>
 
           <p className={styles.cardDescription}>
             {activity.description}
@@ -39,9 +46,15 @@ interface ActivityCardProps {
               Modalità: {formatTravelMode(activity.travelMode ?? "")}
             </span>
 
-            <span className={styles.badge}>
+            <span
+              className={`${styles.badge} ${
+                effectiveStatus === "Chiuso"
+                  ? styles.badgeClosed
+                  : ""
+              }`}
+            >
               Data:{" "}
-              {new Date(activity.activityDate).toLocaleString("it-IT", {
+              {activityDate.toLocaleString("it-IT", {
                 timeZone: "Europe/Rome",
                 day: "2-digit",
                 month: "2-digit",
@@ -51,7 +64,6 @@ interface ActivityCardProps {
               })}
             </span>
           </div>
-
         </div>
       </article>
     </Link>

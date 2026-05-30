@@ -47,6 +47,11 @@
   color: var(--accent-text);
 }
 
+.badgeClosed {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
 .cardLink {
   text-decoration: none;
   color: inherit;
