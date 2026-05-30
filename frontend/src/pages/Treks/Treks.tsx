@@ -89,10 +89,7 @@ export default function Treks() {
     function handleClickOutside(e: MouseEvent) {
       const target = e.target as Node;
 
-      if (
-        filtersRef.current &&
-        !filtersRef.current.contains(target)
-      ) {
+      if (filtersRef.current &&!filtersRef.current.contains(target)) {
         setFiltersOpen(false);
         setSortOpen(false);
       }
@@ -183,103 +180,121 @@ return (
   <main className={styles.page}>
 
     <div className={styles.searchRow} ref={filtersRef}>
-       <div className={styles.leftGroup}>
+      <div className={styles.leftGroup}>
 
-      {/*Gruppo sx: Bottone filtro + Barra di ricerca + pannello sotto*/}
-      <div className={styles.leftGroupRow}>
-        <button 
-          className={`${styles.filterBtn} ${filtersOpen ? styles.filterBtnActive : ""}`}
-          onClick={() => setFiltersOpen(!filtersOpen)}
-        >
-          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <line x1="4" y1="6" x2="20" y2="6"/>
-            <line x1="7" y1="12" x2="17" y2="12"/>
-            <line x1="10" y1="18" x2="14" y2="18"/>
-          </svg>
-          {activeTags.length > 0 && (
-            <span className={styles.filterCount}>{activeTags.length}</span>
-          )}
-        </button> 
+        {/*Gruppo sx: Bottone filtro + Barra di ricerca + pannello sotto*/}
+        <div className={styles.leftGroupRow}>
+          <button 
+            className={`${styles.filterBtn} ${filtersOpen ? styles.filterBtnActive : ""}`}
+            onClick={() => setFiltersOpen(!filtersOpen)}
+          >
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <line x1="4" y1="6" x2="20" y2="6"/>
+              <line x1="7" y1="12" x2="17" y2="12"/>
+              <line x1="10" y1="18" x2="14" y2="18"/>
+            </svg>
+            {activeTags.length > 0 && (
+              <span className={styles.filterCount}>{activeTags.length}</span>
+            )}
+          </button> 
 
-        <input
-          className={styles.searchInput}
-          type="text"
-          placeholder="Cerca un percorso..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-        />
-      </div>
+          <input
+            className={styles.searchInput}
+            type="text"
+            placeholder="Cerca un percorso..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          />
+        </div>
 
-      {/*Pannello filtri*/}
-      {filtersOpen && (
-        <div className={styles.filtersPanel}>
-          <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>Difficoltà</label> 
-            <div className={styles.filterOptions}>
-              {["", "Facile", "Medio", "Difficile"].map((d) => (
-                <button
-                  key={d}
-                  className={`${styles.filterOption} ${difficulty === d ? (
-                        d === "" ? styles.filterOptionAll :
-                        d === "Facile" ? styles.filterOptionEasy :
-                        d === "Medio" ? styles.filterOptionMedium :
-                        styles.filterOptionHard
-                  ) : ""}`}
-                  onClick={() => { setDifficulty(d as typeof difficulty); setPage(1); }}
-                >
-                  {d === "" ? "Tutte" : d}
-                </button>
-              ))}
+        {/*Pannello filtri*/}
+        {filtersOpen && (
+          <div className={styles.filtersPanel}>
+            <div className={styles.filterGroup}>
+              <label className={styles.filterLabel}>Difficoltà</label> 
+              <div className={styles.filterOptions}>
+                {["", "Facile", "Medio", "Difficile"].map((d) => (
+                  <button
+                    key={d}
+                    className={`${styles.filterOption} ${difficulty === d ? (
+                          d === "" ? styles.filterOptionAll :
+                          d === "Facile" ? styles.filterOptionEasy :
+                          d === "Medio" ? styles.filterOptionMedium :
+                          styles.filterOptionHard
+                    ) : ""}`}
+                    onClick={() => { setDifficulty(d as typeof difficulty); setPage(1); }}
+                  >
+                    {d === "" ? "Tutte" : d}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>
-              Max km {maxLength && <span className={styles.sliderValue}>{maxLength} km</span>}
-            </label>
-            <input 
-              className={styles.slider}
-              type="range" min={0} max={25} step={1}
-              value={maxLength || 25}
-              onChange={(e) => { setMaxLength(e.target.value === "0" ? "" : e.target.value); setPage(1); }}
-            /> 
-          </div>
+            <div className={styles.filterGroup}>
+              <label className={styles.filterLabel}>
+                Max km {maxLength && <span className={styles.sliderValue}>{maxLength} km</span>}
+              </label>
+              <input 
+                className={styles.slider}
+                type="range" min={0} max={25} step={1}
+                value={maxLength || 25}
+                onChange={(e) => { setMaxLength(e.target.value === "0" ? "" : e.target.value); setPage(1); }}
+              /> 
+            </div>
 
-          <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>
-              Max dislivello {maxElevation && <span className={styles.sliderValue}>{maxElevation} m</span>}
-            </label>
-            <input 
-              className={styles.slider}
-              type="range" min={0} max={3000} step={50}
-              value={maxElevation || 3000}
-              onChange={(e) => { setMaxElevation(e.target.value === "0" ? "" : e.target.value); setPage(1); }}
-            /> 
-          </div>
+            <div className={styles.filterGroup}>
+              <label className={styles.filterLabel}>
+                Max dislivello {maxElevation && <span className={styles.sliderValue}>{maxElevation} m</span>}
+              </label>
+              <input 
+                className={styles.slider}
+                type="range" min={0} max={3000} step={50}
+                value={maxElevation || 3000}
+                onChange={(e) => { setMaxElevation(e.target.value === "0" ? "" : e.target.value); setPage(1); }}
+              /> 
+            </div>
 
-          <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>
-              Max durata {maxDuration && <span className={styles.sliderValue}>{Number(maxDuration) / 60} ore</span>}
-            </label>
-            <input
-              className={styles.slider}
-              type="range" min={60} max={600} step={60}
-              value={maxDuration || 600}
-              onChange={(e) => { setMaxDuration(e.target.value === "0" ? "" : e.target.value); setPage(1); }}
-            />
+            <div className={styles.filterGroup}>
+              <label className={styles.filterLabel}>
+                Max durata {maxDuration && <span className={styles.sliderValue}>{Number(maxDuration) / 60} ore</span>}
+              </label>
+              <input
+                className={styles.slider}
+                type="range" min={60} max={600} step={60}
+                value={maxDuration || 600}
+                onChange={(e) => { setMaxDuration(e.target.value === "0" ? "" : e.target.value); setPage(1); }}
+              />
+            </div>
+          </div> 
+        )} 
+
+        {/* Tag filtri attivi */}
+        {activeTags.length > 0 && (
+          <div className={styles.activeTags}>
+            {activeTags.map((tag) => (
+              <button 
+                key={tag.label} 
+                className={styles.activeTag} 
+                onClick={tag.onRemove}
+              >
+                {tag.label} ✕
+              </button>
+            ))}
+            {/* onClick={(e) => { e.stopPropagation(); setEditValutazione(prev => prev === star ? null : star); }} */}
+            <button className={styles.clearAll} onClick={(e) => {
+              e.preventDefault(); e.stopPropagation(); setDifficulty(""); setMaxLength(""); setMaxElevation(""); setMaxDuration(""); setPage(1);
+            }}>
+              Rimuovi tutti
+            </button>
           </div>
-        </div> 
-      )} 
+        )}
       </div>
 
      
 
       {/* Gruppo dx: Bottone ordina per + Pannello ordina per */}
       <div className={styles.rightGroup}>
-        <button
-          className={`${styles.filterBtn} ${sortOpen ? styles.filterBtnActive : ""}`}
-          onClick={() => setSortOpen(!sortOpen)}
-        >
+        <button className={`${styles.filterBtn} ${sortOpen ? styles.filterBtnActive : ""}`} onClick={() => setSortOpen(!sortOpen)} >
           <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
             <line x1="4" y1="6" x2="20" y2="6"/>
             <line x1="16" y1="12" x2="20" y2="12"/>
@@ -308,65 +323,44 @@ return (
               </button>
             ))}
           </div>
-        )}
+        )}        
       </div>
 
     </div>
   
-      {/* Tag filtri attivi */}
-      {activeTags.length > 0 && (
-        <div className={styles.activeTags}>
-          {activeTags.map((tag) => (
-            <button 
-              key={tag.label} 
-              className={styles.activeTag} 
-              onClick={tag.onRemove}
-            >
-              {tag.label} ✕
-            </button>
-          ))}
-          <button className={styles.clearAll} onClick={() => {
-            setDifficulty(""); setMaxLength(""); setMaxElevation(""); setMaxDuration(""); setPage(1);
-          }}>
-            Rimuovi tutti
-          </button>
-        </div>
-      )}
+    {/* Risultati */}
+    <div className={styles.results}>
+      {loading && <p className={styles.message}>Caricamento percorsi...</p>}
+      {error && <p className={styles.messageError}>Impossibile caricare i percorsi: {error}</p>}
+      {!loading && !error && <p className={styles.count}>{filtered.length} Percorsi trovati</p>}
+      {!loading && !error && filtered.length === 0 && <p className={styles.message}>Nessun percorso trovato</p>}
+      {!loading && !error && paginated.map((trek) => (
+        <TrekCardEsplora key={trek.id} trek={trek} />
+      ))}
+    </div>
 
-
-      {/* Risultati */}
-      <div className={styles.results}>
-        {loading && <p className={styles.message}>Caricamento percorsi...</p>}
-        {error && <p className={styles.messageError}>Impossibile caricare i percorsi: {error}</p>}
-        {!loading && !error && <p className={styles.count}>{filtered.length} Percorsi trovati</p>}
-        {!loading && !error && filtered.length === 0 && <p className={styles.message}>Nessun percorso trovato</p>}
-        {!loading && !error && paginated.map((trek) => (
-          <TrekCardEsplora key={trek.id} trek={trek} />
-        ))}
+    {/* Paginazione */}
+    {!loading && !error && totalPages > 1 && (
+      <div className={styles.pagination}>
+        <button 
+          className={styles.pageBtn} 
+          onClick={() => {setPage(p => p - 1); window.scrollTo(0, 0);} }
+          disabled={page === 1}
+        >
+          ←
+        </button>
+        <span className={styles.pageInfo}>{page} / {totalPages}</span>
+        <button 
+          className={styles.pageBtn} 
+          onClick={() => {setPage(p => p + 1); window.scrollTo(0, 0);} }
+          disabled={page === totalPages}
+        >
+          →
+        </button>
+          
       </div>
 
-      {/* Paginazione */}
-      {!loading && !error && totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button 
-            className={styles.pageBtn} 
-            onClick={() => {setPage(p => p - 1); window.scrollTo(0, 0);} }
-            disabled={page === 1}
-          >
-            ←
-          </button>
-          <span className={styles.pageInfo}>{page} / {totalPages}</span>
-          <button 
-            className={styles.pageBtn} 
-            onClick={() => {setPage(p => p + 1); window.scrollTo(0, 0);} }
-            disabled={page === totalPages}
-          >
-            →
-          </button>
-            
-        </div>
-
-      )}
+    )}
 
 
   </main>
