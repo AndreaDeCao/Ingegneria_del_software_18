@@ -138,7 +138,7 @@ export default function VisualizzaAttivitaPage() {
       const updated = await res.json();
       // aggiorna l'attività nella lista
       setActivities((prev) => prev.map((a) => a._id === activity._id ? { ...a, partecipantList: updated.partecipantList?.map((p: any) => p._id ?? p) ?? [] } : a));
-      setJoinMessage({ id: activity._id, text: "Iscrizione confermata ✔" });
+      setJoinMessage({ id: activity._id, text: "Iscrizione confermata" });
       setTimeout(() => setJoinMessage(null), 3000);
     } catch (err: any) {
       setJoinMessage({ id: activity._id, text: err.message || "Errore" });
