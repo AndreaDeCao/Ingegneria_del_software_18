@@ -411,6 +411,24 @@ export default function FavoriteTreks() {
               </div>
             </div>
           )}
+          {/* TAG ATTIVI */}
+          {activeTags.length > 0 && (
+            <div className={styles.activeTags}>
+              {activeTags.map((tag) => (
+                <button
+                  key={tag.label}
+                  className={styles.activeTag}
+                  onClick={tag.onRemove}
+                >
+                  {tag.label} ✕
+                </button>
+              ))}
+              
+              <button className={styles.clearAll} onClick={clearAllFilters}>
+                Rimuovi tutti ✕
+              </button>
+            </div>
+          )}
         </div>
 
         {/* DESTRA */}
@@ -453,24 +471,7 @@ export default function FavoriteTreks() {
         </div>
       </div>
 
-      {/* TAG ATTIVI */}
-      {activeTags.length > 0 && (
-        <div className={styles.activeTags}>
-          {activeTags.map((tag) => (
-            <button
-              key={tag.label}
-              className={styles.activeTag}
-              onClick={tag.onRemove}
-            >
-              {tag.label} ✕
-            </button>
-          ))}
-          
-          <button className={styles.clearAll} onClick={clearAllFilters}>
-            Rimuovi tutti ✕
-          </button>
-        </div>
-      )}
+
 
       {/* RISULTATI */}
       <div className={styles.results}>
