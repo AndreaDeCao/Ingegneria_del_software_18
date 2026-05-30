@@ -19,9 +19,17 @@ export default function PublicHomepage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const MAX_TREK_CARDS = 11;
+  const MAX_TREK_CARDS = 7;
   const MAX_ACTIVITY_CARDS = 7;
   const MAX_EVENT_CARDS = 11;
+
+  const topRatedTreks = [...treks]
+    .sort((a, b) => {
+      const ratingDiff = (b.averageRating ?? 0) - (a.averageRating ?? 0);
+      if (ratingDiff !== 0) return ratingDiff;
+      return (b.ratingCount ?? 0) - (a.ratingCount ?? 0);
+    })
+    .slice(0, MAX_TREK_CARDS);
 
   useEffect(() => {
     fetch(`${API_BASE}/treks`)
@@ -102,7 +110,7 @@ export default function PublicHomepage() {
 
             {!loading && !error && (
               <div className={styles.cardsRow}>
-                {treks.slice(0, MAX_TREK_CARDS).map((trek) => (
+                {topRatedTreks.map((trek) => (
                   <TrekCard key={trek.id} trek={trek} />
                 ))}
               </div>
