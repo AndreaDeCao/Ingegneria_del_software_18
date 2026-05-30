@@ -107,7 +107,7 @@ export default function DettagliAttivita() {
       updated.partecipantList = updated.partecipantList ?? [];
       setActivity(updated);
 //      showMessage(
-//        endpoint === "join" ? "Partecipazione confermata ✔" :
+//        endpoint === "join" ? "Partecipazione confermata" :
 //        endpoint === "leave" ? "Hai lasciato l'attività" :
 //        endpoint === "cancel" ? "Attività annullata" :
 //        endpoint === "uncancel" ? "Attività riattivata" :
@@ -196,7 +196,12 @@ export default function DettagliAttivita() {
           <div style={{ paddingBottom: "20px" }}>
             {isOrganizer && (
                 <>
-                  <div className={styles.organizerBadge}>✅ Sei l'organizzatore di questa attività</div>
+                  <div className={styles.organizerBadge}>Sei l'organizzatore di questa attività</div>
+                </>
+            )}
+            {isParticipant && (
+              <>
+                <div className={styles.alreadyJoinedBadge}>Partecipi a questa attività</div>
                 </>
             )}
           </div>
@@ -314,7 +319,6 @@ export default function DettagliAttivita() {
             {/* Già partecipante */}
             {isParticipant && (
               <>
-                <div className={styles.alreadyJoinedBadge}>✔ Partecipi già a questa attività</div>
                 <div className={styles.buttonActions}>
                   <button className={styles.leaveButton} onClick={() => setActiveModal("leave")}>
                     Lascia attività
@@ -438,7 +442,7 @@ export default function DettagliAttivita() {
       {activeModal === "delete" && (
         <div className={styles.modalOverlay} onClick={() => setActiveModal(null)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-            <h2 className={styles.modalTitle}>⚠️ Elimina attività</h2>
+            <h2 className={styles.modalTitle}>Elimina attività</h2>
             <p className={styles.modalBody}>
               Stai per eliminare definitivamente <strong>{activity.title}</strong> dal database.
               <br /><br />

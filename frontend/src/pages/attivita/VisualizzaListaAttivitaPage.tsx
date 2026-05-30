@@ -261,11 +261,17 @@ export default function VisualizzaAttivitaPage() {
                 )}
 
                 <div className={styles.cardActions}>
-                  <Link to={`/attivita/${activity._id}`} className={appStyles.secondaryButton}>Dettagli</Link>
                   <button
                     className={appStyles.primaryButtonSmall}
                     disabled={isDisabled}
-                    onClick={() => !isDisabled && setJoinModal({ activity })}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+
+                      if (!isDisabled) {
+                        setJoinModal({ activity });
+                      }
+                    }}
                   >
                     {buttonLabel}
                   </button>
