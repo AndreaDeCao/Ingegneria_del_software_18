@@ -8,13 +8,14 @@
   display: flex;
   align-items: baseline;
   gap: 10px;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
+  margin-top: 1.5rem;
 }
 
 .sectionTitle {
   padding: 2px 8px;
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 500;
   color: var(--text-primary);
 }
@@ -33,6 +34,10 @@
 }
 
 .sectionTreks {
+}
+
+.sectionEvents {
+  margin-bottom: 2.5rem;
 }
 
 .cardsRow {
@@ -96,3 +101,91 @@
 
   padding-right: 6px;
 }
+
+.seeMore {
+  display: inline-block;
+  margin-top: 11px;
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.seeMore:hover {
+  text-decoration: underline;
+}
+
+.sectionDiary {
+  margin-top: 40px;
+  margin-bottom: 20px;
+}
+
+.diaryCardsRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.secondaryButton {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.secondaryButton:hover {
+  background: var(--bg-secondary);
+  border-color: var(--accent);
+}
+
+
+
+/* diary stats */
+.sectionStats { margin-top: 2rem; }
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.statCard {
+  background: var(--card-bg, #f5f5f5);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.statValue {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.statLabel {
+  font-size: 0.8rem;
+  color: var(--text-muted, #666);
+}
+
+.diffBar {
+  display: flex;
+  border-radius: 6px;
+  overflow: hidden;
+  height: 28px;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.diffFacile    { background: #4caf50; color: #fff; display:flex; align-items:center; justify-content:center; }
+.diffMedio     { background: #ff9800; color: #fff; display:flex; align-items:center; justify-content:center; }
+.diffDifficile { background: #f44336; color: #fff; display:flex; align-items:center; justify-content:center; }
