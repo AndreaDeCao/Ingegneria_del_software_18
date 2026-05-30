@@ -21,7 +21,9 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
   })
 ); // permette richieste dal frontend
-app.use(express.json());
+// app.use(express.json());
+app.use(express.json({ limit: "100mb" }));
+app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 app.use(cookieParser());
 
 // Sanitizzazione input (NoSQL injection): rimuove chiavi con '$' o '.' da body/query/params
@@ -45,11 +47,17 @@ app.use((req, _res, next) => {
   next();
 });
 
+app.get("/test-eventi", (req, res) => {
+  res.json({ ok: true });
+});
+
 const userRoutes = require("./routes/usersRoutes");
 const trekRoutes = require("./routes/treksRoutes");
 const authRoutes = require("./routes/authRoutes");
 const activityRoutes = require("./routes/activityRoutes"); //!!!
 const diaryRoutes = require("./routes/diaryRoutes");
+const eventRoutes = require("./routes/eventRoutes");
+
 const routeRoutes = require("./routes/routeRoutes");
 
 app.use("/treks", trekRoutes);
@@ -58,6 +66,7 @@ app.use("/api/auth", authRoutes);
 app.use("/activities", activityRoutes); 
 app.use("/api/weather", weatherRoutes); 
 app.use("/api/diary", diaryRoutes);
+app.use("/api/trento-events", eventRoutes);
 app.use("/api/route", routeRoutes);
 
 // Connessione a MongoDB

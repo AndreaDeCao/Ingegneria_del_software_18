@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import TrekCard from "../../components/TrekCard";
 import ActivityCard from "../../components/ActivityCard";
+import EventCard from "../../components/EventCard";
 
 import type { Trek } from "../../types/Trek";
 import type { Activity } from "../../types/Activity";
+import type { Event } from "../../types/Events";
 
 import styles from "../../App.module.css";
 
@@ -13,11 +15,13 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 export default function PublicHomepage() {
   const [treks, setTreks] = useState<Trek[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const MAX_TREK_CARDS = 11;
   const MAX_ACTIVITY_CARDS = 7;
+  const MAX_EVENT_CARDS = 11;
 
   useEffect(() => {
     fetch(`${API_BASE}/treks`)
@@ -43,6 +47,18 @@ export default function PublicHomepage() {
       .catch((err: Error) => {
         console.error("Errore fetch attività:", err);
       });
+  }, []);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/trento-events`).then((res) => {
+      if(!res.ok) {
+        throw new Error("Errore eventi: " + res.status);
+      }
+      return res.json();
+    })
+    .then((data) => setEvents(data)).catch((err: Error) => {
+      console.error("Errore fetch eventi:", err);
+    });
   }, []);
 
   return (
@@ -92,6 +108,42 @@ export default function PublicHomepage() {
               </div>
             )}
           </div>
+
+          { /* EVENTI */}
+          <div className={styles.sectionTreks}>
+
+            <div className={styles.sectionHead}>
+              <h2 className={styles.sectionTitle}>
+                Eventi a Trento
+              </h2>
+
+              {/* Link sito eventi comune di Trento */}
+              <a
+              href="https://eventi.comune.trento.it"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.seeMore}
+              >
+                Scopri tutti gli eventi
+              </a>
+            </div>
+
+            {events.length === 0 && (
+              <p className={styles.message}>Nessun evento disponibile.</p>
+            )}
+
+            {events.length > 0 && (
+              <div className={styles.cardsRow}>
+                {events.slice(0, MAX_EVENT_CARDS).map((event) => (
+                  <EventCard 
+                    key={event._id}
+                    event={event}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+      
 
 
         </section>
