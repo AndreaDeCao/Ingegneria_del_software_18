@@ -238,20 +238,24 @@ exports.updatePassword = async (req, res) => {
       return res.status(400).json({ error: "La password deve essere tra 6 e 32 caratteri e contenere almeno un numero, una lettera maiuscola e una minuscola" });
     }
 
-    const user = await User.findById(req.userId).select("+password");
+    const user = await User.findById(req.userId).select("+passwordHash +tempPasswordExpires");
     if(!user) {
       return res.status(404).json({ error: "Utente non trovato" });
     }
-    if(!user.password) {
-      return res.status(400).json({ error: "Questo account non usa una password locale" });
+
+    if(!user.passwordHash) {
+      return res.status(400).json({ error: "Questo account non ha ancora una password impostata, bisogna richiederne una temporanea" });
     }
 
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
     if(!isMatch) {
       return res.status(401).json({ error: "Password attuale non corretta" });
     }
 
-    user.password = await bcrypt.hash(newPassword, 12);
+    const saltedRound = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) : 15;
+    user.passwordHash = await bcrypt.hash(newPassword, saltedRound);
+    user.tempPasswordExpires = undefined;
+
     await user.save({ validateModifiedOnly: true});
 
     res.json({ message: "Password aggiornata con successo" });
