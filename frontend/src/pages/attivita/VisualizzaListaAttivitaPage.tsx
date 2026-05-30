@@ -4,24 +4,8 @@ import appStyles from "../../App.module.css";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 
-type Activity = {
-  _id: string;
-  id: number;
-  title: string;
-  description: string;
-  activityDate: string;
-  maxParticipants: number;
-  partecipantList?: string[];
-  status: string;
-  travelMode: string;
-  organizerID: string;
-  trekID: string;
-};
-
-type Trek = {
-  _id: string;
-  name: string;
-};
+import type {Activity} from "../../types/Activity";
+import type {Trek} from "../../types/Trek";
 
 // modale inline per conferma partecipazione dalla lista
 type JoinModal = { activity: Activity } | null;
@@ -234,7 +218,7 @@ export default function VisualizzaAttivitaPage() {
               <article key={activity._id} className={styles.activityCard}>
                 <div className={styles.cardTop}>
                   <span className={`${styles.statusBadge} ${getStatusClass(activity.status)}`}>{activity.status}</span>
-                  <span className={styles.activityId}>#{activity.id}</span>
+                  <span className={styles.activityId}>#{activity._id}</span>
                 </div>
 
                 <h3 className={styles.activityTitle}>{activity.title}</h3>

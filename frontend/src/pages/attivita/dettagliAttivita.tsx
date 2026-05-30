@@ -4,31 +4,9 @@ import styles from "./attivitaPage.module.css";
 import appStyles from "../../App.module.css";
 import { useAuth } from "../../auth/AuthProvider";
 import type { Activity } from "../../types/Activity";
-
-type Trek = {
-  _id: string;
-  name: string;
-  difficulty?: string;
-  duration?: number;
-  distance?: number;
-  description?: string;
-};
-
-type Organizer = {
-  _id: string;
-  nome?: string;
-  cognome?: string;
-  nickname?: string;
-  email?: string;
-};
-
-type Participant = {
-  _id: string;
-  nickname: string;
-  email: string;
-  nome?: string;
-  cognome?: string;
-};
+import type {Trek} from "../../types/Trek";
+import type {Organizer} from "../../types/Organizer";
+import type {Participant} from "../../types/Participant";
 
 type ActivityPopulated = Omit<Activity, "partecipantList"> & {
   partecipantList: Participant[];
@@ -256,13 +234,13 @@ export default function DettagliAttivita() {
           </div>
 
           {/* Trek details */}
-          {trek && (trek.distance || trek.duration || trek.difficulty || trek.description) && (
+          {trek && (trek.lengthKm || trek.duration || trek.difficulty || trek.description) && (
             <div className={styles.formCard}>
               <h2 className={styles.detailSectionTitle}>Dettagli del trek</h2>
               {trek.description && <p className={styles.activityDescription}>{trek.description}</p>}
               <div className={styles.activityInfo}>
                 {trek.difficulty && <div className={styles.infoItem}><span className={styles.infoLabel}>Difficoltà</span><span className={styles.infoValue}>{trek.difficulty}</span></div>}
-                {trek.distance && <div className={styles.infoItem}><span className={styles.infoLabel}>Distanza</span><span className={styles.infoValue}>{trek.distance} km</span></div>}
+                {trek.lengthKm && <div className={styles.infoItem}><span className={styles.infoLabel}>Distanza</span><span className={styles.infoValue}>{trek.lengthKm} km</span></div>}
                 {trek.duration && <div className={styles.infoItem}><span className={styles.infoLabel}>Durata stimata</span><span className={styles.infoValue}>{trek.duration}</span></div>}
               </div>
             </div>
