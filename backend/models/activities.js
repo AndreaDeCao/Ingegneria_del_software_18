@@ -33,9 +33,6 @@ const ActivitySchema = new mongoose.Schema({
     // ID Percorso dell'attività
     trekID: { type: mongoose.Schema.Types.ObjectId, ref: 'Trek' },
 
-    // Lista utenti partecipanti all'attività (organizzatore compreso)
-    participants: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-
     // Lista utenti invitati all'attività (può avere solo amici dell'organizzatore)
     invitedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 },

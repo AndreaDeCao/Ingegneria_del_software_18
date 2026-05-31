@@ -193,11 +193,16 @@ export default function DettagliAttivita() {
                 <div className={styles.alreadyJoinedBadge}>Partecipi a questa attività</div>
                 </>
             )}
+            {activity.visibility === "private" && (
+                <>
+                  <div className={styles.visibilityBadge}>L'attività è privata</div>
+                </>
+            )}
             {isExpired && (
                 <div className={styles.errorBox}>
                   Questa attività è scaduta — la data era il {new Date(activity.activityDate).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" })}
                 </div>
-            )}
+            )}  
           </div>
 
           {/* Hero */}
@@ -358,6 +363,7 @@ export default function DettagliAttivita() {
               </ul>
             )}
           </div>
+          
         </div>
 
       </div>
