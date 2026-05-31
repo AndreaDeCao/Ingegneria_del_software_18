@@ -1,9 +1,18 @@
 export type Activity = {
-  id: string;
+  _id: string;
+
   title: string;
   description: string;
-  //activityDate: string;
-  maxParticipants: number;
-  status: string;
+  
+  activityDate: Date;
+  status: "Aperto" | "Chiuso" | "Annullato";
 
+  travelMode?: "walking" | "bicycling";
+
+  maxParticipants: number;
+  partecipantList?: string[];
+
+  organizerID: string;
+  // favoriteTreks: string[]; // Array di ID dei trek salvati
+  trekID: string;
 };

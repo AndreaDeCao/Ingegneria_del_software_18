@@ -7,5 +7,8 @@ router.get("/:id", routeController.getRouteByTrekId);
 
 // 
 router.get("/:id/custom", routeController.getRouteCustomStart); 
+router.get("/:id/variants", routeController.getRouteVariants);
+
+router.get("/:id/parking", routeController.getNearestParkingRoute);
 
 module.exports = router;

@@ -37,7 +37,7 @@ export default function CreaAttivitaPage() {
   const [treks, setTreks] = useState<Trek[]>([]);
   const [title, setTitle] = useState("");
   const [selectedTrek, setSelectedTrek] = useState("");
-  const [maxParticipants, setMaxParticipants] = useState(6);
+  const [maxParticipants, setMaxParticipants] = useState(10);
   const [activityDate, setActivityDate] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -141,15 +141,25 @@ export default function CreaAttivitaPage() {
         organizerID: user?._id,
       };
 
-      const created = await http<{ _id: string }>("/activities", {
+      // const res = await fetch("http://localhost:3000/activities", {
+      const res = await fetch(`${API_BASE}/activities/`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(body),
       });
 
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Errore backend");
+      }
+
+      const created = await res.json();
       navigate(`/attivita/${created._id}`);
 
     } catch(err: unknown) {
-      if(err instanceof Error) setError(err.message);
+      // console.error(err);
+      if(err instanceof Error) setError(err.message || "Errore nella creazione attività");
     }
   }
 
@@ -158,12 +168,7 @@ export default function CreaAttivitaPage() {
       <div className={appStyles.contentLayout}>
         <div className={appStyles.leftColumn}>
           
-          <div style={{ 
-            paddingBottom: "24px", 
-            display: "flex", 
-            justifyContent: "space-between", 
-            alignItems: "center" 
-            }}>
+          <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',}}>
             <h1 className={styles.pageTitle}>Crea Attività</h1>
             <Link to="/attivita/visualizza" className={appStyles.primaryButton}>
               Apri Lista Attività
@@ -220,12 +225,12 @@ export default function CreaAttivitaPage() {
             {/* PARTECIPANTI E DATA */}
             <div className={styles.grid}>
               <div className={styles.section}>
-                <label className={styles.label}>Partecipanti max (max 6)</label>
+                <label className={styles.label}>Partecipanti max</label>
                 <input
                   className={styles.input}
                   type="number"
                   min={1}
-                  max={6}
+                  max={50}
                   value={maxParticipants}
                   onChange={(e) => setMaxParticipants(Number(e.target.value))}
                   required

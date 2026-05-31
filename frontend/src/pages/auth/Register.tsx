@@ -2,19 +2,14 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 
-// import HCaptcha from "@hcaptcha/react-hcaptcha";
-
-// import { useTheme } from "../hooks/useTheme";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
 import TurnstileWidget from "../../components/TurnstileWidget";
-
-// import styles from "./Auth.module.css";
+import styles from "./Auth.module.css";
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
-
-  // const { theme } = useTheme(); 
 
   const [nome, setNome] = useState("");
   const [cognome, setCognome] = useState("");
@@ -31,17 +26,15 @@ export default function Register() {
     setTurnstileToken("");
     setTurnstileKey((k) => k + 1);
   };
-  
-
-  // const captchaRef = useRef<HCaptcha>(null);
-  // const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   return (
-    // <div style={{ padding: 24, maxWidth: 520 }}>
-    <div style={{ padding: 24, maxWidth: 520, left: "50%", transform: "translateX(-50%)", position: "relative"}}>
-      <h2>Form di registrazione</h2>
-      <br />
-      <form
+    <div className={styles.container}>
+      <h2 className={styles.heading}>Registrazione</h2>
+      <p className={styles.intro}>
+        Crea un account per salvare i tuoi percorsi e le esperienze sul diario.
+      </p>
+
+      <form className={styles.form}
         onSubmit={async (e) => {
           e.preventDefault();
           setError(null);
@@ -70,21 +63,21 @@ export default function Register() {
           }
         }}
       >
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <label style={{ display: "block" }}>
+        <div className={styles.fieldGrid}>
+          <label className={styles.label}>
             Nome
-            <input style={{ width: "100%", padding: 8 }} value={nome} onChange={(e) => setNome(e.target.value)} required />
+            <input className={styles.input} value={nome} onChange={(e) => setNome(e.target.value)} required />
           </label>
-          <label style={{ display: "block" }}>
+          <label className={styles.label}>
             Cognome
-            <input style={{ width: "100%", padding: 8 }} value={cognome} onChange={(e) => setCognome(e.target.value)} required />
+            <input className={styles.input} value={cognome} onChange={(e) => setCognome(e.target.value)} required />
           </label>
         </div>
 
-        <label style={{ display: "block", marginTop: 12 }}>
+        <label className={styles.label}>
           Email
           <input
-            style={{ width: "100%", padding: 8 }}
+            className={styles.input}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
@@ -93,15 +86,15 @@ export default function Register() {
           />
         </label>
 
-        <label style={{ display: "block", marginTop: 12 }}>
+        <label className={styles.label}>
           Nickname
-          <input style={{ width: "100%", padding: 8 }} value={nickname} onChange={(e) => setNickname(e.target.value)} required />
+          <input className={styles.input} value={nickname} onChange={(e) => setNickname(e.target.value)} required />
         </label>
 
-        <label style={{ display: "block", marginTop: 12 }}>
+        <label className={styles.label}>
           Password
           <input
-            style={{ width: "100%", padding: 8 }}
+            className={styles.input}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             type="password"
@@ -110,10 +103,10 @@ export default function Register() {
           />
         </label>
 
-        <label style={{ display: "block", marginTop: 12 }}>
+        <label className={styles.label}>
           Conferma password
           <input
-            style={{ width: "100%", padding: 8 }}
+            className={styles.input}
             value={confermaPassword}
             onChange={(e) => setConfermaPassword(e.target.value)}
             type="password"
@@ -121,14 +114,6 @@ export default function Register() {
             required
           />
         </label>
-
-
-        {/* <HCaptcha 
-          sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY}
-          onVerify={(token) => setCaptchaToken(token)}
-          onExpire={() => setCaptchaToken(null)}
-          ref={captchaRef}
-        /> */}
 
         <TurnstileWidget
           key={turnstileKey}
@@ -139,55 +124,36 @@ export default function Register() {
           }}
         />
 
-        {error && (
-          <div
-            role="alert"
-            style={{
-              marginTop: 12,
-              padding: 12,
-              borderRadius: 8,
-              border: "1px solid #f5c6cb",
-              background: "#fdecea",
-              color: "#7a1f1f",
-            }}
-          >
-            {error}
-          </div>
-        )}
+        {error && <div role="alert" className={styles.errorBox}>{error}</div>}
 
-        <button type="submit" disabled={submitting} style={{ marginTop: 16, width: "100%", padding: 10, cursor: "pointer" , background: "#ececec", color: "#000000", border: `1px solid`, borderRadius: 6 }}>
+        <button type="submit" disabled={submitting} className={styles.submitButton}>
           {submitting ? "Creazione..." : "Crea account"}
         </button>
       </form>
 
-      {/* Separatore */}
-      <div style={{display: "flex", alignItems: "center", gap: 8, margin: "16px 0"}}>
-        <hr style={{ flex: 1}}/>
-        <span style={{ color: "#888", fontSize: 13}}>oppure</span>
-        <hr style={{ flex: 1}}/>
+      <div className={styles.divider}>
+        <hr className={styles.dividerLine} />
+        <span className={styles.orText}>oppure</span>
+        <hr className={styles.dividerLine} />
       </div>
 
-      <button
-        onClick={() => window.location.href = "http://localhost:3000/api/auth/github"}
-        style={{ width: "100%", padding: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", background: "#fff", color: "#000", border: "1px solid #000", borderRadius: 6 }}>
-        
-        <img src="./GitHub_Lockup_Black.svg" width={100} height={18} alt="GitHub" />
-      </button>
+      <div className={styles.socialGrid}>
+        <button
+          onClick={() => window.location.href = `${API_BASE}/api/auth/github`}
+          className={styles.githubButton}
+        >
+          <img src="./GitHub_Lockup_Black.svg" width={100} height={18} alt="GitHub" />
+        </button>
 
-      {/* Login con Google */}
-      {/* <button
-        onClick={() => window.location.href = "http://localhost:3000/api/auth/google"}
-        style={{ width: "100%", padding: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer"}}
-      >
-        <img src="https://www.google.com/favicon.ico" width={16} height={16} alt="Google" />
-        Registrati con Google
-      </button> */}
-      <br />
-      <GoogleSignInButton label="Registrati con Google" />
+        <GoogleSignInButton label="Registrati con Google" />
+      </div>
 
+      <p className={styles.caption}>
+        Hai già un account? <Link to="/login" className={styles.link}>Accedi</Link>
+      </p>
 
-      <p style={{ marginTop: 16 }}>
-        Hai già un account? <Link to="/login" style={{color: 'blue'}}>Accedi</Link>
+      <p className={styles.caption}>
+        Password dimenticata? <Link to="/forgotten-password" className={styles.link}>Richiedi password provvisoria</Link>
       </p>
     </div>
   );

@@ -16,10 +16,12 @@ const UserSchema = new mongoose.Schema({
   githubId: { type: String, unique: true, sparse: true, required: false }, // per utenti registrati con GitHub OAuth2
   turnstileToken: { type: String, required: false }, // per memorizzare il token Turnstile, se necessario
   role: { type: String, enum: ["user", "admin"], default: "user" },
-  
+  favoriteTreks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Trek" }],
+
   emailVerified: { type: Boolean, default: false }, // true dopo che user clicca il link
   emailVerificationToken: {type: String, select: false }, // token random per link
   emailVerificationExpires: { type: Date, select: false }, // scadenza token
+  tempPasswordExpires: { type: Date, select: false }, // password temporanea valida per un periodo limitato
 
   avatarUrl: { type: String, default: null },
 }, { timestamps: true });

@@ -12,9 +12,10 @@ import ProtectedRoute from "./auth/ProtectedRoute";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import AuthCallback from "./pages/auth/AuthCallback";
+import RequestTemporaryPassword from "./pages/auth/RequestTemporaryPassword";
 
 import Treks from "./pages/Treks/Treks";
-import MyTreks from "./pages/Treks/MyTreks";
+import MyTreks from "./pages/Treks/FavoriteTreks";
 import TrekDetails from "./pages/Treks/TrekDetails";
 
 import Friends from "./pages/amici/Friends";
@@ -33,8 +34,9 @@ import VisualizzaDiarioPage from "./pages/diario/VisualizzaDiarioPage";
 import CreaVoceDiarioPage from "./pages/diario/CreaVoceDiarioPage";
 import DettagliVoceDiarioPage from "./pages/diario/DettagliVoceDiarioPage";
 
-import VisualizzaAttivitaPage from "./pages/attivita/VisualizzaAttivitaPage";
+import VisualizzaAttivitaPage from "./pages/attivita/VisualizzaListaAttivitaPage";
 import CreaAttivitaPage from "./pages/attivita/CreaAttivitaPage";
+import DettagliAttivita from "./pages/attivita/dettagliAttivita";
 
 import VersioneCorrentePage from "./pages/versione/VersioneCorrentePage";
 
@@ -88,7 +90,8 @@ export default function App() {
                   {/* Auth */}
                   <Route path="/login"    element={<AppLayout><Login /></AppLayout>} />
                   <Route path="/register" element={<AppLayout><Register /></AppLayout>} />
-        
+                  <Route path="/forgotten-password" element={<AppLayout><RequestTemporaryPassword /></AppLayout>} />
+
                   {/* Treks — pubblica */}
                   <Route path="/treks" element={<AppLayout><Treks /></AppLayout>} />
         
@@ -111,6 +114,7 @@ export default function App() {
 
                   <Route path="/attivita/visualizza" element={<AppLayout><ProtectedRoute><VisualizzaAttivitaPage /></ProtectedRoute></AppLayout>} />
                   <Route path="/attivita/crea" element={<AppLayout><ProtectedRoute><CreaAttivitaPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/attivita/:id" element={<AppLayout><ProtectedRoute><DettagliAttivita /></ProtectedRoute></AppLayout>} />
 
                   <Route path="/versione/corrente" element={<AppLayout><VersioneCorrentePage /></AppLayout>} />
 

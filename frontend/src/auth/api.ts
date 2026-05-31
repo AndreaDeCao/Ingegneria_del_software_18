@@ -5,6 +5,7 @@ export type SafeUser = {
   email: string;
   nickname: string;
   role: "user" | "admin";
+  favoriteTreks: string[]; // Array di ID dei trek preferiti
   avatarUrl: string | null;
 };
 
@@ -112,8 +113,20 @@ export async function http<T>(path: string, init?: RequestInit): Promise<T> {
     }
 
     if (!message) {
-      if (res.status >= 500) message = "Errore del server. Riprova più tardi.";
-      else message = text || `HTTP ${res.status}`;
+      const trimmed = text.trim();
+      const looksLikeHtml = trimmed.startsWith("<") || /<html/i.test(trimmed) || /<body/i.test(trimmed);
+      const isExpressPostError = /Cannot\s+POST\s+/i.test(trimmed) || /Cannot\s+GET\s+/i.test(trimmed);
+      if (isExpressPostError) {
+        message = "Endpoint non trovato o metodo non valido. Verifica l'URL e riprova.";
+      } else if (looksLikeHtml) {
+        message = res.status === 404
+          ? "Endpoint non trovato. Verifica l'URL e riprova."
+          : "Errore di comunicazione con il server. Riprova più tardi.";
+      } else if (res.status >= 500) {
+        message = "Errore del server. Riprova più tardi.";
+      } else {
+        message = text || `HTTP ${res.status}`;
+      }
     }
 
     throw new Error(message);
@@ -137,6 +150,8 @@ export const authApi = {
     http<AuthAPI<SafeUser>>("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
   register: (body: RegisterRequest) =>
     http<AuthAPI<SafeUser>>("/api/auth/register", { method: "POST", body: JSON.stringify(body) }),
+  requestTemporaryPassword: (body: { email: string; turnstileToken: string }) =>
+    http<{ message: string }>("/api/auth/request-temp-password", { method: "POST", body: JSON.stringify(body) }),
   logout: async () => {
     const token = await ensureCsrfToken();
     return http<AuthAPI<SafeUser>>("/api/auth/logout", { method: "POST", headers: { "X-CSRF-Token": token } });

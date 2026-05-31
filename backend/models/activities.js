@@ -1,16 +1,23 @@
 const mongoose = require("mongoose");
 
 const ActivitySchema = new mongoose.Schema({ 
-    id: Number,
     title: { type: String, required: true },
+    
     description: String,
     activityDate: { type: Date, required: true}, // Data e ora dell'attività. 
-    maxParticipants: { type: Number, default: 6, max: 6},
+    maxParticipants: { type: Number, default: 10, max: 50},
+
+    partecipantList: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 
     status: {
         type: String,
         enum: ["Aperto", "Chiuso", "Annullato"],
-        default: "Aperto",
+        default: "Aperto"
+    },
+
+    travelMode: {
+        type: String,
+        enum: ["walking", "bicycling"]
     },
 
     // Visibilità attività (public o private)

@@ -17,7 +17,7 @@ app.use(
   cors({
     origin: process.env.FRONTEND_URL ?? "http://localhost:5173",
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
   })
 ); // permette richieste dal frontend
@@ -47,11 +47,17 @@ app.use((req, _res, next) => {
   next();
 });
 
+app.get("/test-eventi", (req, res) => {
+  res.json({ ok: true });
+});
+
 const userRoutes = require("./routes/usersRoutes");
 const trekRoutes = require("./routes/treksRoutes");
 const authRoutes = require("./routes/authRoutes");
 const activityRoutes = require("./routes/activityRoutes"); //!!!
 const diaryRoutes = require("./routes/diaryRoutes");
+const eventRoutes = require("./routes/eventRoutes");
+
 const routeRoutes = require("./routes/routeRoutes");
 const friendshipRoutes = require("./routes/friendshipRoutes");
 
@@ -61,6 +67,7 @@ app.use("/api/auth", authRoutes);
 app.use("/activities", activityRoutes); 
 app.use("/api/weather", weatherRoutes); 
 app.use("/api/diary", diaryRoutes);
+app.use("/api/trento-events", eventRoutes);
 app.use("/api/route", routeRoutes);
 app.use("/api/friendships", friendshipRoutes);
 

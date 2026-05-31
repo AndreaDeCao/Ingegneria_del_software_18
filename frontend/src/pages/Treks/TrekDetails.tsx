@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { useAuth } from "../../auth/AuthProvider";
 
+import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
 import type { Trek } from "../../types/Trek";
 import appStyles from "../../App.module.css";
@@ -13,7 +13,7 @@ import StarRating from "../../components/StarRating";
 import starStyles from "../../components/StarRating.module.css";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-function downloadGpx(geojson: any, trekName: string) {
+function downloadGpx(geojson: any, trekName: string, distanceMeters?: number, durationSeconds?: number, routeType?: string ) {
   const coords: [number, number][] =
     geojson?.features?.[0]?.geometry?.coordinates ?? [];
 
@@ -22,14 +22,17 @@ function downloadGpx(geojson: any, trekName: string) {
     .join("\n");
 
   const gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="DoloMate" xmlns="http://www.topografix.com/GPX/1/1">
-  <trk>
-    <name>${trekName}</name>
-    <trkseg>
-${trkpts}
-    </trkseg>
-  </trk>
-</gpx>`;
+  <gpx version="1.1" creator="DoloMate" xmlns="http://www.topografix.com/GPX/1/1">
+    <metadata>
+      ${distanceMeters !== undefined ? `<extensions><distance>${distanceMeters}</distance><duration>${durationSeconds}</duration>${routeType ? `<routeType>${routeType}</routeType>` : ""}</extensions>` : ""}
+    </metadata>
+    <trk>
+      <name>${trekName}</name>
+      <trkseg>
+  ${trkpts}
+      </trkseg>
+    </trk>
+  </gpx>`;
 
   const blob = new Blob([gpx], { type: "application/gpx+xml" });
   const url = URL.createObjectURL(blob);
@@ -40,8 +43,10 @@ ${trkpts}
   URL.revokeObjectURL(url);
 }
 
+
 export default function TrekDetails() {
   const { id } = useParams();
+  const { user } = useAuth(); 
 
   const [trek, setTrek] = useState<Trek | null>(null);
   const [weather, setWeather] = useState<any>(null);
@@ -51,7 +56,7 @@ export default function TrekDetails() {
 
   const [hoverVote, setHoverVote] = useState<number | null>(null);
   
-  const { user } = useAuth(); 
+  // const { user } = useAuth(); 
 
   const [myVote, setMyVote] = useState<number | null>(null);
   const [ratingLoading, setRatingLoading] = useState(false);
@@ -62,32 +67,46 @@ export default function TrekDetails() {
   const [routeGeojson, setRouteGeojson] = useState<any>(null);
   const [routeInfo, setRouteInfo] = useState<{ distanceMeters: number; durationSeconds: number } | null>(null);
 
-  // partenza personalizzata
+  // partenza personalizzata (pin viola solo se attiva)
   const [customStart, setCustomStart] = useState<{ lat: number; lon: number } | null>(null);
   const [customStartLabel, setCustomStartLabel] = useState<string>("");
+  // modalità selezione partenza: search | gps | map | parking
   const [selectMode, setSelectMode] = useState<"none" | "search" | "gps" | "map">("none");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
   const [clickToSelect, setClickToSelect] = useState(false);
+  const [parkingLoading, setParkingLoading] = useState(false);
+  const [lastParkingCoords, setLastParkingCoords] = useState<{ lat: number; lon: number } | null>(null);
+
+  // varianti di percorso (4 tipi: 2 a piedi + 2 in bici) — NON cambiano la partenza
+  const [routeVariants, setRouteVariants] = useState<any[]>([]);
+  const [variantsLoading, setVariantsLoading] = useState(false);
+  const [variantsOpen, setVariantsOpen] = useState(false);
+  const [activeVariantKey, setActiveVariantKey] = useState<string | null>(null);
 
   const [searchResults, setSearchResults] = useState<{ display_name: string; lat: string; lon: string }[]>([]);
   const [searchDebounce, setSearchDebounce] = useState<ReturnType<typeof setTimeout> | null>(null);
+
+
+    
+  //aggiunge Trek ai preferiti del user
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  
+  const disableSave = !user || favoriteLoading;
+
+  const alreadyAtParking = !!lastParkingCoords && customStart?.lat === lastParkingCoords.lat && customStart?.lon === lastParkingCoords.lon;
 
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
 
-        // TREK
-        const trekResponse = await fetch(
-          `${API_BASE}/treks/${id}`
-        );
-
-        if (!trekResponse.ok)
-          throw new Error("Errore caricamento trek");
-
+        const trekResponse = await fetch(`${API_BASE}/treks/${id}`);
+        if (!trekResponse.ok) throw new Error("Errore caricamento trek");
         const trekData = await trekResponse.json();
         setTrek(trekData);
 
@@ -113,7 +132,7 @@ export default function TrekDetails() {
           // tracciato non disponibile, la mappa mostra solo il marker
         }
 
-        // METEO 
+         // METEO 
         const weatherResponse = await fetch(
           `${API_BASE}/api/weather/${trekData._id}`
         );
@@ -132,7 +151,36 @@ export default function TrekDetails() {
     }
 
     fetchData();
-  }, [id]);
+  }, [id]);  
+
+  useEffect(() => {
+    if (!favoriteError) return;
+    const timer = setTimeout(() => setFavoriteError(null), 3000);
+    return () => clearTimeout(timer);
+  }, [favoriteError]);
+
+  //controlla i trek gia messi nei preferiti
+  useEffect(() => {
+    if (!user || !trek) return;
+
+    const checkFavorite = () => {
+      http<Trek[]>("/users/favorites")
+        .then((favorites) => {
+          const alreadySaved = favorites.some(
+            (fav: any) => fav._id === (trek as any)._id
+          );
+          setIsFavorite(alreadySaved);
+        })
+        .catch(() => {
+          // silenzioso, non blocca la pagina
+        });
+    };
+
+    checkFavorite();
+
+    window.addEventListener("focus", checkFavorite);
+    return () => window.removeEventListener("focus", checkFavorite);
+  }, [user, trek]);
 
   function getHourlyList(weather: any) {
     const hourly = weather?.weather?.["180"];
@@ -202,15 +250,34 @@ export default function TrekDetails() {
     });
   }
 
-  function skyToText(code: string) {
+  function skyToText(code: string): string {
     switch (code) {
-      case "A": return "Sereno";
-      case "B": return "Poco nuvoloso";
-      case "C": return "Nuvoloso";
-      case "D": return "Molto nuvoloso";
-      case "F": return "Pioggia";
-      case "H": return "Temporale";
-      case "J": return "Variabile";
+      case "A": return "Cielo sereno";
+      case "B": return "Soleggiato";
+      case "C": return "Parzialmente nuvoloso";
+      case "D": return "Nuvoloso";
+      case "E": return "Molto nuvoloso";
+      case "F": return "Rovesci";
+      case "G": return "Rovesci forti";
+      case "H": return "Pioggia moderata";
+      case "I": return "Pioggia forte";
+      case "J": return "Pioggia debole";
+      case "K": return "Rovesci deboli";
+      case "L": return "Neve debole e sole";
+      case "M": return "Neve e sole";
+      case "N": return "Neve debole";
+      case "O": return "Neve moderata";
+      case "P": return "Neve forte";
+      case "Q": return "Neve bagnata e sole";
+      case "R": return "Neve bagnata";
+      case "S": return "Foschia";
+      case "T": return "Foschia in quota";
+      case "U": return "Instabile";
+      case "V": return "Temporali";
+      case "W": return "Instabile con neve bagnata";
+      case "X": return "Temporali di neve bagnata";
+      case "Y": return "Instabile con temporali nevosi";
+      case "Z": return "Temporali nevosi";
       default: return "N/D";
     }
   }
@@ -240,13 +307,18 @@ export default function TrekDetails() {
     }
   }
 
-  // applica una partenza personalizzata e ricalcola il tracciato
+  // applica una partenza personalizzata e ricalcola il tracciato (pin viola)
   async function applyCustomStart(lat: number, lon: number, label: string) {
     setCustomStart({ lat, lon });
     setCustomStartLabel(label);
     setClickToSelect(false);
     setSelectMode("none");
     setRouteLoading(true);
+    // Chiude le varianti e le resetta: vanno ricalcolate con la nuova partenza
+    setVariantsOpen(false);
+    setRouteVariants([]);
+    setActiveVariantKey(null);
+    setLastParkingCoords(null);
     try {
       const res = await fetch(
         `${API_BASE}/api/route/${id}/custom?startLat=${lat}&startLon=${lon}`
@@ -262,7 +334,7 @@ export default function TrekDetails() {
     }
   }
 
-  // ripristina partenza originale
+  // ripristina partenza originale (pin verde)
   async function resetCustomStart() {
     setCustomStart(null);
     setCustomStartLabel("");
@@ -270,6 +342,10 @@ export default function TrekDetails() {
     setClickToSelect(false);
     setSearchError(null);
     setRouteLoading(true);
+    setRouteVariants([]);
+    setActiveVariantKey(null);
+    setVariantsOpen(false);
+    setLastParkingCoords(null);
     try {
       const res = await fetch(`${API_BASE}/api/route/${id}`);
       if (res.ok) {
@@ -282,26 +358,43 @@ export default function TrekDetails() {
     }
   }
 
-  // ricerca indirizzo via Nominatim
-  // async function handleSearch() {
-  //   if (!searchQuery.trim()) return;
-  //   setSearchLoading(true);
-  //   setSearchError(null);
-  //   try {
-  //     const res = await fetch(
-  //       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1`,
-  //       { headers: { "Accept-Language": "it" } }
-  //     );
-  //     const results = await res.json();
-  //     if (!results.length) throw new Error("Nessun luogo trovato");
-  //     const { lat, lon, display_name } = results[0];
-  //     await applyCustomStart(parseFloat(lat), parseFloat(lon), display_name);
-  //   } catch (err: any) {
-  //     setSearchError(err.message);
-  //   } finally {
-  //     setSearchLoading(false);
-  //   }
-  // }
+  // parcheggio più vicino → cambia punto di partenza (pin viola), stesso pannello delle altre modalità
+  async function handleParking() {
+    // Se la partenza corrente coincide con l'ultimo parcheggio, non fare nulla
+    if ( lastParkingCoords && customStart?.lat === lastParkingCoords.lat && customStart?.lon === lastParkingCoords.lon ) {
+      return; // oppure rendi button non cliccabile
+    }
+
+    setSearchError(null);
+    setParkingLoading(true);
+    try {
+      const start = customStart ?? { lat: trek!.coordinates.lat, lon: trek!.coordinates.lon };
+      const res = await fetch(
+        `${API_BASE}/api/route/${id}/parking?startLat=${start.lat}&startLon=${start.lon}`
+      );
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Parcheggio non trovato");
+      }
+      const data = await res.json();
+
+      // Salva le coordinate del parcheggio trovato
+      setLastParkingCoords({ lat: data.startLat, lon: data.startLon });
+
+      setCustomStart({ lat: data.startLat, lon: data.startLon });
+      setCustomStartLabel(data.label);
+      setRouteGeojson(data.geojson);
+      setRouteInfo({ distanceMeters: data.distanceMeters, durationSeconds: data.durationSeconds });
+      setSelectMode("none");
+      setVariantsOpen(false);
+      setRouteVariants([]);
+      setActiveVariantKey(null);
+    } catch (err: any) {
+      setSearchError(err.message);
+    } finally {
+      setParkingLoading(false);
+    }
+}
 
   function handleSearchInput(value: string) {
     setSearchQuery(value);
@@ -328,7 +421,7 @@ export default function TrekDetails() {
       } finally {
         setSearchLoading(false);
       }
-    }, 400); // aspetta 400ms dopo l'ultimo tasto prima di cercare
+    }, 400);
 
     setSearchDebounce(timeout);
   }
@@ -356,6 +449,105 @@ export default function TrekDetails() {
   function handleMapClick(lat: number, lon: number) {
     applyCustomStart(lat, lon, `${lat.toFixed(5)}, ${lon.toFixed(5)}`);
   }
+
+  // carica le 4 varianti di percorso con la partenza corrente (non cambia il pin)
+  async function loadRouteVariants() {
+    if (variantsOpen) { setVariantsOpen(false); return; }
+    setVariantsOpen(true);
+    if (routeVariants.length > 0) return;
+
+    setVariantsLoading(true);
+    try {
+      const startLat = customStart?.lat ?? trek?.coordinates?.lat;
+      const startLon = customStart?.lon ?? trek?.coordinates?.lon;
+      const url = `${API_BASE}/api/route/${id}/variants?startLat=${startLat}&startLon=${startLon}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      setRouteVariants(data.variants ?? []);
+    } catch {
+      setRouteVariants([]);
+    } finally {
+      setVariantsLoading(false);
+    }
+  }
+
+  // applica una variante (NON cambia il punto di partenza)
+  function applyVariant(v: any) {
+    if (v.error) return;
+    setActiveVariantKey(v.key);
+    setRouteGeojson(v.geojson);
+    setRouteInfo({ distanceMeters: v.distanceMeters, durationSeconds: v.durationSeconds });
+  }
+
+  // reset variante → torna al percorso con la partenza corrente
+  async function resetVariant() {
+    setActiveVariantKey(null);
+    setRouteLoading(true);
+    try {
+      if (customStart) {
+        const res = await fetch(`${API_BASE}/api/route/${id}/custom?startLat=${customStart.lat}&startLon=${customStart.lon}`);
+        if (res.ok) { const d = await res.json(); setRouteGeojson(d.geojson); setRouteInfo({ distanceMeters: d.distanceMeters, durationSeconds: d.durationSeconds }); }
+      } else {
+        const res = await fetch(`${API_BASE}/api/route/${id}`);
+        if (res.ok) { const d = await res.json(); setRouteGeojson(d.geojson); setRouteInfo({ distanceMeters: d.distanceMeters, durationSeconds: d.durationSeconds }); }
+      }
+    } finally {
+      setRouteLoading(false);
+    }
+  }
+  
+  async function toggleFavorite() {
+    // console.log(user);
+
+    if (!user) {
+      setFavoriteError("Devi accedere per salvare un percorso");
+      return;
+    }
+    
+    // console.log("favoriteTreks:", user.favoriteTreks);
+    // console.log("trek._id:", (trek as any)._id);
+
+    if (!trek?.id) return;
+
+    setFavoriteLoading(true);
+    setFavoriteError(null);
+
+    try {
+
+      if (isFavorite) {
+
+        await http(`/users/favorites/${trek.id}`, {
+          method: "DELETE",
+        });
+
+        setIsFavorite(false);
+
+      } else {
+
+        await http(`/users/favorites/${trek.id}`, {
+          method: "POST",
+        });
+
+        setIsFavorite(true);
+
+      }
+
+    } catch (err) {
+
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Errore gestione preferiti";
+
+      setFavoriteError(message);
+
+    } finally {
+
+      setFavoriteLoading(false);
+
+    }
+  }
+
 
   if (loading) {
     return (
@@ -396,6 +588,15 @@ export default function TrekDetails() {
   //   }
   // }
   
+  function formatDuration(seconds: number): string {
+    const totalMinutes = Math.round(seconds / 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    if (hours === 0) return `${minutes} min`;
+    if (minutes === 0) return `${hours} h`;
+    return `${hours} h ${minutes} min`;
+  }
+
   function calcDifficulty(distanceMeters: number, durationSeconds: number): string {
     const km = distanceMeters / 1000;
     const ore = durationSeconds / 3600;
@@ -480,33 +681,40 @@ export default function TrekDetails() {
 
           {/* BADGES */}
           <div className={styles.badges}>
-            <span className={appStyles.sectionCount}>
+            <div className={appStyles.sectionCount}>
+            <span>
               Trek details: 
             </span>
-            <span>🎯 Difficoltà: {
-              customStart && routeInfo?.distanceMeters && routeInfo?.durationSeconds
+            <span> — {
+              (customStart || activeVariantKey) && routeInfo?.distanceMeters && routeInfo?.durationSeconds
                 ? calcDifficulty(routeInfo.distanceMeters, routeInfo.durationSeconds)
                 : trek.difficulty
             }</span>
 
-            <span>⏱ Durata: {
-              customStart && routeInfo?.durationSeconds
-                ? `${Math.round(routeInfo.durationSeconds / 60)} minuti (stimati)`
+            <span> — {
+              (customStart || activeVariantKey) && routeInfo?.durationSeconds
+                ? `${formatDuration(routeInfo.durationSeconds)} (stimati)`
                 : trek.duration
             }</span>
 
-            <span>📏 Lunghezza: {
-              customStart && routeInfo?.distanceMeters
+            <span> — {
+              (customStart || activeVariantKey) && routeInfo?.distanceMeters
                 ? `${(routeInfo.distanceMeters / 1000).toFixed(1)} km (calcolati)`
                 : `${trek.lengthKm ?? "-"} km`
             }</span>
-            <span>⛰ Dislivello: {customStart ? "-" : (trek.elevationGain ?? "-")} m</span>
+            <span> — {(customStart || activeVariantKey) ? "-" : (trek.elevationGain ?? "-")} m — </span>
             
-            {customStart && (
+            {(customStart || activeVariantKey) && (
               <span style={{ color: "#7c3aed", fontSize: "12px", borderBottom: "none" }}>
-                🟣 Dati aggiornati dalla tua partenza
+                {(customStart && activeVariantKey)
+                  ? "Dati aggiornati dalla tua partenza e dal tipo di percorso selezionato"
+                  : customStart
+                    ? "Dati aggiornati dalla tua partenza"
+                    : "Dati aggiornati in base al tipo di percorso selezionato"}
               </span>
             )}
+
+            </div>
 
           </div>
 
@@ -535,69 +743,57 @@ export default function TrekDetails() {
             />
           </div> */}
 
-          {/* SELEZIONE PARTENZA PERSONALIZZATA */}
+          {/* ── CAMBIA PUNTO DI PARTENZA (pin viola) ─────────────────── */}
           <div className={styles.customStartBox}>
 
-            {/* Banner partenza personalizzata attiva */}
+            {/* Banner partenza attiva — sopra, separato */}
             {customStart && (
-              <div className={styles.customStartBanner}>
-                <span>🟣 Partenza personalizzata: <strong>{customStartLabel}</strong></span>
+              <div className={styles.customStartActiveBadge}>
+                <span>🟣 Partenza: <strong>{customStartLabel}</strong></span>
                 <button className={styles.resetButton} onClick={resetCustomStart}>
                   Ripristina predefinita
                 </button>
               </div>
             )}
 
-            {/* Bottoni scelta modalità */}
-            {!customStart && (
-              <div className={styles.customStartActions}>
-                <p className={styles.customStartLabel}>Cambia punto di partenza:</p>
-                <div className={styles.customStartButtons}>
-                  <button
-                    className={`${styles.modeButton} ${selectMode === "search" ? styles.modeButtonActive : ""}`}
-                    onClick={() => { setSelectMode(selectMode === "search" ? "none" : "search"); setSearchError(null); }}
-                  >
-                    🔍 Cerca indirizzo
-                  </button>
-                  <button
-                    className={`${styles.modeButton} ${selectMode === "gps" ? styles.modeButtonActive : ""}`}
-                    onClick={() => { setSelectMode("gps"); handleGps(); }}
-                  >
-                    📍 Usa GPS
-                  </button>
-                  <button
-                    className={`${styles.modeButton} ${selectMode === "map" ? styles.modeButtonActive : ""}`}
-                    onClick={() => {
-                      const next = selectMode !== "map";
-                      setSelectMode(next ? "map" : "none");
-                      setClickToSelect(next);
-                    }}
-                  >
-                    🗺 Seleziona su mappa
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* Riga label + bottoni — sempre visibile */}
+            <div className={styles.customStartRow}>
+              <span className={styles.customStartLabel}>Cambia punto di partenza:</span>
+              <button
+                className={`${styles.modeButton} ${selectMode === "search" ? styles.modeButtonActive : ""}`}
+                onClick={() => { setSelectMode(selectMode === "search" ? "none" : "search"); setSearchError(null); }}
+              >
+                 Cerca un indirizzo
+              </button>
+              <button
+                className={`${styles.modeButton} ${selectMode === "gps" ? styles.modeButtonActive : ""}`}
+                onClick={() => { setSelectMode("gps"); handleGps(); }}
+              >
+                 Usa il GPS
+              </button>
+              <button
+                className={`${styles.modeButton} ${selectMode === "map" ? styles.modeButtonActive : ""}`}
+                onClick={() => {
+                  const next = selectMode !== "map";
+                  setSelectMode(next ? "map" : "none");
+                  setClickToSelect(next);
+                }}
+              >
+                Seleziona sulla mappa
+              </button>
+
+              <button
+                className={`${styles.modeButton} ${alreadyAtParking ? styles.modeButtonDisabled : ""}`}
+                onClick={handleParking}
+                disabled={parkingLoading || alreadyAtParking}
+                title={alreadyAtParking ? "Sei già partito dal parcheggio più vicino" : undefined}
+              >
+                {parkingLoading ? "Ricerca..." : alreadyAtParking ? "Già al parcheggio" : "Parcheggio più vicino"}
+              </button>
+            </div>
 
             {/* Pannello ricerca */}
-            {selectMode === "search" && !customStart && (
-              // <div className={styles.searchBox}>
-              //   <input
-              //     className={styles.searchInput}
-              //     type="text"
-              //     placeholder="Es: Passo Rolle, Trento..."
-              //     value={searchQuery}
-              //     onChange={(e) => setSearchQuery(e.target.value)}
-              //     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              //   />
-              //   <button
-              //     className={styles.searchButton}
-              //     onClick={handleSearch}
-              //     disabled={searchLoading}
-              //   >
-              //     {searchLoading ? "..." : "Cerca"}
-              //   </button>
-              // </div>
+            {selectMode === "search" && (
               <div className={styles.searchBox}>
                 <div className={styles.searchInputWrapper}>
                   <input
@@ -607,54 +803,80 @@ export default function TrekDetails() {
                     value={searchQuery}
                     onChange={(e) => handleSearchInput(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && searchResults.length > 0) {
-                        handleSelectResult(searchResults[0]);
-                      }
+                      if (e.key === "Enter" && searchResults.length > 0) handleSelectResult(searchResults[0]);
                       if (e.key === "Escape") setSearchResults([]);
                     }}
                     autoComplete="off"
                   />
-
-                  {/* Dropdown suggerimenti */}
                   {searchResults.length > 0 && (
                     <ul className={styles.searchDropdown}>
                       {searchResults.map((r, i) => (
-                        <li
-                          key={i}
-                          className={styles.searchDropdownItem}
-                          onClick={() => handleSelectResult(r)}
-                        >
+                        <li key={i} className={styles.searchDropdownItem} onClick={() => handleSelectResult(r)}>
                           <span className={styles.searchDropdownIcon}>📍</span>
                           <span>{r.display_name}</span>
                         </li>
                       ))}
                     </ul>
                   )}
-
-                  {searchLoading && (
-                    <span className={styles.searchSpinner}>⏳</span>
-                  )}
+                  {searchLoading && <span className={styles.searchSpinner}>⏳</span>}
                 </div>
               </div>
-
             )}
 
-            {/* Istruzione click mappa */}
-            {selectMode === "map" && !customStart && (
+            {selectMode === "map" && (
               <p className={styles.mapClickHint}>
                 Clicca sulla mappa per scegliere il punto di partenza
               </p>
             )}
 
-            {/* Loading ricalcolo */}
-            {routeLoading && (
-              <p className={styles.routeLoading}>⏳ Ricalcolo percorso...</p>
+            {routeLoading && <p className={styles.routeLoading}>Ricalcolo percorso...</p>}
+            {searchError && <p className={styles.searchErrorText}>{searchError}</p>}
+          </div>
+
+          {/* ── TIPO DI PERCORSO (4 varianti, partenza invariata) ─────── */}
+          <div className={styles.customStartBox} style={{ marginTop: 8 }}>
+
+            {/* Banner variante attiva — sparisce quando activeVariantKey è null */}
+            {activeVariantKey !== null && (
+              <div className={styles.customStartActiveBadge}>
+                <span>Variante: <strong>{routeVariants.find(v => v.key === activeVariantKey)?.label ?? activeVariantKey}</strong></span>
+                <button className={styles.resetButton} onClick={resetVariant}>
+                  Ripristina sentiero hiking
+                </button>
+              </div>
             )}
 
-            {/* Errore */}
-            {searchError && (
-              <p className={styles.searchErrorText}>{searchError}</p>
-            )}
+            {/* Riga label + bottoni — sempre visibile */}
+            <div className={styles.customStartRow}>
+              <span className={styles.customStartLabel}>Tipo di percorso:</span>
+              {routeVariants.length === 0 && !variantsLoading && (
+                <button
+                  className={styles.modeButton}
+                  onClick={loadRouteVariants}
+                >
+                  Mostra varianti
+                </button>
+              )}
+              {variantsLoading && <span className={styles.routeLoading}>Calcolo varianti...</span>}
+              {routeVariants.map((v) => (
+                <button
+                  key={v.key}
+                  className={`${styles.modeButton} ${activeVariantKey === v.key ? styles.modeButtonActive : ""} ${v.error ? styles.modeButtonDisabled : ""}`}
+                  disabled={!!v.error}
+                  title={v.error ? (v.errorMessage ?? "Non disponibile") : undefined}
+                  onClick={() => {
+                    // se è già attivo o è hiking (default), reset → banner sparisce
+                    if (activeVariantKey === v.key || v.key === "hiking") {
+                      resetVariant();
+                    } else {
+                      applyVariant(v);
+                    }
+                  }}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className={styles.mapContainer}>
@@ -757,7 +979,7 @@ export default function TrekDetails() {
                             }
                           >
                             <p>
-                              <span style={{ alignSelf: "center" }}>⏰</span> {formatSlotTime(item.key)}
+                              {formatSlotTime(item.key)}
                             </p>
 
                             <p><span>🌡</span> {item.temperature}°C</p>
@@ -768,7 +990,7 @@ export default function TrekDetails() {
 
                             <p><span>❄</span> {item.snow_level} m</p>
 
-                            <p><span>☁</span> {skyToText(item.sky_condition)}</p>
+                            <p>{skyToText(item.sky_condition)}</p>
                           </div>
                         ))}
                       </div>
@@ -790,16 +1012,15 @@ export default function TrekDetails() {
                             }
                           >
                             <p>
-                              {formatDayLabelFromKey(weather, item.key)} {/*FIXME: converti in data leggibile*/}
+                              {formatDayLabelFromKey(weather, item.key)}
                             </p>
 
-                            <p><span>🌡</span> Max: {item.temperature_maximum}°C</p>
-                            <p><span>🌡</span> Min: {item.temperature_minimum}°C</p>
-                            <p><span>🌧</span> Pioggia: {item.rain_fall} mm</p>
-                            <p><span>🌧</span> Probabilità: {item.rain_probability}%</p>
-                            <p><span>❄</span> Neve: {item.snow_level} m</p>
+                            <p><span>🌡</span> Min-Max: <br />{item.temperature_minimum}-{item.temperature_maximum}°C</p>
+                            <p><span>🌧</span> Pioggia: <br />{item.rain_fall} mm</p>
+                            <p><span>🌧</span> Probabilità: <br />{item.rain_probability}%</p>
+                            <p><span>❄</span> Neve: <br />{item.snow_level} m</p>
 
-                            <p><span>☁</span> {skyToText(item.sky_condition)}</p>
+                            <p>{skyToText(item.sky_condition)}</p>
                           </div>
                         ))}
                       </div>
@@ -820,35 +1041,40 @@ export default function TrekDetails() {
               <h3 className={appStyles.sectionTitle}>Riepilogo</h3>
 
               <div className={styles.summaryList}>
-                <span>🎯 Difficoltà: {trek.difficulty}</span>
-                <span>⏱ Durata: {trek.duration}</span>
-                <span>📏 Lunghezza: {trek.lengthKm ?? "-"} km</span>
-                <span>⛰ Dislivello: {trek.elevationGain ?? "-"} m</span>
+                <span>Difficoltà: {trek.difficulty}</span>
+                <span>Durata: {trek.duration}</span>
+                <span>Lunghezza: {trek.lengthKm ?? "-"} km</span>
+                <span>Dislivello: {trek.elevationGain ?? "-"} m</span>
               </div>
             </div> */}
             <div className={styles.card}>
               <h3 className={appStyles.sectionTitle}>Riepilogo</h3>
               <div className={styles.summaryList}>
-                <span>🎯 Difficoltà: {
-                  customStart && routeInfo?.distanceMeters && routeInfo?.durationSeconds
+                <span>Difficoltà: {
+                  (customStart || activeVariantKey) && routeInfo?.distanceMeters && routeInfo?.durationSeconds
                     ? calcDifficulty(routeInfo.distanceMeters, routeInfo.durationSeconds)
                     : trek.difficulty
                 }</span>
-                <span>⏱ Durata: {
-                  customStart && routeInfo?.durationSeconds
-                    ? `${Math.round(routeInfo.durationSeconds / 60)} minuti (stimati)`
+                <span>Durata: {
+                  (customStart || activeVariantKey) && routeInfo?.durationSeconds
+                    ? `${formatDuration(routeInfo.durationSeconds)} (stimati)`
                     : trek.duration
                 }</span>
-                <span>📏 Lunghezza: {
-                  customStart && routeInfo?.distanceMeters
+                <span>Lunghezza: {
+                  (customStart || activeVariantKey) && routeInfo?.distanceMeters
                     ? `${(routeInfo.distanceMeters / 1000).toFixed(1)} km (calcolati)`
                     : `${trek.lengthKm ?? "-"} km`
                 }</span>
-                <span>⛰ Dislivello: {customStart ? "-" : (trek.elevationGain ?? "-")} m</span>
+                <span>Dislivello: {(customStart || activeVariantKey) ? "-" : (trek.elevationGain ?? "-")} m</span>
 
-                {customStart && (
+                {(customStart || activeVariantKey) && (
                   <span style={{ color: "#7c3aed", fontSize: "12px", borderBottom: "none" }}>
-                    🟣 Dati aggiornati dalla tua partenza
+                    {/* {customStart && activeVariantKey ? "Dati aggiornati dalla tua partenza" : "Dati aggiornati in base al tipo di percorso selezionato"} */}
+                    {(customStart && activeVariantKey)
+                      ? "Dati aggiornati dalla tua partenza e dal tipo di percorso selezionato"
+                      : customStart
+                        ? "Dati aggiornati dalla tua partenza"
+                        : "Dati aggiornati in base al tipo di percorso selezionato"}
                   </span>
                 )}
               </div>
@@ -982,9 +1208,33 @@ export default function TrekDetails() {
                 Salva il percorso o condividilo con amici.
               </p>
 
-              <button className={styles.saveShareButton}> {/*FIXME: aggiungi funzionalità */}
-                Salva percorso
+              
+              <button
+                className={styles.saveShareButton}
+                onClick={toggleFavorite}
+                disabled={disableSave}
+              >
+                {!user
+                  ? "Accedi per salvare"
+                  : favoriteLoading
+                    ? "Caricamento..."
+                    : isFavorite
+                      ? "Rimuovi dai preferiti"
+                      : "Salva percorso"}
               </button>
+
+              {favoriteError && (
+                <p
+                  style={{
+                    marginTop: "0.4rem",
+                    fontSize: "0.8rem",
+                    color: "#b91c1c",
+                  }}
+                >
+                  {favoriteError}
+                </p>
+              )}
+
               <button className={styles.saveShareButton} onClick={shareWithFriends}>
                 Condividi con amici
               </button>
@@ -995,9 +1245,9 @@ export default function TrekDetails() {
                 <button
                   className={styles.saveShareButton}
                   disabled={!routeGeojson} 
-                  onClick={() => downloadGpx(routeGeojson, trek.name)}
+                  onClick={() => downloadGpx(routeGeojson, trek.name, routeInfo?.distanceMeters, routeInfo?.durationSeconds, activeVariantKey ?? "hiking")} 
                 >
-                  {routeGeojson ? "⬇ Scarica GPX" : "⏳ Caricamento..."}
+                  {routeGeojson ? "⬇ Scarica GPX" : "Caricamento..."}
                 </button>
               )}
             </div>

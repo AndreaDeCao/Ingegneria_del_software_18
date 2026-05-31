@@ -1,36 +1,72 @@
 import styles from "./ActivityCard.module.css";
 
 import type { Activity } from "../types/Activity";
+import { Link } from "react-router-dom";
 
 interface ActivityCardProps {
   activity: Activity;
 }
 
 function ActivityCard({ activity }: ActivityCardProps) {
+  const activityDate = new Date(activity.activityDate);
+
+  const isExpired =
+    activity.status === "Aperto" &&
+    activityDate.getTime() < Date.now();
+
+  const effectiveStatus = isExpired ? "Chiuso" : activity.status;
+
+  const formatTravelMode = (mode: string) => {
+    switch (mode) {
+      case "walking":
+        return "A piedi";
+      case "bicycling":
+        return "In bicicletta";
+      default:
+        return mode;
+    }
+  };
+
   return (
-    <article className={styles.card}>
-      <div className={styles.cardBody}>
+    <Link to={`/attivita/${activity._id}`} className={styles.cardLink}>
+      <article className={styles.card}>
+        <div className={styles.cardBody}>
+          <h3 className={styles.cardTitle}>{activity.title}</h3>
 
-        <h3 className={styles.cardTitle}>
-          {activity.title}
-        </h3>
+          <p className={styles.cardDescription}>
+            {activity.description}
+          </p>
 
-        <p className={styles.cardDescription}>
-          {activity.description}
-        </p>
+          <div className={styles.cardMeta}>
+            <span className={styles.badge}>
+              Partecipanti: {activity.partecipantList?.length}/{activity.maxParticipants}
+            </span>
 
-        <div className={styles.cardMeta}>
-          <span className={styles.badge}>
-            👥 {activity.maxParticipants}
-          </span>
+            <span className={styles.badge}>
+              Modalità: {formatTravelMode(activity.travelMode ?? "")}
+            </span>
 
-          <span className={styles.badge}>
-            📅 {new Date().toLocaleDateString()}
-          </span>
+            <span
+              className={`${styles.badge} ${
+                effectiveStatus === "Chiuso"
+                  ? styles.badgeClosed
+                  : ""
+              }`}
+            >
+              Data:{" "}
+              {activityDate.toLocaleString("it-IT", {
+                timeZone: "Europe/Rome",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          </div>
         </div>
-
-      </div>
-    </article>
+      </article>
+    </Link>
   );
 }
 
