@@ -1,10 +1,32 @@
 const User = require("../models/users");
 const Trek = require("../models/treks");
+const mongoose = require("mongoose");
 
 const crypto = require("crypto");
 const { sendEmailChangeVerification } = require("../services/emailService");
 
 const bcrypt = require("bcryptjs");
+
+async function findTrekByIdParam(trekId) {
+  const conditions = [];
+  const numericId = Number(trekId);
+
+  if (Number.isInteger(numericId)) {
+    conditions.push({ id: numericId });
+  }
+
+  if (mongoose.Types.ObjectId.isValid(trekId)) {
+    conditions.push({ _id: trekId });
+  }
+
+  if (conditions.length === 0) return null;
+  return Trek.findOne({ $or: conditions });
+}
+
+async function getPopulatedFavoriteTreks(userId) {
+  const user = await User.findById(userId).populate("favoriteTreks");
+  return user?.favoriteTreks ?? null;
+}
 
 // GET tutti gli utenti
 exports.getUsers = async (req, res) => {
@@ -65,7 +87,7 @@ exports.addTrekToFavorites = async (req, res) => {
     const { trekId } = req.params;
 
     // controlla esistenza trek
-    const trek = await Trek.findOne({ id: Number(trekId) });
+    const trek = await findTrekByIdParam(trekId);
 
     if (!trek) {
       return res.status(404).json({
@@ -84,7 +106,7 @@ exports.addTrekToFavorites = async (req, res) => {
 
     // controlla se già nei preferiti
     const alreadyFavorite = user.favoriteTreks.some(
-      (id) => id.toString() === trek._id.toString() || id.toString() === trekId
+      (id) => id.toString() === trek._id.toString()
     );
 
     if (alreadyFavorite) {
@@ -98,11 +120,8 @@ exports.addTrekToFavorites = async (req, res) => {
 
     await user.save();
 
-    // ripopola i trek
-    const updatedUser = await User.findById(userId)
-      .populate("favoriteTreks");
-
-    res.status(200).json(updatedUser);
+    const favoriteTreks = await getPopulatedFavoriteTreks(userId);
+    res.status(200).json({ favoriteTreks });
 
   } catch (err) {
     if (err.name === "CastError") {
@@ -152,7 +171,7 @@ exports.removeTrekFromFavorites = async (req, res) => {
     const { trekId } = req.params;
 
     // controlla esistenza trek
-    const trek = await Trek.findOne({ id: Number(trekId) });
+    const trek = await findTrekByIdParam(trekId);
 
     if (!trek) {
       return res.status(404).json({
@@ -180,18 +199,13 @@ exports.removeTrekFromFavorites = async (req, res) => {
       });
     }
 
-    // rimuovi trek dai preferiti
-    user.favoriteTreks = user.favoriteTreks.filter(
-      (id) => id.toString() !== trek._id.toString()
+    await User.updateOne(
+      { _id: userId },
+      { $pull: { favoriteTreks: trek._id } }
     );
 
-    await user.save();
-
-    // ripopola i trek
-    const updatedUser = await User.findById(userId)
-      .populate("favoriteTreks");
-
-    res.status(200).json(updatedUser);
+    const favoriteTreks = await getPopulatedFavoriteTreks(userId);
+    res.status(200).json({ favoriteTreks });
 
   } catch (err) {
     if (err.name === "CastError") {

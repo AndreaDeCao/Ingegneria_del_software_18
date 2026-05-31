@@ -15,13 +15,13 @@ router.put("/me/password", requireAuth, userController.updatePassword);
 
 router.get("/", userController.getUsers);
 router.get("/favorites", requireAuth, userController.getFavoriteTreks);
-router.get("/:id", userController.getUserById);
+router.get("/verify-email-change/:token", userController.verifyEmailChange);
 
 router.post("/", userController.createUser);
 router.post("/favorites/:trekId", requireAuth, userController.addTrekToFavorites);
+router.delete("/favorites/:trekId", requireAuth, userController.removeTrekFromFavorites);
 
-
-router.get("/verify-email-change/:token", userController.verifyEmailChange);
+router.get("/:id", userController.getUserById);
 
 
 module.exports = router;

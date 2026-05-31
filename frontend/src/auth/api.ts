@@ -32,23 +32,82 @@ export const setAccessToken = (t: string | null) => { accessToken = t; }; // Fun
 
 let csrfToken: string | null = null;
 export const setCsrfToken = (t: string | null) => { csrfToken = t; };
+let csrfTokenPromise: Promise<string> | null = null;
+let refreshTokenPromise: Promise<string | null> | null = null;
+
+function readCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const prefix = `${name}=`;
+  const cookie = document.cookie
+    .split("; ")
+    .find((part) => part.startsWith(prefix));
+  return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : null;
+}
 
 async function ensureCsrfToken(): Promise<string> {
+  const cookieToken = readCookie("csrf_token");
+  if (cookieToken) {
+    csrfToken = cookieToken;
+    return cookieToken;
+  }
   if (csrfToken) return csrfToken;
+  if (csrfTokenPromise) return csrfTokenPromise;
 
-  const res = await fetch(`${API_BASE}/api/auth/csrf`, {
-    method: "GET",
-    credentials: "include",
+  csrfTokenPromise = (async () => {
+    const res = await fetch(`${API_BASE}/api/auth/csrf`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!res.ok) throw new Error("Impossibile ottenere CSRF token");
+    const data = (await res.json()) as { csrfToken?: unknown };
+    if (typeof data.csrfToken !== "string" || !data.csrfToken) {
+      throw new Error("CSRF token non valido");
+    }
+
+    csrfToken = data.csrfToken;
+    return csrfToken;
+  })().finally(() => {
+    csrfTokenPromise = null;
   });
 
-  if (!res.ok) throw new Error("Impossibile ottenere CSRF token");
-  const data = (await res.json()) as { csrfToken?: unknown };
-  if (typeof data.csrfToken !== "string" || !data.csrfToken) {
-    throw new Error("CSRF token non valido");
+  return csrfTokenPromise;
+}
+
+async function requestRefreshAccessToken(): Promise<string | null> {
+  const refresh = (token: string) => fetch(`${API_BASE}/api/auth/refresh`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "X-CSRF-Token": token },
+  });
+
+  let token = await ensureCsrfToken();
+  let res = await refresh(token);
+
+  if (res.status === 403) {
+    csrfToken = null;
+    token = await ensureCsrfToken();
+    res = await refresh(token);
   }
 
-  csrfToken = data.csrfToken;
-  return csrfToken;
+  if (!res.ok) {
+    accessToken = null;
+    return null;
+  }
+
+  const data = (await res.json()) as { accessToken?: unknown };
+  accessToken = typeof data.accessToken === "string" ? data.accessToken : null;
+  return accessToken;
+}
+
+export async function refreshAccessToken(): Promise<string | null> {
+  if (!refreshTokenPromise) {
+    refreshTokenPromise = requestRefreshAccessToken().finally(() => {
+      refreshTokenPromise = null;
+    });
+  }
+
+  return refreshTokenPromise;
 }
 
 
@@ -70,24 +129,13 @@ export async function http<T>(path: string, init?: RequestInit): Promise<T> {
   // token scaduto --> prova a rinnovarlo e riprova la richiesta
   // if (res.status === 401 && !path.includes("/auth/refresh")) { //problema con login
   // if (res.status === 401 && !path.includes("/auth/refresh") && !path.includes("/auth/login")) { possibile problema con registrazione
-  if (res.status === 401 && !isAuthEndpoint) { //no problemi con refresh, login e register
-    const token = await ensureCsrfToken().catch(() => null);
-    const refreshed = await fetch(`${API_BASE}/api/auth/refresh`, {
-      method: "POST",
-      credentials: "include",
-      headers: token ? { "X-CSRF-Token": token } : undefined,
-    });
-
-    if (refreshed.ok) {
-      const data = await refreshed.json();
-      accessToken = data.accessToken;
-
+  if (res.status === 401 && !isAuthEndpoint && accessToken) { //no problemi con refresh, login e register
+    const refreshedToken = await refreshAccessToken().catch(() => null);
+    if (refreshedToken) {
       return http<T>(path, init); // riprova con il nuovo token
-    } else {
-      accessToken = null;
-
-      throw new Error("Sessione scaduta");
     }
+
+    throw new Error("Sessione scaduta");
   }
 
   if (!res.ok) {

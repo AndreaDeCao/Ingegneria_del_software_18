@@ -4,9 +4,6 @@ import { http } from "../../auth/api";
 import TrekCardFavorite from "../../components/TrekCardFavorite";
 import type { Trek } from "../../types/Trek";
 import styles from "./Treks.module.css";
-import appStyles from "../../App.module.css";
-
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 /**
  * Converte stringa durata nel formato "X ore Y min" in minuti totali.

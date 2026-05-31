@@ -5,6 +5,7 @@ const {OAuth2Client } = require("google-auth-library");
 const crypto = require("crypto");
 const { sendVerificationEmail, sendTemporaryPasswordEmail } = require("../services/emailService");
 
+const REFRESH_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 function getJwtSecret() {
   // const secret = process.env.JWT_SECRET; //obsoleto, non usato più, sostituito da JWT_ACCESS_SECRET e JWT_REFRESH_SECRET
@@ -57,17 +58,17 @@ function setAuth(res, userId, role="user") {
   );
  
   const refreshToken = jwt.sign(
-    { sub: userId.toString() },
+    { sub: userId.toString(), role },
     getJwtRefreshSecret(),
-    { expiresIn: "15m" }
+    { expiresIn: "7d" }
   );
  
   // Refresh token → cookie httpOnly (invisibile a JS)
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
-    sameSite: "lax", // permette l'invio del cookie anche in richieste cross-site, ma solo se provengono da link o form (non da fetch/ajax), riducendo il rischio di CSRF mantenendo la funzionalità del refresh token
+    sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 1000, // 1 ora
+    maxAge: REFRESH_TOKEN_MAX_AGE_MS,
     path: "/api/auth/refresh", // cookie inviato SOLO a questo endpoint
   });
  
@@ -80,6 +81,7 @@ function clearAuth(res) {
   res.clearCookie("refresh_token", {
     httpOnly: true,
     sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
     path: "/api/auth/refresh",
   });
 }
@@ -239,7 +241,7 @@ exports.login = async (req, res) => {
       return res.status(403).json({ error: "Devi verificare la tua email prima di accedere. Controlla la tua casella di posta."});
     }
 
-    const accessToken = setAuth(res, user._id); //nuova versione con refresh token nei cookie e access token nell'header Authorization
+    const accessToken = setAuth(res, user._id, user.role); //nuova versione con refresh token nei cookie e access token nell'header Authorization
 
     // c'era un return dopo res.json() — il codice dopo non veniva mai eseguito
     res.json({ user: safeUser(user), accessToken }); //manda i dati dell'utente (senza passwordHash) e il token di accesso al client, che lo salverà e lo userà per autenticarsi nelle richieste future
@@ -258,17 +260,14 @@ exports.logout = async (req, res) => {
 
 exports.refresh = (req, res) => {
   const token = req.cookies?.refresh_token;
-  if (!token) return res.status(401).json({ error: "Refresh token mancante" });
+  if (!token) return res.json({ accessToken: null });
 
   try {
     const payload = jwt.verify(token, getJwtRefreshSecret());
-    const accessToken = jwt.sign(
-      { sub: payload.sub },
-      getJwtSecret(),
-      { expiresIn: "15m" }
-    );
+    const accessToken = setAuth(res, payload.sub, payload.role ?? "user");
     res.json({ accessToken });
   } catch {
+    clearAuth(res);
     res.status(401).json({ error: "Refresh token non valido o scaduto" });
   }
 };
@@ -447,7 +446,7 @@ exports.googleCallback = async(req, res) => {
     }
 
     //Crea access e refresh token
-    const accessToken = setAuth(res, user._id);
+    const accessToken = setAuth(res, user._id, user.role);
 
     //Reinderizza al frontend
     const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
@@ -559,7 +558,7 @@ exports.githubCallback = async (req, res) => {
       }
     }
 
-    const accessToken = setAuth(res, user._id);
+    const accessToken = setAuth(res, user._id, user.role);
 
     const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
     res.redirect(`${frontendUrl}/auth/callback?accessToken=${accessToken}`);
