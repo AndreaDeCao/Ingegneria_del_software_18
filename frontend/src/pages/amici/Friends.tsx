@@ -64,6 +64,7 @@ export default function Friends() {
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
 
 
   useEffect(() => {
@@ -98,6 +99,7 @@ export default function Friends() {
   async function handleSearch() {
     if(searchQuery.trim().length < 2) return;
     setSearching(true);
+    setHasSearched(true);
     setError(null);
     try {
       const results = await http<SearchUser[]>(
@@ -218,6 +220,7 @@ export default function Friends() {
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
+              setHasSearched(false);
               if (e.target.value.trim().length < 2) setSearchResults([]);
             }}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -251,7 +254,7 @@ export default function Friends() {
           </div>
         )}
 
-        {searchResults.length === 0 && searchQuery.length >= 2 && !searching && (
+        {searchResults.length === 0 && hasSearched && !searching && (
           <p className={styles.empty}>Nessun utente trovato.</p>
         )}
       </section>
