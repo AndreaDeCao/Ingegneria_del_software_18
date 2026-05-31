@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import TrekCard from "../../components/TrekCard";
 import ActivityCard from "../../components/ActivityCard";
 import EventCard from "../../components/EventCard";

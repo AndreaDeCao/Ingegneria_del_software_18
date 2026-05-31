@@ -249,23 +249,6 @@
   opacity: 0.6;
 }
 
-.secondaryButton {
-  padding: 10px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-primary);
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-block;
-  transition: background 0.2s ease, border-color 0.2s ease;
-}
-
-.secondaryButton:hover {
-  background: var(--bg-secondary);
-  border-color: var(--accent);
-}
 
 .buttonBox {
   margin-bottom: 16px;
