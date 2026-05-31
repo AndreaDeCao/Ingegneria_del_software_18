@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import TrekCard from "../../components/TrekCard";
 import ActivityCard from "../../components/ActivityCard";
 import EventCard from "../../components/EventCard";
@@ -37,6 +38,13 @@ export default function Homepage() {
   const MAX_ACTIVITY_CARDS = 7;
   const MAX_DIARY_CARDS = 5;
   const MAX_EVENT_CARDS = 11;
+  const topRatedTreks = [...treks]
+    .sort((a, b) => {
+      const ratingDiff = (b.averageRating ?? 0) - (a.averageRating ?? 0);
+      if (ratingDiff !== 0) return ratingDiff;
+      return (b.ratingCount ?? 0) - (a.ratingCount ?? 0);
+    })
+    .slice(0, MAX_TREK_CARDS);
 
   // Carica percorsi, senza token
   useEffect(() => {
@@ -107,10 +115,10 @@ export default function Homepage() {
         {/* TREKS */}
         <div className={styles.sectionTreks}>
 
-          <div className={styles.sectionHead}>
-            <h2 className={styles.sectionTitle}>
-              Di tendenza nelle vicinanze
-            </h2>
+            <div className={styles.sectionHead}>
+              <Link to="/treks" className={styles.sectionTitle}>
+                Di tendenza 
+              </Link>
 
             {!loading && !error && (
               <span className={styles.sectionCount}>
@@ -137,7 +145,7 @@ export default function Homepage() {
 
             {!loading && !error && (
              <div className={styles.cardsRow}>
-               {treks.slice(0, MAX_TREK_CARDS).map((trek) => (
+               {topRatedTreks.map((trek) => (
                 <TrekCard key={trek.id} trek={trek} />
                ))}
              </div>
@@ -272,9 +280,9 @@ export default function Homepage() {
         <section className={styles.rightColumn}>
 
           <div className={styles.sectionHead}>
-            <h2 className={styles.sectionTitle}>
+            <Link to="/attivita/visualizza" className={styles.sectionTitle}>
               Attività in programma
-            </h2>
+            </Link>
 
             {!loading && !error && (
               <span className={styles.sectionCount}>
@@ -303,7 +311,7 @@ export default function Homepage() {
             <div className={styles.activitiesColumn}>
               {activities.slice(0, MAX_ACTIVITY_CARDS).map((activity) => (
                 <ActivityCard
-                  key={activity.id}
+                  key={activity._id}
                   activity={activity}
                 />
               ))}

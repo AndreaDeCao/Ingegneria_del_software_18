@@ -23,6 +23,49 @@ const difficultyStyle: Record<Trek["difficulty"], string> = {
 };
 
 /**
+ * funzione per applicare il badge corretto in base alla durata
+ * @param duration contiene la durata del trek con formato 'hh ore mm min'
+ * @returns lo stile da applicare
+ */
+function getDurationStyle(duration: string): string {
+  const hours   = parseInt(duration.match(/(\d+)\s*or[ae]/)?.[1]  ?? "0");
+  const minutes = parseInt(duration.match(/(\d+)\s*min/)?.[1]     ?? "0");
+  const total   = hours * 60 + minutes;
+
+  // console.log("ore:", hours, "minuti:", minutes, "totale:", total);
+
+  if (total < 60)  return styles.badgeEasy;    // < 1 ora      → verde
+  if (total <= 150) return styles.badgeMedium; // 1 ora a 2 ore 30 min   → giallo
+  return styles.badgeHard;                     // > 2ora e 30 min    → rosso
+}
+
+/**
+ * funzione per applicare il badge corretto in base alla lunghezza
+ * @param lengthKm contiene la lunghezza in chilometri del percorso
+ * @returns lo stile da applicare
+ */
+function getLengthStyle(lengthKm: number): string {
+
+  if (lengthKm < 3.5)  return styles.badgeEasy;    // < 3 km       → verde
+  if (lengthKm <= 8) return styles.badgeMedium; // da 3 km a 7,5 km   → giallo
+  return styles.badgeHard;                     // > 7,5 km    → rosso
+}
+
+/**
+ * funzione per applicare il badge corretto in base al dislivello
+ * @param elevationGain contiene il dislivello in metri del percorso
+ * @returns lo stile da applicare
+ */
+function getElevationGainStyle(elevationGain: string): string {
+  // console.log(elevationGain);
+  const elevation = parseInt(elevationGain);
+
+  if (elevation < 300)  return styles.badgeEasy;    // < 300 m      → verde
+  if (elevation <= 700) return styles.badgeMedium; // da 300 m a 700 m   → giallo
+  return styles.badgeHard;                     // > 700 m    → rosso
+}
+
+/**
  * Props del componente TrekCard
  * @param {Trek} trek - Oggetto percorso da visualizzare
  */
@@ -58,22 +101,22 @@ function TrekCard({ trek }: TrekCardProps) {
               </span>
 
               {trek.duration && (
-                <span className={`${styles.badge} ${styles.badgeInfo}`}>
+                <span className={`${styles.badge} ${getDurationStyle(trek.duration)}`}>
                   {trek.duration}
                 </span>
               )}
 
               {trek.lengthKm && (
-                <span className={`${styles.badge} ${styles.badgeInfo}`}>
+                <span className={`${styles.badge} ${getLengthStyle(trek.lengthKm)}`}>
                   {trek.lengthKm} km
                 </span>
               )}
-              
+
               {trek.elevationGain && (
-                <span className={`${styles.badge} ${styles.badgeInfo}`}>
+                <span className={`${styles.badge} ${getElevationGainStyle(trek.elevationGain)}`}>
                   {trek.elevationGain} m
                 </span>
-            )}
+              )}
           </div>
         </div>
 

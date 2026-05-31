@@ -198,6 +198,16 @@
   scroll-snap-type: y mandatory;
 }
 
+.saveShareButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.saveShareButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .weatherTimeline::-webkit-scrollbar { width: 3px; }
 .weatherTimeline::-webkit-scrollbar-track { background: transparent; }
 .weatherTimeline::-webkit-scrollbar-thumb {

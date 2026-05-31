@@ -189,3 +189,72 @@
 .diffFacile    { background: #4caf50; color: #fff; display:flex; align-items:center; justify-content:center; }
 .diffMedio     { background: #ff9800; color: #fff; display:flex; align-items:center; justify-content:center; }
 .diffDifficile { background: #f44336; color: #fff; display:flex; align-items:center; justify-content:center; }
+
+/* ── BOTTONI ─────────────────────────────────────────────────────────────── */
+
+.primaryButton {
+  margin-top: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.primaryButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.18);
+}
+
+.primaryButton:active {
+  transform: scale(0.98);
+}
+
+.primaryButton:disabled {
+  background: var(--border);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.65;
+}
+
+.primaryButtonSmall {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.primaryButtonSmall:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.18);
+}
+
+.primaryButtonSmall:disabled {
+  background: var(--border);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+
+.buttonBox {
+  margin-bottom: 16px;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  max-width: 150px;
+  align-items: flex-start ;
+}

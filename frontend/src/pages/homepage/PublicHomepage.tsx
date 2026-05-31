@@ -6,6 +6,7 @@ import EventCard from "../../components/EventCard";
 import type { Trek } from "../../types/Trek";
 import type { Activity } from "../../types/Activity";
 import type { Event } from "../../types/Events";
+import { Link } from "react-router-dom";
 
 import styles from "../../App.module.css";
 
@@ -18,9 +19,17 @@ export default function PublicHomepage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const MAX_TREK_CARDS = 11;
+  const MAX_TREK_CARDS = 7;
   const MAX_ACTIVITY_CARDS = 7;
   const MAX_EVENT_CARDS = 11;
+
+  const topRatedTreks = [...treks]
+    .sort((a, b) => {
+      const ratingDiff = (b.averageRating ?? 0) - (a.averageRating ?? 0);
+      if (ratingDiff !== 0) return ratingDiff;
+      return (b.ratingCount ?? 0) - (a.ratingCount ?? 0);
+    })
+    .slice(0, MAX_TREK_CARDS);
 
   useEffect(() => {
     fetch(`${API_BASE}/treks`)
@@ -72,9 +81,9 @@ export default function PublicHomepage() {
           <div className={styles.sectionTreks}>
 
             <div className={styles.sectionHead}>
-              <h2 className={styles.sectionTitle}>
+              <Link to="/treks" className={styles.sectionTitle}>
                 Di tendenza nelle vicinanze
-              </h2>
+              </Link>
 
               {!loading && !error && (
                 <span className={styles.sectionCount}>
@@ -101,7 +110,7 @@ export default function PublicHomepage() {
 
             {!loading && !error && (
               <div className={styles.cardsRow}>
-                {treks.slice(0, MAX_TREK_CARDS).map((trek) => (
+                {topRatedTreks.map((trek) => (
                   <TrekCard key={trek.id} trek={trek} />
                 ))}
               </div>
@@ -151,9 +160,9 @@ export default function PublicHomepage() {
         <section className={styles.rightColumn}>
 
           <div className={styles.sectionHead}>
-            <h2 className={styles.sectionTitle}>
+            <Link to="/attivita/visualizza" className={styles.sectionTitle}>
               Attività in programma
-            </h2>
+            </Link>
 
             {!loading && !error && (
               <span className={styles.sectionCount}>
@@ -182,7 +191,7 @@ export default function PublicHomepage() {
             <div className={styles.activitiesColumn}>
               {activities.slice(0, MAX_ACTIVITY_CARDS).map((activity) => (
                 <ActivityCard
-                  key={activity.id}
+                  key={activity._id}
                   activity={activity}
                 />
               ))}

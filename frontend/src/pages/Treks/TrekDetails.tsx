@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { useAuth } from "../../auth/AuthProvider";
 
+import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
 import type { Trek } from "../../types/Trek";
 import appStyles from "../../App.module.css";
@@ -43,8 +43,10 @@ function downloadGpx(geojson: any, trekName: string, distanceMeters?: number, du
   URL.revokeObjectURL(url);
 }
 
+
 export default function TrekDetails() {
   const { id } = useParams();
+  const { user } = useAuth(); 
 
   const [trek, setTrek] = useState<Trek | null>(null);
   const [weather, setWeather] = useState<any>(null);
@@ -54,7 +56,7 @@ export default function TrekDetails() {
 
   const [hoverVote, setHoverVote] = useState<number | null>(null);
   
-  const { user } = useAuth(); 
+  // const { user } = useAuth(); 
 
   const [myVote, setMyVote] = useState<number | null>(null);
   const [ratingLoading, setRatingLoading] = useState(false);
@@ -76,6 +78,7 @@ export default function TrekDetails() {
   const [routeLoading, setRouteLoading] = useState(false);
   const [clickToSelect, setClickToSelect] = useState(false);
   const [parkingLoading, setParkingLoading] = useState(false);
+  const [lastParkingCoords, setLastParkingCoords] = useState<{ lat: number; lon: number } | null>(null);
 
   // varianti di percorso (4 tipi: 2 a piedi + 2 in bici) — NON cambiano la partenza
   const [routeVariants, setRouteVariants] = useState<any[]>([]);
@@ -86,19 +89,24 @@ export default function TrekDetails() {
   const [searchResults, setSearchResults] = useState<{ display_name: string; lat: string; lon: string }[]>([]);
   const [searchDebounce, setSearchDebounce] = useState<ReturnType<typeof setTimeout> | null>(null);
 
+
+    
+  //aggiunge Trek ai preferiti del user
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  
+  const disableSave = !user || favoriteLoading;
+
+  const alreadyAtParking = !!lastParkingCoords && customStart?.lat === lastParkingCoords.lat && customStart?.lon === lastParkingCoords.lon;
+
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
 
-        // TREK
-        const trekResponse = await fetch(
-          `${API_BASE}/treks/${id}`
-        );
-
-        if (!trekResponse.ok)
-          throw new Error("Errore caricamento trek");
-
+        const trekResponse = await fetch(`${API_BASE}/treks/${id}`);
+        if (!trekResponse.ok) throw new Error("Errore caricamento trek");
         const trekData = await trekResponse.json();
         setTrek(trekData);
 
@@ -124,7 +132,7 @@ export default function TrekDetails() {
           // tracciato non disponibile, la mappa mostra solo il marker
         }
 
-        // METEO 
+         // METEO 
         const weatherResponse = await fetch(
           `${API_BASE}/api/weather/${trekData._id}`
         );
@@ -143,7 +151,36 @@ export default function TrekDetails() {
     }
 
     fetchData();
-  }, [id]);
+  }, [id]);  
+
+  useEffect(() => {
+    if (!favoriteError) return;
+    const timer = setTimeout(() => setFavoriteError(null), 3000);
+    return () => clearTimeout(timer);
+  }, [favoriteError]);
+
+  //controlla i trek gia messi nei preferiti
+  useEffect(() => {
+    if (!user || !trek) return;
+
+    const checkFavorite = () => {
+      http<Trek[]>("/users/favorites")
+        .then((favorites) => {
+          const alreadySaved = favorites.some(
+            (fav: any) => fav._id === (trek as any)._id
+          );
+          setIsFavorite(alreadySaved);
+        })
+        .catch(() => {
+          // silenzioso, non blocca la pagina
+        });
+    };
+
+    checkFavorite();
+
+    window.addEventListener("focus", checkFavorite);
+    return () => window.removeEventListener("focus", checkFavorite);
+  }, [user, trek]);
 
   function getHourlyList(weather: any) {
     const hourly = weather?.weather?.["180"];
@@ -281,6 +318,7 @@ export default function TrekDetails() {
     setVariantsOpen(false);
     setRouteVariants([]);
     setActiveVariantKey(null);
+    setLastParkingCoords(null);
     try {
       const res = await fetch(
         `${API_BASE}/api/route/${id}/custom?startLat=${lat}&startLon=${lon}`
@@ -307,6 +345,7 @@ export default function TrekDetails() {
     setRouteVariants([]);
     setActiveVariantKey(null);
     setVariantsOpen(false);
+    setLastParkingCoords(null);
     try {
       const res = await fetch(`${API_BASE}/api/route/${id}`);
       if (res.ok) {
@@ -321,15 +360,27 @@ export default function TrekDetails() {
 
   // parcheggio più vicino → cambia punto di partenza (pin viola), stesso pannello delle altre modalità
   async function handleParking() {
+    // Se la partenza corrente coincide con l'ultimo parcheggio, non fare nulla
+    if ( lastParkingCoords && customStart?.lat === lastParkingCoords.lat && customStart?.lon === lastParkingCoords.lon ) {
+      return; // oppure rendi button non cliccabile
+    }
+
     setSearchError(null);
     setParkingLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/route/${id}/parking`);
+      const start = customStart ?? { lat: trek!.coordinates.lat, lon: trek!.coordinates.lon };
+      const res = await fetch(
+        `${API_BASE}/api/route/${id}/parking?startLat=${start.lat}&startLon=${start.lon}`
+      );
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error ?? "Parcheggio non trovato");
       }
       const data = await res.json();
+
+      // Salva le coordinate del parcheggio trovato
+      setLastParkingCoords({ lat: data.startLat, lon: data.startLon });
+
       setCustomStart({ lat: data.startLat, lon: data.startLon });
       setCustomStartLabel(data.label);
       setRouteGeojson(data.geojson);
@@ -343,7 +394,7 @@ export default function TrekDetails() {
     } finally {
       setParkingLoading(false);
     }
-  }
+}
 
   function handleSearchInput(value: string) {
     setSearchQuery(value);
@@ -444,6 +495,59 @@ export default function TrekDetails() {
       setRouteLoading(false);
     }
   }
+  
+  async function toggleFavorite() {
+    // console.log(user);
+
+    if (!user) {
+      setFavoriteError("Devi accedere per salvare un percorso");
+      return;
+    }
+    
+    // console.log("favoriteTreks:", user.favoriteTreks);
+    // console.log("trek._id:", (trek as any)._id);
+
+    if (!trek?.id) return;
+
+    setFavoriteLoading(true);
+    setFavoriteError(null);
+
+    try {
+
+      if (isFavorite) {
+
+        await http(`/users/favorites/${trek.id}`, {
+          method: "DELETE",
+        });
+
+        setIsFavorite(false);
+
+      } else {
+
+        await http(`/users/favorites/${trek.id}`, {
+          method: "POST",
+        });
+
+        setIsFavorite(true);
+
+      }
+
+    } catch (err) {
+
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Errore gestione preferiti";
+
+      setFavoriteError(message);
+
+    } finally {
+
+      setFavoriteLoading(false);
+
+    }
+  }
+
 
   if (loading) {
     return (
@@ -677,12 +781,14 @@ export default function TrekDetails() {
               >
                 Seleziona sulla mappa
               </button>
+
               <button
-                className={styles.modeButton}
+                className={`${styles.modeButton} ${alreadyAtParking ? styles.modeButtonDisabled : ""}`}
                 onClick={handleParking}
-                disabled={parkingLoading}
+                disabled={parkingLoading || alreadyAtParking}
+                title={alreadyAtParking ? "Sei già partito dal parcheggio più vicino" : undefined}
               >
-                {parkingLoading ? "Ricerca..." : " Parcheggio più vicino"}
+                {parkingLoading ? "Ricerca..." : alreadyAtParking ? "Già al parcheggio" : "Parcheggio più vicino"}
               </button>
             </div>
 
@@ -1102,9 +1208,33 @@ export default function TrekDetails() {
                 Salva il percorso o condividilo con amici.
               </p>
 
-              <button className={styles.saveShareButton}> {/*FIXME: aggiungi funzionalità */}
-                Salva percorso
+              
+              <button
+                className={styles.saveShareButton}
+                onClick={toggleFavorite}
+                disabled={disableSave}
+              >
+                {!user
+                  ? "Accedi per salvare"
+                  : favoriteLoading
+                    ? "Caricamento..."
+                    : isFavorite
+                      ? "Rimuovi dai preferiti"
+                      : "Salva percorso"}
               </button>
+
+              {favoriteError && (
+                <p
+                  style={{
+                    marginTop: "0.4rem",
+                    fontSize: "0.8rem",
+                    color: "#b91c1c",
+                  }}
+                >
+                  {favoriteError}
+                </p>
+              )}
+
               <button className={styles.saveShareButton} onClick={shareWithFriends}>
                 Condividi con amici
               </button>

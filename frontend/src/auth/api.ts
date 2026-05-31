@@ -5,6 +5,7 @@ export type SafeUser = {
   email: string;
   nickname: string;
   role: "user" | "admin";
+  favoriteTreks: string[]; // Array di ID dei trek preferiti
   avatarUrl: string | null;
 };
 

@@ -24,6 +24,27 @@ exports.createTrek = async (req, res) => {
   }
 };
 
+// GET /api/treks/mongo/:mongoId/number-id
+exports.getNumericIdByMongoId = async (req, res) => {
+  try {
+    const { mongoId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(mongoId)) {
+      return res.status(400).json({ error: "Mongo ID non valido" });
+    }
+
+    const trek = await Trek.findById(mongoId).select("id");
+
+    if (!trek) {
+      return res.status(404).json({ error: "Percorso non trovato" });
+    }
+
+    res.json({ id: trek.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 /**
  * Restituisce un percorso in base all'id
  * @param {string} id - id percorso

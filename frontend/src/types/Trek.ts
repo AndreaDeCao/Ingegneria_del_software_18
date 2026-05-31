@@ -1,5 +1,6 @@
 export type Trek = {
-  id: string;
+  _id: string;
+  id: number;
   name: string;
   difficulty: "Facile" | "Medio" | "Difficile";
   description?: string;
@@ -18,7 +19,7 @@ export type Trek = {
   minAltitude?: number;
   maxAltitude?: number;
   
-  coordinates?: {
+  coordinates: {
     lat: number;
     lon: number;
   };

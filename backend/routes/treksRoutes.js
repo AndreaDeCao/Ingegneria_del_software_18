@@ -12,6 +12,8 @@ const { rateTrek, getMyRating } = require('../controllers/treksController');
 
 router.get("/", trekController.getTreks);
 
+router.get("/by-mongo-id/:mongoId", trekController.getNumericIdByMongoId);
+
 router.get("/:id", trekController.getTreksById);
 
 router.post("/", authenticate, requireAdmin, trekController.createTrek); 
