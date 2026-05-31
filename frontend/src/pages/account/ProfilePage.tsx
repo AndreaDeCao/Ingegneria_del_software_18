@@ -32,6 +32,8 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
   // Stato del modal
   const [activeModal, setActiveModal] = useState<
     "nome" | "cognome" | "nickname" | "email" | "password" | "elimina" | null
@@ -211,7 +213,7 @@ export default function ProfilePage() {
           await refreshUser();
           setSuccessMsg("Foto profilo aggiornata");
         } catch(err: unknown) {
-          if(err instanceof Error) setError(err.message);
+          if(err instanceof Error) setAvatarError(err.message);
         }
       };
       reader.readAsDataURL(file);
@@ -241,7 +243,7 @@ export default function ProfilePage() {
           <div>
             <p className={styles.label}>{nome} {cognome}</p>
             <p className={styles.hint}>@{nickname}</p>
-            <label className={styles.editBtn} style={{ cursor: "pointer", marginTop: 8, display: "inline-block" }}>
+            <label className={styles.avatarEditBtn}>
               Cambia foto
               <input
                 type="file"
@@ -250,6 +252,9 @@ export default function ProfilePage() {
                 onChange={handleAvatarUpload}
               />
             </label>
+            {avatarError && 
+              <p className={styles.error}>{avatarError}</p>
+            }
           </div>
         </section>
 

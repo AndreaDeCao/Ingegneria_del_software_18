@@ -245,3 +245,24 @@
   margin-bottom: 0.3rem;
   margin-top: 0.8rem;
 }
+
+.avatarEditBtn {
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  border: 0.5px solid var(--border);
+  background: var(--card-bg);
+  color:var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  cursor: pointer;
+  margin-top: 8px;
+  display: inline-block;
+}
+
+.avatarEditBtn:hover {
+  background: var(--accent-light);
+  color: var(--accent-text);
+}
