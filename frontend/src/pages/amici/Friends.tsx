@@ -68,6 +68,12 @@ export default function Friends() {
 
   useEffect(() => {
     loadAll();
+
+    const interval = setInterval(() => {
+      loadAll();  //refresh ogni 15 sec
+    }, 15000); 
+
+    return () => clearInterval(interval);
   }, []);
   
   // Carica amici e richiestae in entrata/uscita
