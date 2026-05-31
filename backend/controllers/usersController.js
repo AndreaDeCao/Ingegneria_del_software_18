@@ -203,7 +203,7 @@ exports.updateAvatar = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       req.userId,
       { avatarUrl: avatarBase64 },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     if (!user) {
@@ -279,7 +279,7 @@ exports.deleteAvatar = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       req.userId,
       { avatarUrl: null },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     if(!user) {
