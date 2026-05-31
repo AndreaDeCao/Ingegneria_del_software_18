@@ -219,6 +219,24 @@ export default function ProfilePage() {
       reader.readAsDataURL(file);
     }
 
+
+    /**
+     * Elimina avatar dell'utente autenticato.
+     *
+     * @returns {Promise<void>}
+     */
+    async function handleAvatarDelete() {
+      try {
+        await http("/users/me/avatar", { method: "DELETE" });
+        setAvatar(null);
+        await refreshUser();
+        setSuccessMsg("Foto profilo eliminata");
+
+      } catch(err: unknown) {
+        if(err instanceof Error) setAvatarError(err.message);
+      }
+    }
+
     if(loading) {
       return <p className={styles.message}>Caricamento profilo...</p>
     }
@@ -240,22 +258,31 @@ export default function ProfilePage() {
               </div>
             )}
           </div>
+
           <div>
             <p className={styles.label}>{nome} {cognome}</p>
             <p className={styles.hint}>@{nickname}</p>
-            <label className={styles.avatarEditBtn}>
-              Cambia foto
-              <input
-                type="file"
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={handleAvatarUpload}
-              />
-            </label>
-            {avatarError && 
-              <p className={styles.error}>{avatarError}</p>
-            }
-          </div>
+            <div className={styles.avatarBtn}>
+              <label className={styles.avatarEditBtn}>
+                Cambia foto
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleAvatarUpload}
+                />
+              </label>
+              {avatar && (
+                <button
+                  className={styles.avatarDeleteBtn}
+                  onClick={handleAvatarDelete}
+                >
+                  Rimuovi foto
+                </button>
+              )}
+            </div>
+            {avatarError && <p className={styles.error}>{avatarError}</p>}
+          </div>          
         </section>
 
          {/* MESSAGGI */}

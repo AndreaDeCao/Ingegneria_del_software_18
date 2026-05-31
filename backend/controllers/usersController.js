@@ -264,3 +264,31 @@ exports.updatePassword = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+/**
+ * Elimina avatar dell'utente
+ * 
+ * @route DELETE /api/users/me/avatar
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con messaggio di conferma
+ */
+exports.deleteAvatar = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { avatarUrl: null },
+      { new: true }
+    );
+
+    if(!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+
+    res.json({ message: "Avatar eliminato" });
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
