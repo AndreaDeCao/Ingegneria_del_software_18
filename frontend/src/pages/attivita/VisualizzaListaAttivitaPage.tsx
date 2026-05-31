@@ -32,9 +32,9 @@ export default function VisualizzaAttivitaPage() {
 
   // Determina lo stato del bottone Partecipa per una singola attività
   function getJoinState(activity: Activity): "join" | "organizer" | "participant" | "closed" | "full" | "expired" {
+    if (activity.organizerID === currentUserID) return "organizer";
     if (new Date(activity.activityDate).getTime() < Date.now()) return "expired";
     if (activity.status !== "Aperto") return "closed";
-    if (activity.organizerID === currentUserID) return "organizer";
     const list = activity.partecipantList ?? [];
     if (list.includes(currentUserID ?? "")) return "participant";
     if (list.length >= activity.maxParticipants) return "full";
