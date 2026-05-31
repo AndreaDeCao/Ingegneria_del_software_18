@@ -255,7 +255,7 @@ export default function DettagliAttivita() {
           {trek && (trek.lengthKm || trek.duration || trek.difficulty || trek.description) && (
             <Link to={`/treks/${trek.id}`} className={styles.formCard}>
               <h2 className={styles.detailSectionTitle}>Dettagli del trek</h2>
-              {trek.description && <p className={styles.activityDescription}>{trek.description}</p>}
+              {trek.name && <p className={styles.activityName}>{trek.name}</p>}
               <div className={styles.activityInfo}>
                 {trek.difficulty && <div className={styles.infoItem}><span className={styles.infoLabel}>Difficoltà</span><span className={styles.infoValue}>{trek.difficulty}</span></div>}
                 {trek.lengthKm && <div className={styles.infoItem}><span className={styles.infoLabel}>Distanza</span><span className={styles.infoValue}>{trek.lengthKm} km</span></div>}

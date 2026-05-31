@@ -290,7 +290,7 @@ select:focus {
   margin-top: -6px;
 }
 
-.activityDescription {
+.activityName {
   color: var(--text-secondary);
   line-height: 1.6;
   flex: 1;
