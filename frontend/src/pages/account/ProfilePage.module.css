@@ -289,3 +289,38 @@
   background: #c0392b;
   color: white;
 }
+
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13x;
+  font-family: var(--font-body);
+}
+
+.bannerSuccess {
+  background: #eafaf1;
+  color: #1e8449;
+  border: 1px solid #1e8449;
+}
+
+.bannerError {
+  background: #fde2e4;
+  color: #ae1d29;
+  border: 1px solid #ae1d29;
+}
+
+.bannerClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  color: inherit;
+  padding: 0;
+  flex-shrink: 0;
+
+}

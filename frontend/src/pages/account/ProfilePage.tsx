@@ -12,6 +12,20 @@ const VERIFY_MESSAGES: Record<string, { text: string; type: "success" | "error" 
   error:   { text: "Qualcosa è andato storto. Riprova.",      type: "error"   },
 };
 
+// Banner per messaggi di successo e errore
+function Banner({ msg, type, onClose }: {
+  msg: string;
+  type: "success" | "error";
+  onClose: () => void;
+}): React.ReactElement {
+  return (
+    <div className={`${styles.banner} ${type === "success" ? styles.bannerSuccess : styles.bannerError}`}>
+      <span>{msg}</span>
+      <button className={styles.bannerClose} onClick={onClose} aria-label="Chiudi">✕</button>
+    </div>
+  );
+}
+
 /**
  * Pagina profilo utente.
  * Permette di visualizzare e modificare le informazioni personali e di eliminare l'account.
@@ -31,8 +45,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-
-  const [avatarError, setAvatarError] = useState<string | null>(null);
 
   // Stato del modal
   const [activeModal, setActiveModal] = useState<
@@ -64,7 +76,7 @@ export default function ProfilePage() {
   if (searchParams.get("email-verified")) {
     setSearchParams({}, { replace: true });
   }
-}, []);
+}, [searchParams, setSearchParams]);
 
   // Carica dati utente
   useEffect(() => {
@@ -213,7 +225,7 @@ export default function ProfilePage() {
           await refreshUser();
           setSuccessMsg("Foto profilo aggiornata");
         } catch(err: unknown) {
-          if(err instanceof Error) setAvatarError(err.message);
+          if(err instanceof Error) setError(err.message);
         }
       };
       reader.readAsDataURL(file);
@@ -233,7 +245,7 @@ export default function ProfilePage() {
         setSuccessMsg("Foto profilo eliminata");
 
       } catch(err: unknown) {
-        if(err instanceof Error) setAvatarError(err.message);
+        if(err instanceof Error) setError(err.message);
       }
     }
 
@@ -243,6 +255,19 @@ export default function ProfilePage() {
 
     return (
       <main className={styles.main}>
+        {/* MESSAGGI */}
+        {successMsg && 
+        <Banner 
+          msg={successMsg}
+          type="success"
+          onClose={() => setSuccessMsg(null)}
+        />}
+        {error &&
+        <Banner 
+          msg={error}
+          type="error"
+          onClose={() => setError(null)}
+        />}
 
         {/* AVATAR */}
         <section className={styles.avatarSection}>
@@ -281,13 +306,8 @@ export default function ProfilePage() {
                 </button>
               )}
             </div>
-            {avatarError && <p className={styles.error}>{avatarError}</p>}
           </div>          
         </section>
-
-         {/* MESSAGGI */}
-        {successMsg && <p className={styles.success}>{successMsg}</p>}
-        {error && <p className={styles.error}>{error}</p>}
 
         {/* INFO ACCOUNT */}
         <section className={styles.section}>
