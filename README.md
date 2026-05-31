@@ -101,6 +101,7 @@ Ingegneria_del_software_18
 │  │  ├─ activityController.js
 │  │  ├─ authController.js
 │  │  ├─ diaryController.js
+│  │  ├─ routeController.js
 │  │  ├─ treksController.js
 │  │  ├─ usersController.js
 │  │  └─ weatherController.js
@@ -117,6 +118,7 @@ Ingegneria_del_software_18
 │  │  ├─ activityRoutes.js
 │  │  ├─ authRoutes.js
 │  │  ├─ diaryRoutes.js
+│  │  ├─ routeRoutes.js
 │  │  ├─ userRoutes.js
 │  │  ├─ weatherRoutes.js
 │  │  └─ treksRoutes.js
@@ -124,11 +126,13 @@ Ingegneria_del_software_18
 │  │  ├─ activities.js
 │  │  ├─ diary.js
 │  │  ├─ treks.js
+│  │  ├─ ratings.js
 │  │  └─ users.js
 │  ├─ oas3.yaml
 │  ├─ package-lock.json
 │  ├─ package.json
 │  ├─ services
+│  │  ├─ routeService.js
 │  │  └─ emailService.js
 │  └─ swagger.js
 ├─ docker-compose.yml
@@ -159,6 +163,8 @@ Ingegneria_del_software_18
 │  │  │  ├─ Footer.tsx
 │  │  │  ├─ GoogleSignInButton.module.css
 │  │  │  ├─ GoogleSignInButton.tsx
+│  │  │  ├─ StarRating.module.css
+│  │  │  ├─ StarRating.tsx
 │  │  │  ├─ Navbar.module.css
 │  │  │  ├─ Navbar.tsx
 │  │  │  ├─ TrekCard.module.css
