@@ -245,3 +245,81 @@
   margin-bottom: 0.3rem;
   margin-top: 0.8rem;
 }
+
+.avatarBtn {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.avatarEditBtn {
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  border: 0.5px solid var(--border);
+  background: var(--card-bg);
+  color:var(--text-secondary);
+  font-family: var(--font-body);
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  cursor: pointer;
+}
+
+.avatarEditBtn:hover {
+  background: var(--accent-light);
+  color: var(--accent-text);
+}
+
+.avatarDeleteBtn {
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  border: 0.5px solid var(--border);
+  background: var(--card-bg);
+  color: #c0392b;
+  color:var(--text-secondary);
+  font-family: var(--font-body);
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  cursor: pointer;
+}
+
+.avatarDeleteBtn:hover {
+  background: #c0392b;
+  color: white;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13x;
+  font-family: var(--font-body);
+}
+
+.bannerSuccess {
+  background: #eafaf1;
+  color: #1e8449;
+  border: 1px solid #1e8449;
+}
+
+.bannerError {
+  background: #fde2e4;
+  color: #ae1d29;
+  border: 1px solid #ae1d29;
+}
+
+.bannerClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  color: inherit;
+  padding: 0;
+  flex-shrink: 0;
+}

@@ -12,6 +12,20 @@ const VERIFY_MESSAGES: Record<string, { text: string; type: "success" | "error" 
   error:   { text: "Qualcosa è andato storto. Riprova.",      type: "error"   },
 };
 
+// Banner per messaggi di successo e errore
+function Banner({ msg, type, onClose }: {
+  msg: string;
+  type: "success" | "error";
+  onClose: () => void;
+}): React.ReactElement {
+  return (
+    <div className={`${styles.banner} ${type === "success" ? styles.bannerSuccess : styles.bannerError}`}>
+      <span>{msg}</span>
+      <button className={styles.bannerClose} onClick={onClose} aria-label="Chiudi">✕</button>
+    </div>
+  );
+}
+
 /**
  * Pagina profilo utente.
  * Permette di visualizzare e modificare le informazioni personali e di eliminare l'account.
@@ -62,7 +76,7 @@ export default function ProfilePage() {
   if (searchParams.get("email-verified")) {
     setSearchParams({}, { replace: true });
   }
-}, []);
+}, [searchParams, setSearchParams]);
 
   // Carica dati utente
   useEffect(() => {
@@ -171,6 +185,11 @@ export default function ProfilePage() {
         return;
       }
 
+      if(passwordForm.next === passwordForm.current) {
+        setError("La nuova password non può essere uguale a quella attuale");
+        return;
+      }
+
       try {
         await http<{ message: string }>("/users/me/password", {
           method: "PUT",
@@ -217,12 +236,43 @@ export default function ProfilePage() {
       reader.readAsDataURL(file);
     }
 
+
+    /**
+     * Elimina avatar dell'utente autenticato.
+     *
+     * @returns {Promise<void>}
+     */
+    async function handleAvatarDelete() {
+      try {
+        await http("/users/me/avatar", { method: "DELETE" });
+        setAvatar(null);
+        await refreshUser();
+        setSuccessMsg("Foto profilo eliminata");
+
+      } catch(err: unknown) {
+        if(err instanceof Error) setError(err.message);
+      }
+    }
+
     if(loading) {
       return <p className={styles.message}>Caricamento profilo...</p>
     }
 
     return (
       <main className={styles.main}>
+        {/* MESSAGGI */}
+        {successMsg && 
+        <Banner 
+          msg={successMsg}
+          type="success"
+          onClose={() => setSuccessMsg(null)}
+        />}
+        {error &&
+        <Banner 
+          msg={error}
+          type="error"
+          onClose={() => setError(null)}
+        />}
 
         {/* AVATAR */}
         <section className={styles.avatarSection}>
@@ -238,24 +288,31 @@ export default function ProfilePage() {
               </div>
             )}
           </div>
+
           <div>
             <p className={styles.label}>{nome} {cognome}</p>
             <p className={styles.hint}>@{nickname}</p>
-            <label className={styles.editBtn} style={{ cursor: "pointer", marginTop: 8, display: "inline-block" }}>
-              Cambia foto
-              <input
-                type="file"
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={handleAvatarUpload}
-              />
-            </label>
-          </div>
+            <div className={styles.avatarBtn}>
+              <label className={styles.avatarEditBtn}>
+                Cambia foto
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleAvatarUpload}
+                />
+              </label>
+              {avatar && (
+                <button
+                  className={styles.avatarDeleteBtn}
+                  onClick={handleAvatarDelete}
+                >
+                  Rimuovi foto
+                </button>
+              )}
+            </div>
+          </div>          
         </section>
-
-         {/* MESSAGGI */}
-        {successMsg && <p className={styles.success}>{successMsg}</p>}
-        {error && <p className={styles.error}>{error}</p>}
 
         {/* INFO ACCOUNT */}
         <section className={styles.section}>
