@@ -42,7 +42,7 @@ exports.createUser = async (req, res) => {
 
 exports.getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params._id);
+    const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: "Utente non trovato" });
     res.json(user);
   } catch (err) {

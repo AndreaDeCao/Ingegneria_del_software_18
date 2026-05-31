@@ -174,9 +174,7 @@ export default function DettagliAttivita() {
   const isExpired = new Date(activity.activityDate).getTime() < Date.now();
   const canJoin = !isOrganizer && !isParticipant && activity.status === "Aperto" && spotsLeft > 0 && !isExpired;
 
-  const organizerName = organizer?.nickname ||
-    `${organizer?.nome ?? ""} ${organizer?.cognome ?? ""}`.trim() ||
-    organizer?.email || "—";
+  const organizerName = organizer?.nickname || `${organizer?.nome ?? ""} ${organizer?.cognome ?? ""}`.trim() || organizer?.email || "—";
 
   return (
     <main className={styles.page}>
