@@ -138,13 +138,13 @@ exports.getNearestParkingRoute = async (req, res) => {
     if (!trek) return res.status(404).json({ error: "Percorso non trovato" });
 
     const { lat: endLat, lon: endLon } = trek.endCoordinates ?? trek.coordinates;
-    const baseLat = trek.coordinates.lat;
-    const baseLon = trek.coordinates.lon;
+    const baseLat = req.query.startLat ? parseFloat(req.query.startLat) : trek.coordinates.lat;
+    const baseLon = req.query.startLon ? parseFloat(req.query.startLon) : trek.coordinates.lon;
 
     let parkingLat = null, parkingLon = null, parkingLabel = null;
 
     try {
-      const overpass = await getNearestParking(baseLat, baseLon);
+      const overpass = await getNearestParking(baseLat, baseLon); //FIXME sezione parcheggio 
       const elements = overpass?.elements ?? [];
       if (elements.length > 0) {
         const node = elements[0];
@@ -170,7 +170,7 @@ exports.getNearestParkingRoute = async (req, res) => {
     const summary = geojson?.features?.[0]?.properties?.summary ?? {};
 
     res.json({
-      label: `🅿 ${parkingLabel}`,
+      label: `${parkingLabel}`,
       startLat: parkingLat,
       startLon: parkingLon,
       distanceMeters: summary.distance ?? null,

@@ -13,6 +13,6 @@ export type Activity = {
   partecipantList?: string[];
 
   organizerID: string;
-
+  favoriteTreks: string[]; // Array di ID dei trek salvati
   trekID: string;
 };

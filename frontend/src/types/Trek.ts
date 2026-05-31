@@ -19,7 +19,7 @@ export type Trek = {
   minAltitude?: number;
   maxAltitude?: number;
   
-  coordinates?: {
+  coordinates: {
     lat: number;
     lon: number;
   };

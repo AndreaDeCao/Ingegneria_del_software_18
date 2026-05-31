@@ -15,7 +15,7 @@ import AuthCallback from "./pages/auth/AuthCallback";
 import RequestTemporaryPassword from "./pages/auth/RequestTemporaryPassword";
 
 import Treks from "./pages/Treks/Treks";
-import MyTreks from "./pages/Treks/MyTreks";
+import MyTreks from "./pages/Treks/FavoriteTreks";
 import TrekDetails from "./pages/Treks/TrekDetails";
 
 import Friends from "./pages/Friends";
