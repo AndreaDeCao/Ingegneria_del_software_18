@@ -1,5 +1,6 @@
 export type Trek = {
-  id: string;
+  _id: string;
+  id: number;
   name: string;
   difficulty: "Facile" | "Medio" | "Difficile";
   description?: string;

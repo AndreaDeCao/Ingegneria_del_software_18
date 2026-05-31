@@ -80,7 +80,7 @@ interface TrekCardProps {
  */
 function TrekCard({ trek }: TrekCardProps) {
   return (
-    <Link to={`/treks/${trek._id}`} className={styles.cardLink}>
+    <Link to={`/treks/${trek.id}`} className={styles.cardLink}>
       <article className={styles.card}>
 
         {/*Immagine*/}

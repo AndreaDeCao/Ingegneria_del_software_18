@@ -24,27 +24,20 @@ exports.createTrek = async (req, res) => {
   }
 };
 
-// GET per ID (mongo o numerico)
+/**
+ * Restituisce un percorso in base all'id
+ * @param {string} id - id percorso
+ * @returns {object} percorso restituito
+ */
+
 exports.getTreksById = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    let trek;
-
-    if (mongoose.Types.ObjectId.isValid(id)) {
-      trek = await Trek.findById(id);
-    } 
-    else if (!isNaN(parseInt(id))) {
-      trek = await Trek.findOne({ id: parseInt(id) });
+    const trek = await Trek.findOne({id: parseInt(req.params.id)});
+    if(!trek){
+      return res.status(404).json({error: "Percorso non trovato"});
     }
-
-    if (!trek) {
-      return res.status(404).json({ error: "Percorso non trovato" });
-    }
-
     res.json(trek);
-
-  } catch (err) {
+  } catch(err) {
     res.status(500).json({ error: err.message });
   }
 }
