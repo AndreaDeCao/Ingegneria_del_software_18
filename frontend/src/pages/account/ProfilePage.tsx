@@ -185,6 +185,11 @@ export default function ProfilePage() {
         return;
       }
 
+      if(passwordForm.next === passwordForm.current) {
+        setError("La nuova password non può essere uguale a quella attuale");
+        return;
+      }
+
       try {
         await http<{ message: string }>("/users/me/password", {
           method: "PUT",
