@@ -46,6 +46,20 @@ type SearchUser = {
   avatarUrl?: string;
 };
 
+// Banner per messaggi successo/errore
+function Banner({ msg, type, onClose } : {
+  msg: string;
+  type: "success" | "error";
+  onClose: () => void;
+}): React.ReactElement {
+  return (
+    <div className={`${styles.banner} ${type === "success" ? styles.bannerSuccess : styles.bannerError}`}>
+      <span>{msg}</span>
+      <button className={styles.bannerClose} onClick={onClose} aria-label="Chiudi">✕</button>
+    </div>
+  );
+}
+
 
 /**
  * Pagina per la gestione delle amicizie.
@@ -71,7 +85,9 @@ export default function Friends() {
     loadAll();
 
     const interval = setInterval(() => {
+      if(searchQuery.trim().length < 2) {
       loadAll();  //refresh ogni 15 sec
+      }
     }, 15000); 
 
     return () => clearInterval(interval);
@@ -120,7 +136,7 @@ export default function Friends() {
     setError(null);
     try {
       await http(`/api/friendships/request/${userId}`, { method: "POST" });
-      setSuccessMsg("Richiesta inviata!");
+      setSuccessMsg("Richiesta inviata");
       setSearchResults([]);
       setSearchQuery("");
       await loadAll();
@@ -194,20 +210,18 @@ export default function Friends() {
 
       {/* MESSAGGI */}
       {successMsg && (
-        <p 
-          className={styles.success} 
-          onClick={() => setSuccessMsg(null)}
-        >
-          {successMsg}
-        </p>
+        <Banner 
+          msg={successMsg}
+          type="success"
+          onClose={() => setSuccessMsg(null)}
+        />
       )}
       {error && (
-        <p
-          className={styles.error} 
-          onClick={() => setError(null)}
-        >
-          {error}
-        </p>
+        <Banner
+          msg={error}
+          type="error"
+          onClose={() => setError(null)}
+        />
       )}
 
       {/* CERCA UTENTI */}
@@ -226,7 +240,7 @@ export default function Friends() {
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
           <button 
-            className={styles.btnPrimary}
+            className={styles.btnSearch}
             onClick={handleSearch}
             disabled={searching}
           >
