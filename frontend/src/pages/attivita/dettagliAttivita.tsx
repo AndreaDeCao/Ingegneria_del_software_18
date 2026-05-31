@@ -45,8 +45,20 @@ export default function DettagliAttivita() {
         setActivity(activityData);
 
         if (activityData.trekID) {
-          const resTrek = await fetch(`${API_BASE}/treks/${activityData.trekID}`);
+          // 1. Recupera l'id numerico partendo dall'_id Mongo
+          const resId = await fetch(
+            `${API_BASE}/treks/by-mongo-id/${activityData.trekID}`
+          );
+
+          if (!resId.ok) return;
+
+          const { id } = await resId.json();
+
+          // 2. Recupera il trek usando l'id numerico
+          const resTrek = await fetch(`${API_BASE}/treks/${id}`);
+
           if (resTrek.ok) setTrek(await resTrek.json());
+
         }
 
         if (activityData.organizerID) {
@@ -241,7 +253,7 @@ export default function DettagliAttivita() {
 
           {/* Trek details */}
           {trek && (trek.lengthKm || trek.duration || trek.difficulty || trek.description) && (
-            <div className={styles.formCard}>
+            <Link to={`/treks/${trek.id}`} className={styles.formCard}>
               <h2 className={styles.detailSectionTitle}>Dettagli del trek</h2>
               {trek.description && <p className={styles.activityDescription}>{trek.description}</p>}
               <div className={styles.activityInfo}>
@@ -249,7 +261,7 @@ export default function DettagliAttivita() {
                 {trek.lengthKm && <div className={styles.infoItem}><span className={styles.infoLabel}>Distanza</span><span className={styles.infoValue}>{trek.lengthKm} km</span></div>}
                 {trek.duration && <div className={styles.infoItem}><span className={styles.infoLabel}>Durata stimata</span><span className={styles.infoValue}>{trek.duration}</span></div>}
               </div>
-            </div>
+            </Link>
           )}
 
           {/* ── AZIONI ── */}

@@ -48,7 +48,7 @@ export default function CreaAttivitaPage() {
 
   function handleTrekChange(trekID: string) {
     setSelectedTrek(trekID);
-    const trek = treks.find((t) => t._id === trekID);
+    //const trek = treks.find((t) => t._id === trekID);
   }
 
   async function handleSubmit(e: React.FormEvent) {
