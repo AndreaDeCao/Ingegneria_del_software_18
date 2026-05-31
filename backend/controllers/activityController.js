@@ -56,29 +56,32 @@ exports.getActivityById = async (req, res) => {
 
 exports.createActivity = async (req, res) => {
   try {
-    const organizerID = req.body.organizerID;
+    const {
+      organizerID,
+      maxParticipants = 10,
+      invitedUsers = [],
+    } = req.body;
+    const max = Number(maxParticipants);
 
-    // const {
-    //   title,
-    //   description,
-    //   activityDate,
-    //   maxParticipants,
-    //   visibility,
-    //   trekID,
-    //   invitedUsers = [],
-    // } = req.body;
+    if (!organizerID) {
+      return res.status(400).json({ error: "Organizzatore mancante" });
+    }
+
+    if (!Array.isArray(invitedUsers)) {
+      return res.status(400).json({ error: "Lista invitati non valida" });
+    }
 
     if(invitedUsers.length > 0) {
       const friendships = await Friendship.find({
          $or: [
-          { sender: req.userId, status: "accepted" },
-          { receiver: req.userId, status: "accepted" },
+          { sender: organizerID, status: "accepted" },
+          { receiver: organizerID, status: "accepted" },
         ],
       });
 
       const friendIds = new Set(
         friendships.map((f) => 
-          f.sender.toString() === req.userId
+          f.sender.toString() === organizerID
             ? f.receiver.toString()
             : f.sender.toString()
         )
@@ -111,6 +114,8 @@ exports.createActivity = async (req, res) => {
 
     const newActivity = new Activity({
       ...req.body,
+      maxParticipants: max,
+      invitedUsers,
       partecipantList: organizerID ? [organizerID] : [],
     });
 

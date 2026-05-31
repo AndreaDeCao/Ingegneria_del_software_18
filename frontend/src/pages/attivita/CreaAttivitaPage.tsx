@@ -152,8 +152,8 @@ export default function CreaAttivitaPage() {
       });
 
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message /*|| "Errore backend"*/);
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || err.message || "Errore backend");
       }
 
       const created = await res.json();
