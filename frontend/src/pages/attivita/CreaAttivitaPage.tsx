@@ -7,7 +7,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
 import { Link, useNavigate } from "react-router-dom";
 
-  const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
 
 
 // Type dell'amico di un utente
@@ -47,6 +47,8 @@ export default function CreaAttivitaPage() {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [invitedUsers, setInvitedUsers] = useState<string[]>([]);
   const [friendSearch, setFriendSearch] = useState("");
+
+  const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
   useEffect(() => {
     async function fetchTreks() {
@@ -151,7 +153,7 @@ export default function CreaAttivitaPage() {
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.message || "Errore backend");
+        throw new Error(err.message /*|| "Errore backend"*/);
       }
 
       const created = await res.json();
