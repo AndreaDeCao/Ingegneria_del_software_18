@@ -13,7 +13,6 @@ import type { DiaryStats } from "../../types/DiaryStats";
 
 
 import styles from "../../App.module.css";
-import { Link } from "react-router-dom";
 
 // Helper per fare fetch autenticata (riusa il token in memoria tramite http di api.ts)
 export async function fetchAuth<T>(path: string): Promise<T> {
