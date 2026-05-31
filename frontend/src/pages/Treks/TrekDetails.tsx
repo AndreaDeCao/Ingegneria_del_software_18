@@ -497,15 +497,15 @@ export default function TrekDetails() {
   }
   
   async function toggleFavorite() {
-    console.log(user);
+    // console.log(user);
 
     if (!user) {
       setFavoriteError("Devi accedere per salvare un percorso");
       return;
     }
     
-    console.log("favoriteTreks:", user.favoriteTreks);
-console.log("trek._id:", (trek as any)._id);
+    // console.log("favoriteTreks:", user.favoriteTreks);
+    // console.log("trek._id:", (trek as any)._id);
 
     if (!trek?.id) return;
 
