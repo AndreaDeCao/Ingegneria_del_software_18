@@ -285,13 +285,15 @@ export default function DettagliAttivita() {
 
   // Segnalazioni: l'utente ha gia segnalato questa attivita?
   const reports = (activity as any).reports ?? [];
-  const hasAlreadyReported = !isAdmin && !isOrganizer && reports.some(
-    (r: any) => (r.reportedBy?._id ?? r.reportedBy)?.toString() === currentUserID
-  );
+  // Segnalazione dell'utente corrente (se presente)
+  const myReport = !isAdmin && !isOrganizer && currentUserID
+    ? reports.find((r: any) => (r.reportedBy?._id ?? r.reportedBy)?.toString() === currentUserID)
+    : undefined;
+  const hasAlreadyReported = !!myReport;
   // Segnalazioni accettate — visibili a tutti
   const acceptedReports = reports.filter((r: any) => r.reportStatus === "accepted");
   const hasAcceptedReport = acceptedReports.length > 0;
-  // Segnalazioni in attesa — solo admin
+  // Segnalazioni in attesa — solo admin (le dismissed non vengono mostrate nel pannello admin di questa pagina)
   const pendingReports = reports.filter((r: any) => r.reportStatus === "pending");
 
   return (
@@ -463,11 +465,22 @@ export default function DettagliAttivita() {
                       <div key={r._id} className={styles.adminReportItem}>
                         <div className={styles.adminReportMeta}>
                           <span className={styles.adminReportUser}>
-                            {r.reportedBy?.nickname ?? r.reportedBy?.email ?? "Utente"}
+                            {r.reportedBy?.nickname
+                              ? `@${r.reportedBy.nickname}`
+                              : r.reportedBy?.email ?? "Utente"}
                           </span>
                           <span className={styles.adminReportDate}>
                             {new Date(r.reportedAt).toLocaleDateString("it-IT")}
                           </span>
+                        </div>
+                        {/* Dettagli aggiuntivi utente */}
+                        <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginBottom: "4px" }}>
+                          {r.reportedBy?.email && <span>{r.reportedBy.email}</span>}
+                          {(r.reportedBy?.nome || r.reportedBy?.cognome) && (
+                            <span style={{ marginLeft: "8px" }}>
+                              {[r.reportedBy.nome, r.reportedBy.cognome].filter(Boolean).join(" ")}
+                            </span>
+                          )}
                         </div>
                         {r.reason && <p className={styles.adminReportReason}>{r.reason}</p>}
                         <div className={styles.adminReportActions}>
@@ -491,36 +504,36 @@ export default function DettagliAttivita() {
                   </div>
                 )}
 
-                {/* Segnalazioni gia revisionate — solo admin */}
-                {reports.filter((r: any) => r.reportStatus !== "pending").length > 0 && (
+                {/* Segnalazioni accettate — solo admin (le dismissed non vengono mostrate in questa pagina) */}
+                {reports.filter((r: any) => r.reportStatus === "accepted").length > 0 && (
                   <div className={styles.adminReportsSection}>
                     <span className={styles.adminReportsSectionTitle}>
-                      Segnalazioni revisionate
+                      Segnalazioni accettate
                     </span>
-                    {reports.filter((r: any) => r.reportStatus !== "pending").map((r: any) => (
+                    {reports.filter((r: any) => r.reportStatus === "accepted").map((r: any) => (
                       <div key={r._id} className={styles.adminReportItem}>
                         <div className={styles.adminReportMeta}>
                           <span className={styles.adminReportUser}>
-                            {r.reportedBy?.nickname ?? r.reportedBy?.email ?? "Utente"}
+                            {r.reportedBy?.nickname
+                              ? `@${r.reportedBy.nickname}`
+                              : r.reportedBy?.email ?? "Utente"}
                           </span>
-                          <span className={`${styles.statusBadge} ${r.reportStatus === "accepted" ? styles.statusReported : styles.statusClosed}`} style={{ fontSize: "11px", padding: "3px 8px" }}>
-                            {r.reportStatus === "accepted" ? "Accettata" : "Rigettata"}
+                          <span className={`${styles.statusBadge} ${styles.statusReported}`} style={{ fontSize: "11px", padding: "3px 8px" }}>
+                            Accettata
                           </span>
                         </div>
                         {r.reason && <p className={styles.adminReportReason}>{r.reason}</p>}
                         {/* Admin puo rimuovere il banner rigettando una segnalazione accettata */}
-                        {r.reportStatus === "accepted" && (
-                          <div className={styles.adminReportActions}>
-                            <button
-                              className={styles.dismissReportButton}
-                              onClick={() => handleReportAction(r._id, "dismiss")}
-                              disabled={actionLoading}
-                              title="Rimuove il banner 'Segnalata' dall'attivita"
-                            >
-                              Rimuovi segnalazione
-                            </button>
-                          </div>
-                        )}
+                        <div className={styles.adminReportActions}>
+                          <button
+                            className={styles.dismissReportButton}
+                            onClick={() => handleReportAction(r._id, "dismiss")}
+                            disabled={actionLoading}
+                            title="Rimuove il banner 'Segnalata' dall'attivita"
+                          >
+                            Rimuovi segnalazione
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -607,14 +620,59 @@ export default function DettagliAttivita() {
               </div>
             )}
 
-            {/* Segnala attivita — visibile agli utenti non organizzatori, non admin FIXME: se segnalazione non accettata si puo segnare di nuovo*/}
+            {/* Segnala attivita — visibile agli utenti non organizzatori, non admin */}
             {!isOrganizer && !isAdmin && currentUserID && (
               <div style={{ marginTop: "8px" }}>
-                {reportSuccess || hasAlreadyReported ? (
+                {/* Segnalazione appena inviata in questa sessione (prima che il polling aggiorni) */}
+                {reportSuccess && !hasAlreadyReported && (
                   <div className={styles.reportedConfirmBadge}>
-                    Hai segnalato questa attivita. L'amministrazione esaminerà la segnalazione.
+                    Segnalazione inviata. L'amministrazione esaminerà la segnalazione.
                   </div>
-                ) : (
+                )}
+
+                {/* Segnalazione esistente — mostra stato in base a come admin ha agito */}
+                {hasAlreadyReported && (
+                  <div className={styles.reportedConfirmBadge}>
+                    {myReport.reportStatus === "pending" && (
+                      <>
+                        <strong>Hai segnalato questa attivita.</strong>
+                        <br />
+                        La segnalazione e in attesa di revisione da parte dell'amministrazione.
+                        {myReport.reason && (
+                          <><br /><span style={{ opacity: 0.8 }}>Motivo: {myReport.reason}</span></>
+                        )}
+                        <br />
+                        <span style={{ opacity: 0.7, fontSize: "12px" }}>
+                          Segnalata il {new Date(myReport.reportedAt).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" })}
+                        </span>
+                      </>
+                    )}
+                    {myReport.reportStatus === "accepted" && (
+                      <>
+                        <strong>La tua segnalazione e stata accettata dall'amministrazione.</strong>
+                        <br />
+                        Grazie per la segnalazione. L'attivita e ora contrassegnata come segnalata.
+                        {myReport.reason && (
+                          <><br /><span style={{ opacity: 0.8 }}>Motivo: {myReport.reason}</span></>
+                        )}
+                      </>
+                    )}
+                    {myReport.reportStatus === "dismissed" && (
+                      <>
+                        <strong>La tua segnalazione e stata esaminata e rigettata dall'amministrazione.</strong>
+                        {myReport.reason && (
+                          <><br /><span style={{ opacity: 0.8 }}>Motivo inviato: {myReport.reason}</span></>
+                        )}
+                        {myReport.reviewNote && (
+                          <><br /><span style={{ opacity: 0.8 }}>Nota admin: {myReport.reviewNote}</span></>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Pulsante visibile solo se l'utente non ha ancora segnalato */}
+                {!hasAlreadyReported && !reportSuccess && (
                   <button
                     className={styles.reportButton}
                     onClick={() => setActiveModal("report")}
