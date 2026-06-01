@@ -47,6 +47,13 @@ export default function CreaAttivitaPage() {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [invitedUsers, setInvitedUsers] = useState<string[]>([]);
   const [friendSearch, setFriendSearch] = useState("");
+  const displayedFriends = friends
+    .filter(({ user: f }) =>
+      `${f.nome} ${f.cognome} ${f.nickname}`
+        .toLowerCase()
+        .includes(friendSearch.toLowerCase())
+    )
+    .slice(0, 5);
 
   const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -288,13 +295,7 @@ export default function CreaAttivitaPage() {
                 />
 
                 <div className={styles.friendsList}>
-                  {friends
-                    .filter(({ user: f }) =>
-                    `${f.nome} ${f.cognome} ${f.nickname}`
-                    .toLowerCase()
-                    .includes(friendSearch.toLowerCase())
-                  )
-                  .map(({ friendshipId, user: friend }) => {
+                  {displayedFriends.map(({ friendshipId, user: friend }) => {
                     const isSelected = invitedUsers.includes(friend._id);
                     return (
                       <div

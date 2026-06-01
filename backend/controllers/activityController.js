@@ -32,7 +32,7 @@ exports.getActivityById = async (req, res) => {
   try {
     const activity = await Activity
       .findById(req.params.id)
-      .populate("partecipantList", "nickname email nome cognome");
+      .populate("partecipantList", "nickname email nome cognome avatarUrl");
 
     if (!activity) {
       return res.status(404).json({ error: "Attività non trovata" });
@@ -125,6 +125,18 @@ exports.createActivity = async (req, res) => {
     }
 
     await newActivity.save();
+
+    if (invitedUsers.length > 0) {
+      await ActivityInvitation.insertMany(
+        invitedUsers.map((receiverId) => ({
+          activity: newActivity._id,
+          sender: organizerID,
+          receiver: receiverId,
+          status: "pending",
+        }))
+      );
+    }
+
     res.status(201).json(newActivity);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -180,7 +192,7 @@ exports.joinActivity = async (req, res) => {
 
     const updated = await Activity
       .findById(activity._id)
-      .populate("partecipantList", "nickname email nome cognome");
+      .populate("partecipantList", "nickname email nome cognome avatarUrl");
 
     res.json(updated);
   } catch (err) {
@@ -236,7 +248,7 @@ exports.leaveActivity = async (req, res) => {
 
     const updated = await Activity
       .findById(activity._id)
-      .populate("partecipantList", "nickname email nome cognome");
+      .populate("partecipantList", "nickname email nome cognome avatarUrl");
 
     res.json(updated);
   } catch (err) {
@@ -270,7 +282,7 @@ exports.cancelActivity = async (req, res) => {
       req.params.id,
       { $set: { status: "Annullato" } },
       { returnDocument: "after" }
-    ).populate("partecipantList", "nickname email nome cognome");
+    ).populate("partecipantList", "nickname email nome cognome avatarUrl");
 
     res.json(updated);
   } catch (err) {
@@ -308,7 +320,7 @@ exports.uncancelActivity = async (req, res) => {
       req.params.id,
       { $set: { status: newStatus } },
       { returnDocument: "after" }
-    ).populate("partecipantList", "nickname email nome cognome");
+    ).populate("partecipantList", "nickname email nome cognome avatarUrl");
 
     res.json(updated);
   } catch (err) {
@@ -341,7 +353,7 @@ exports.closeActivity = async (req, res) => {
       req.params.id,
       { $set: { status: "Chiuso" } },
       { returnDocument: "after" }
-    ).populate("partecipantList", "nickname email nome cognome");
+    ).populate("partecipantList", "nickname email nome cognome avatarUrl");
 
     res.json(updated);
   } catch (err) {
@@ -377,7 +389,7 @@ exports.openActivity = async (req, res) => {
       req.params.id,
       { $set: { status: "Aperto" } },
       { returnDocument: "after" }
-    ).populate("partecipantList", "nickname email nome cognome");
+    ).populate("partecipantList", "nickname email nome cognome avatarUrl");
 
     res.json(updated);
   } catch (err) {
@@ -632,7 +644,7 @@ exports.acceptActivityInvite = async (req, res) => {
     await invitation.save();
 
     const updatedActivity = await Activity.findById(activity._id)
-      .populate("partecipantList", "nickname email nome cognome")
+      .populate("partecipantList", "nickname email nome cognome avatarUrl")
       .populate("organizerID", "nome cognome nickname avatarUrl");
 
     const populatedInvitation = await ActivityInvitation.findById(invitation._id)

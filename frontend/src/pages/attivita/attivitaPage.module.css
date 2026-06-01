@@ -521,6 +521,14 @@ select:focus {
   flex-shrink: 0;
 }
 
+.participantAvatarImage {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 .participantInfo {
   display: flex;
   flex-direction: column;

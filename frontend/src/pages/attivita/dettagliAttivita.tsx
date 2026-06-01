@@ -512,9 +512,13 @@ export default function DettagliAttivita() {
               <ul className={styles.participantList}>
                 {activity.partecipantList.map((p, i) => (
                   <li key={p._id} className={styles.participantItem}>
-                    <div className={styles.participantAvatar}>
-                      {(p.nickname?.[0] ?? p.email?.[0] ?? "?").toUpperCase()}
-                    </div>
+                    {p.avatarUrl ? (
+                      <img src={p.avatarUrl} alt={p.nickname} className={styles.participantAvatarImage} />
+                    ) : (
+                      <div className={styles.participantAvatar}>
+                        {(p.nickname?.[0] ?? p.email?.[0] ?? "?").toUpperCase()}
+                      </div>
+                    )}
                     <div className={styles.participantInfo}>
                       <span className={styles.participantNickname}>
                         {p.nickname}
