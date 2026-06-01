@@ -22,6 +22,7 @@ export default function VisualizzaAttivitaPage() {
   const [selectedDate, setSelectedDate] = useState("");
   const [travelModeFilter, setTravelModeFilter] = useState("Tutti");
   const [participationFilter, setParticipationFilter] = useState("Tutte");
+  const [visibilityFilter, setVisibilityFilter] = useState("Tutte");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +49,8 @@ export default function VisualizzaAttivitaPage() {
     statusFilter !== "Tutti" ||
     travelModeFilter !== "Tutti" ||
     selectedDate !== "" ||
-    participationFilter !== "Tutte";
+    participationFilter !== "Tutte" ||
+    visibilityFilter !== "Tutte";
 
   function resetFilters() {
     setSearch("");
@@ -56,6 +58,7 @@ export default function VisualizzaAttivitaPage() {
     setTravelModeFilter("Tutti");
     setSelectedDate("");
     setParticipationFilter("Tutte");
+    setVisibilityFilter("Tutte");
   }
 
   const getStatusClass = (status: string) => {
@@ -77,8 +80,14 @@ export default function VisualizzaAttivitaPage() {
       participationFilter === "Tutte" ||
       (participationFilter === "Partecipo" && isParticipant) ||
       (participationFilter === "Non partecipo" && !isParticipant);
+    const matchesVisibility =
+      visibilityFilter === "Tutte"
+        ? true
+        : visibilityFilter === "Pubblica"
+          ? a.visibility === "public"
+          : a.visibility === "private";
 
-    return matchesSearch && matchesStatus && matchesDate && matchesTravelMode && matchesParticipation;
+    return matchesSearch && matchesStatus && matchesDate && matchesTravelMode && matchesParticipation && matchesVisibility;
   });
 
   const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
@@ -186,6 +195,20 @@ export default function VisualizzaAttivitaPage() {
             <option value="Tutte">Tutte</option>
             <option value="Partecipo">A cui partecipo</option>
             <option value="Non partecipo">A cui non partecipo</option>
+          </select>
+        </div>
+
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Visibilità</label>
+
+          <select
+            value={visibilityFilter}
+            onChange={(e) => setVisibilityFilter(e.target.value)}
+            className={styles.select}
+          >
+            <option value="Tutte">Tutte</option>
+            <option value="Pubblica">Pubblica</option>
+            <option value="Privata">Privata</option>
           </select>
         </div>
 
