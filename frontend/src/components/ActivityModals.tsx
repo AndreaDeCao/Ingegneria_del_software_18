@@ -1,5 +1,5 @@
 import styles from "./attivitaPage.module.css";
-import appStyles from "../../App.module.css";
+import appStyles from "../App.module.css";
 
 export function ActivityModals({
   activeModal,
