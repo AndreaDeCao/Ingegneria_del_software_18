@@ -47,6 +47,7 @@ import VersioneCorrentePage from "./pages/versione/VersioneCorrentePage";
 import "./index.css";
 import styles from "./App.module.css";
 import ScrollToTop from "./ScrollToTop";
+import GestioneSegnalazioniPage from "./pages/admin/GestioneSegnalazioniPage";
 
 
 
@@ -117,6 +118,9 @@ export default function App() {
                   <Route path="/attivita/:id" element={<AppLayout><ProtectedRoute><DettagliAttivita /></ProtectedRoute></AppLayout>} />
 
                   <Route path="/versione/corrente" element={<AppLayout><VersioneCorrentePage /></AppLayout>} />
+
+                  <Route path="/admin/segnalazioni" element={<AppLayout><GestioneSegnalazioniPage /></AppLayout>} />
+
 
                 {/*
                   <Route path="/profile/profilo"  element={<AppLayout><ProtectedRoute> 

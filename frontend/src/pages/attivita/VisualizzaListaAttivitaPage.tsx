@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import styles from "./attivitaPage.module.css";
 import appStyles from "../../App.module.css";
 import { Link } from "react-router-dom";
@@ -7,12 +7,15 @@ import { useAuth } from "../../auth/AuthProvider";
 import type {Activity} from "../../types/Activity";
 import type {Trek} from "../../types/Trek";
 
+// Intervallo di polling in ms — aggiorna la lista senza ricaricare la pagina
+const POLL_INTERVAL_MS = 20_000;
+
 type JoinModal = { activity: Activity } | null;
 
-// Estende Activity con i campi admin opzionali
 type ActivityWithAdmin = Activity & {
   suspended?: boolean;
   suspendedReason?: string;
+  reports?: Array<{ reportStatus: string }>;
 };
 
 export default function VisualizzaAttivitaPage() {
@@ -27,8 +30,13 @@ export default function VisualizzaAttivitaPage() {
   const [travelModeFilter, setTravelModeFilter] = useState("Tutti");
   const [participationFilter, setParticipationFilter] = useState("Tutte");
   const [organizerFilter, setOrganizerFilter] = useState("Tutti");
-  const [suspendedFilter, setSuspendedFilter] = useState("Tutte"); // solo admin
-  
+  const [suspendedFilter, setSuspendedFilter] = useState("Tutte");
+  // Filtro segnalazioni:
+  //   "Tutte"              — nessun filtro
+  //   "Segnalate"          — ha almeno una segnalazione accettata (admin: include anche pending)
+  //   "Non segnalate"      — nessuna segnalazione accettata
+  //   "In attesa" (admin)  — ha segnalazioni pending
+  const [reportFilter, setReportFilter] = useState("Tutte");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +46,8 @@ export default function VisualizzaAttivitaPage() {
 
   const currentUserID = user?._id;
   const isAdmin = user?.role === "admin";
+
+  const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
   function getJoinState(activity: ActivityWithAdmin): "join" | "organizer" | "participant" | "closed" | "full" | "expired" | "admin" {
     if (isAdmin) return "admin";
@@ -50,6 +60,14 @@ export default function VisualizzaAttivitaPage() {
     return "join";
   }
 
+  // Helpers segnalazioni
+  function hasAcceptedReport(a: ActivityWithAdmin) {
+    return (a.reports ?? []).some((r) => r.reportStatus === "accepted");
+  }
+  function hasPendingReport(a: ActivityWithAdmin) {
+    return (a.reports ?? []).some((r) => r.reportStatus === "pending");
+  }
+
   const hasActiveFilters =
     search !== "" ||
     statusFilter !== "Tutti" ||
@@ -57,7 +75,8 @@ export default function VisualizzaAttivitaPage() {
     selectedDate !== "" ||
     participationFilter !== "Tutte" ||
     organizerFilter !== "Tutti" ||
-    suspendedFilter !== "Tutte";
+    suspendedFilter !== "Tutte" ||
+    reportFilter !== "Tutte";
 
   function resetFilters() {
     setSearch("");
@@ -67,6 +86,7 @@ export default function VisualizzaAttivitaPage() {
     setParticipationFilter("Tutte");
     setOrganizerFilter("Tutti");
     setSuspendedFilter("Tutte");
+    setReportFilter("Tutte");
   }
 
   const getStatusClass = (status: string) => {
@@ -94,38 +114,57 @@ export default function VisualizzaAttivitaPage() {
       organizerFilter === "Tutti" ||
       (organizerFilter === "Organizzo" && isOrganizer) ||
       (organizerFilter === "Non organizzo" && !isOrganizer);
+
     const matchesSuspended =
       suspendedFilter === "Tutte" ||
       (suspendedFilter === "Sospese" && a.suspended) ||
       (suspendedFilter === "Non sospese" && !a.suspended);
 
-    return matchesSearch && matchesStatus && matchesDate && matchesTravelMode && matchesParticipation && matchesOrganizer && matchesSuspended;
+    const matchesReport =
+      reportFilter === "Tutte" ||
+      (reportFilter === "Segnalate" && hasAcceptedReport(a)) ||
+      (reportFilter === "Non segnalate" && !hasAcceptedReport(a)) ||
+      (reportFilter === "In attesa" && isAdmin && hasPendingReport(a));
+
+    return matchesSearch && matchesStatus && matchesDate && matchesTravelMode && matchesParticipation && matchesOrganizer && matchesSuspended && matchesReport;
   });
 
-  const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+  // Fetch attivita e trek (chiamata completa — usata anche per il polling)
+  const fetchData = useCallback(async (silent = false) => {
+    try {
+      const resActivities = await fetch(`${API_BASE}/activities/`);
+      if (!resActivities.ok) throw new Error("Errore nel recupero attivita");
+      const activitiesData: ActivityWithAdmin[] = await resActivities.json();
+      setActivities(activitiesData);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const resActivities = await fetch(`${API_BASE}/activities/`);
-        if (!resActivities.ok) throw new Error("Errore nel recupero attività");
-        const activitiesData: ActivityWithAdmin[] = await resActivities.json();
-        setActivities(activitiesData);
-
+      // I trek li carichiamo solo al primo fetch (non cambiano durante il polling)
+      if (!silent) {
         const resTreks = await fetch(`${API_BASE}/treks/`);
         if (!resTreks.ok) throw new Error("Errore nel recupero trek");
         const treksData: Trek[] = await resTreks.json();
         const map: Record<string, string> = {};
         treksData.forEach((t) => { map[t._id] = t.name; });
         setTreksMap(map);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
       }
-    };
-    fetchData();
-  }, []);
+    } catch (err: any) {
+      if (!silent) setError(err.message);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, [API_BASE]);
+
+  // Caricamento iniziale
+  useEffect(() => {
+    fetchData(false);
+  }, [fetchData]);
+
+  // Polling automatico — aggiorna badge segnalazioni/sospensione senza ricaricare la pagina
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchData(true);
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
   async function confirmJoin(activity: Activity) {
     setJoinLoading(true);
@@ -149,30 +188,35 @@ export default function VisualizzaAttivitaPage() {
     }
   }
 
-  if (loading) return <main className={styles.page}><p className={styles.message}>Caricamento attività...</p></main>;
+  if (loading) return <main className={styles.page}><p className={styles.message}>Caricamento attivita...</p></main>;
   if (error) return <main className={styles.page}><p className={styles.messageError}>{error}</p></main>;
 
   return (
     <main className={styles.page}>
-      <h1 className={styles.pageTitle}>Attività in programma</h1>
+      <h1 className={styles.pageTitle}>Attivita in programma</h1>
 
       <div className={styles.listHeader}>
-        <div>
-          <h2 className={styles.sectionTitle}>Lista attività</h2>
-          <span className={styles.sectionCount}>{activities.length} attività</span>
-        </div>
-        <Link to="/attivita/crea" className={appStyles.primaryButton}>+ Crea attività</Link>
+        <input
+          className={styles.searchInput}
+          type="text"
+          placeholder="Cerca per titolo o descrizione..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <Link to="/attivita/crea" className={appStyles.primaryButton}>
+          + Crea attivita
+        </Link>
       </div>
 
-      {/* FILTRI */}
       <div className={styles.filtersBar}>
         <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Ricerca</label>
-          <input type="text" placeholder="Cerca attività..." value={search} onChange={(e) => setSearch(e.target.value)} className={styles.searchInput} />
-        </div>
-        <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Data</label>
-          <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className={styles.dateInput} />
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className={styles.dateInput}
+          />
         </div>
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Status</label>
@@ -184,7 +228,7 @@ export default function VisualizzaAttivitaPage() {
           </select>
         </div>
         <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Modalità di viaggio</label>
+          <label className={styles.filterLabel}>Modalita di viaggio</label>
           <select value={travelModeFilter} onChange={(e) => setTravelModeFilter(e.target.value)} className={styles.select}>
             <option value="Tutti">Tutti</option>
             <option value="walking">A piedi</option>
@@ -192,7 +236,6 @@ export default function VisualizzaAttivitaPage() {
           </select>
         </div>
 
-        {/* Filtro partecipazione — nascosto per admin (non partecipano) */}
         {!isAdmin && (
           <div className={styles.filterGroup}>
             <label className={styles.filterLabel}>Partecipazione</label>
@@ -204,22 +247,16 @@ export default function VisualizzaAttivitaPage() {
           </div>
         )}
 
-        {/* Filtro organizzazione — nascosto per admin (non partecipano) */}
-
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Organizzazione</label>
-          <select
-            value={organizerFilter}
-            onChange={(e) => setOrganizerFilter(e.target.value)}
-            className={styles.select}
-          >
+          <select value={organizerFilter} onChange={(e) => setOrganizerFilter(e.target.value)} className={styles.select}>
             <option value="Tutti">Tutti</option>
             <option value="Organizzo">Solo che organizzo</option>
             <option value="Non organizzo">Non organizzo</option>
           </select>
         </div>
 
-        {/* Filtro sospensione — visibile a tutti */}
+        {/* Filtro sospensione */}
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Sospensione</label>
           <select value={suspendedFilter} onChange={(e) => setSuspendedFilter(e.target.value)} className={styles.select}>
@@ -229,13 +266,24 @@ export default function VisualizzaAttivitaPage() {
           </select>
         </div>
 
-        
+        {/* Filtro segnalazioni:
+            - utenti: vedono solo le accettate
+            - admin: vedono anche quelle in attesa */}
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Segnalazioni</label>
+          <select value={reportFilter} onChange={(e) => setReportFilter(e.target.value)} className={styles.select}>
+            <option value="Tutte">Tutte</option>
+            <option value="Segnalate">Segnalate</option>
+            <option value="Non segnalate">Non segnalate</option>
+            {isAdmin && <option value="In attesa">In attesa di revisione</option>}
+          </select>
+        </div>
 
         {hasActiveFilters && (
           <div className={styles.filterGroup}>
             <label className={styles.filterLabel}>&nbsp;</label>
             <button className={styles.resetFiltersButton} onClick={resetFilters}>
-              ✕ Azzera filtri
+              Azzera filtri
             </button>
           </div>
         )}
@@ -247,13 +295,15 @@ export default function VisualizzaAttivitaPage() {
           const joinState = getJoinState(activity);
           const isExpired = joinState === "expired";
           const effectiveStatus = isExpired && activity.status === "Aperto" ? "Chiuso" : activity.status;
-          // L'admin non vede mai il pulsante Partecipa
           const isDisabled = joinState !== "join";
           const isSuspended = activity.suspended;
+          const isReported = hasAcceptedReport(activity);
+          const isPendingReport = isAdmin && hasPendingReport(activity);
+
           const buttonLabel: Record<string, string> = {
             join: "Partecipa",
             organizer: "Organizzatore",
-            participant: "Già iscritto",
+            participant: "Gia iscritto",
             closed: "Non disponibile",
             full: "Al completo",
             expired: "Scaduta",
@@ -263,14 +313,20 @@ export default function VisualizzaAttivitaPage() {
           return (
             <Link key={activity._id} to={`/attivita/${activity._id}`}>
               <article
-                className={`${styles.activityCard} ${activity.suspended ? styles.activityCardSuspended : ""}`}
+                className={`${styles.activityCard} ${isSuspended ? styles.activityCardSuspended : ""} ${isReported ? styles.activityCardReported : ""}`}
               >
                 <div className={styles.cardTop}>
                   <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
-                    {activity.suspended ? (
+                    {isSuspended ? (
                       <span className={`${styles.statusBadge} ${styles.statusSuspended}`}>Sospesa</span>
                     ) : (
                       <span className={`${styles.statusBadge} ${getStatusClass(effectiveStatus)}`}>{effectiveStatus}</span>
+                    )}
+                    {isReported && (
+                      <span className={`${styles.statusBadge} ${styles.statusReported}`}>Segnalata</span>
+                    )}
+                    {isPendingReport && (
+                      <span className={`${styles.statusBadge} ${styles.statusPendingReport}`}>In attesa</span>
                     )}
                   </div>
                   <span className={styles.activityId}>#{activity._id}</span>
@@ -296,7 +352,6 @@ export default function VisualizzaAttivitaPage() {
                 </div>
 
                 <div className={styles.cardActions}>
-                  {/* Admin: solo link alla pagina, nessun pulsante partecipa */}
                   {isAdmin ? (
                     <span className={`${styles.statusBadge} ${styles.statusSuspended}`} style={{ background: "rgba(155,89,182,0.1)", color: "#8e44ad", border: "1px solid rgba(155,89,182,0.2)" }}>
                       Admin

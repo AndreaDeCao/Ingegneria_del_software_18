@@ -725,3 +725,190 @@ select:focus {
 .modalActions .dangerButton {
   margin-top: 0;
 }
+
+/* Badge "Segnalata" nella lista e nel dettaglio */
+.statusReported {
+  background: rgba(230, 180, 34, 0.15);
+  color: #a07800;
+}
+
+/* Badge segnalazione in attesa — visibile solo admin */
+.statusPendingReport {
+  background: rgba(230, 140, 34, 0.15);
+  color: #8a4a00;
+}
+
+/* Card con segnalazione accettata — bordo giallo-ambra */
+.activityCardReported {
+  border-color: rgba(230, 180, 34, 0.5) !important;
+}
+
+/* Banner segnalazione accettata — visibile a tutti */
+.reportedBanner {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(230, 180, 34, 0.45);
+  background: rgba(230, 180, 34, 0.1);
+  color: #6b4e00;
+  font-size: 14px;
+  font-weight: 600;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.reportedBannerTitle {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.reportedBannerReason {
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+/* Bottone "Segnala attività" — tono neutro discreto */
+.reportButton {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.reportButton:hover {
+  background: rgba(230, 180, 34, 0.08);
+  color: #a07800;
+  border-color: rgba(230, 180, 34, 0.4);
+}
+
+.reportButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Badge conferma segnalazione già inviata */
+.reportedConfirmBadge {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(230, 180, 34, 0.35);
+  background: rgba(230, 180, 34, 0.08);
+  color: #7a5500;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ── PANNELLO ADMIN — SEZIONE SEGNALAZIONI ───────────────────────────────── */
+
+.adminReportsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid rgba(155, 89, 182, 0.2);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+.adminReportsSectionTitle {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #8e44ad;
+}
+
+.adminReportItem {
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.adminReportMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.adminReportUser {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.adminReportDate {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.adminReportReason {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.adminReportActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+/* Bottone accetta segnalazione — verde */
+.acceptReportButton {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(46, 204, 113, 0.12);
+  color: #1a7a40;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.acceptReportButton:hover {
+  background: rgba(46, 204, 113, 0.22);
+}
+
+.acceptReportButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Bottone rigetta segnalazione — grigio neutro */
+.dismissReportButton {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.dismissReportButton:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.dismissReportButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

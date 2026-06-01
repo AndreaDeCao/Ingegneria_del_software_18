@@ -315,7 +315,7 @@ exports.openActivity = async (req, res) => {
   }
 };
 
-// DELETE /activities/:id — organizzatore o admin
+// DELETE /activities/:id — admin
 exports.deleteActivity = async (req, res) => {
   try {
     const userID = req.user?._id?.toString() || req.body.userID?.toString();
@@ -326,9 +326,9 @@ exports.deleteActivity = async (req, res) => {
     if (!activity) return res.status(404).json({ error: "Attività non trovata" });
 
     const isAdmin = userRole === "admin";
-    const isOrganizer = activity.organizerID?.toString() === userID;
+    //const isOrganizer = activity.organizerID?.toString() === userID;
 
-    if (!isAdmin && !isOrganizer) {
+    if (!isAdmin /*&& !isOrganizer*/) {
       return res.status(403).json({ error: "Solo l'organizzatore o un amministratore può eliminare l'attività" });
     }
 
@@ -363,7 +363,7 @@ exports.suspendActivity = async (req, res) => {
       {
         $set: {
           suspended: true,
-          statusBeforeSuspend: activity.status, // salva lo status attuale per ripristinarlo all'unsuspend
+          statusBeforeSuspend: activity.status,
           status: "Annullato",
           suspendedReason: reason,
           suspendedBy: adminID,
@@ -376,7 +376,9 @@ exports.suspendActivity = async (req, res) => {
       { returnDocument: "after" }
     )
       .populate("partecipantList", "nickname email nome cognome")
-      .populate("suspendedBy", "nickname email");
+      .populate("suspendedBy", "nickname email")
+      .populate("reports.reportedBy", "nickname email")
+      .populate("reports.reviewedBy", "nickname email");
 
     res.json(updated);
   } catch (err) {
@@ -399,8 +401,6 @@ exports.unsuspendActivity = async (req, res) => {
     if (!activity.suspended) return res.status(400).json({ error: "Attività non è sospesa" });
 
     const reason = req.body.reason?.trim() || "";
-
-    // Ripristina lo status salvato prima della sospensione; fallback a "Aperto" se mancante
     const restoredStatus = activity.statusBeforeSuspend || "Aperto";
 
     const updated = await Activity.findByIdAndUpdate(
@@ -421,7 +421,127 @@ exports.unsuspendActivity = async (req, res) => {
       { returnDocument: "after" }
     )
       .populate("partecipantList", "nickname email nome cognome")
-      .populate("suspendedBy", "nickname email");
+      .populate("suspendedBy", "nickname email")
+      .populate("reports.reportedBy", "nickname email")
+      .populate("reports.reviewedBy", "nickname email");
+
+    res.json(updated);
+  } catch (err) {
+    if (err.name === "CastError") return res.status(400).json({ error: "ID non valido" });
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ── SEGNALAZIONI ─────────────────────────────────────────────────────────────
+
+// POST /activities/:id/report — utente autenticato segnala un'attività
+// Body: { userID, reason }
+// Un utente non può segnalare la stessa attività due volte.
+// L'organizzatore non può segnalare la propria attività.
+exports.reportActivity = async (req, res) => {
+  try {
+    const userID = req.user?._id?.toString() || req.body.userID?.toString();
+    if (!userID) return res.status(401).json({ error: "Non autenticato" });
+
+    const activity = await Activity.findById(req.params.id);
+    if (!activity) return res.status(404).json({ error: "Attività non trovata" });
+
+    if (activity.organizerID?.toString() === userID) {
+      return res.status(400).json({ error: "Non puoi segnalare la tua attività" });
+    }
+
+    const alreadyReported = activity.reports.some(
+      (r) => r.reportedBy?.toString() === userID
+    );
+    if (alreadyReported) {
+      return res.status(400).json({ error: "Hai già segnalato questa attività" });
+    }
+
+    const reason = req.body.reason?.trim() || "";
+
+    activity.reports.push({
+      reportedBy: userID,
+      reason,
+      reportedAt: new Date(),
+      reportStatus: "pending",
+    });
+
+    await activity.save();
+
+    // Ritorna solo la segnalazione appena creata (non esporre le altre all'utente)
+    res.status(201).json({ message: "Segnalazione inviata. Verrà esaminata dall'amministrazione." });
+  } catch (err) {
+    if (err.name === "CastError") return res.status(400).json({ error: "ID non valido" });
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// PATCH /activities/:id/reports/:reportId/accept — solo admin
+// Accetta la segnalazione: diventa visibile a tutti con banner "Segnalata".
+exports.acceptReport = async (req, res) => {
+  try {
+    const adminID = req.user?._id?.toString() || req.body.userID?.toString();
+    const userRole = req.user?.role || req.body.userRole;
+    if (!adminID) return res.status(401).json({ error: "Non autenticato" });
+    if (userRole !== "admin") return res.status(403).json({ error: "Accesso riservato agli amministratori" });
+
+    const activity = await Activity.findById(req.params.id);
+    if (!activity) return res.status(404).json({ error: "Attività non trovata" });
+
+    const report = activity.reports.id(req.params.reportId);
+    if (!report) return res.status(404).json({ error: "Segnalazione non trovata" });
+
+    report.reportStatus = "accepted";
+    report.reviewedBy = adminID;
+    report.reviewedAt = new Date();
+    report.reviewNote = req.body.reviewNote?.trim() || "";
+
+    activity.adminLog.push({ adminID, action: "report_accept", reason: report.reason, date: new Date() });
+
+    await activity.save();
+
+    const updated = await Activity
+      .findById(req.params.id)
+      .populate("partecipantList", "nickname email nome cognome")
+      .populate("reports.reportedBy", "nickname email")
+      .populate("reports.reviewedBy", "nickname email");
+
+    res.json(updated);
+  } catch (err) {
+    if (err.name === "CastError") return res.status(400).json({ error: "ID non valido" });
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// PATCH /activities/:id/reports/:reportId/dismiss — solo admin
+// Rigetta la segnalazione: non viene mostrata agli utenti.
+exports.dismissReport = async (req, res) => {
+  try {
+    const adminID = req.user?._id?.toString() || req.body.userID?.toString();
+    const userRole = req.user?.role || req.body.userRole;
+    if (!adminID) return res.status(401).json({ error: "Non autenticato" });
+    if (userRole !== "admin") return res.status(403).json({ error: "Accesso riservato agli amministratori" });
+
+    const activity = await Activity.findById(req.params.id);
+    if (!activity) return res.status(404).json({ error: "Attività non trovata" });
+
+    const report = activity.reports.id(req.params.reportId);
+    if (!report) return res.status(404).json({ error: "Segnalazione non trovata" });
+
+    report.reportStatus = "dismissed";
+    report.reviewedBy = adminID;
+    report.reviewedAt = new Date();
+    report.reviewNote = req.body.reviewNote?.trim() || "";
+
+    activity.adminLog.push({ adminID, action: "report_dismiss", reason: report.reason, date: new Date() });
+
+    await activity.save();
+
+    const updated = await Activity
+      .findById(req.params.id)
+      .populate("partecipantList", "nickname email nome cognome")
+      .populate("reports.reportedBy", "nickname email")
+      .populate("reports.reviewedBy", "nickname email");
 
     res.json(updated);
   } catch (err) {

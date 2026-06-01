@@ -16,6 +16,14 @@ router.patch("/:id/uncancel", activityController.uncancelActivity);
 router.patch("/:id/close", activityController.closeActivity);
 router.patch("/:id/open", activityController.openActivity);
 
+// ── Segnalazioni ──────────────────────────────────────────────────────────────
+// POST   /:id/report                        — utente segnala l'attività
+// PATCH  /:id/reports/:reportId/accept      — admin accetta la segnalazione
+// PATCH  /:id/reports/:reportId/dismiss     — admin rigetta la segnalazione
+router.post("/:id/report", /* authenticate, */ activityController.reportActivity);
+router.patch("/:id/reports/:reportId/accept", /* requireAdmin, */ activityController.acceptReport);
+router.patch("/:id/reports/:reportId/dismiss", /* requireAdmin, */ activityController.dismissReport);
+
 // ── Admin ──────────────────────────────────────────────────────────────────
 router.patch("/:id/suspend", /* requireAdmin, */ activityController.suspendActivity);
 router.patch("/:id/unsuspend", /* requireAdmin, */ activityController.unsuspendActivity);
