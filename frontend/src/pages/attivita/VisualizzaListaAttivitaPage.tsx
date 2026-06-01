@@ -7,13 +7,18 @@ import { useAuth } from "../../auth/AuthProvider";
 import type {Activity} from "../../types/Activity";
 import type {Trek} from "../../types/Trek";
 
-// modale inline per conferma partecipazione dalla lista
 type JoinModal = { activity: Activity } | null;
+
+// Estende Activity con i campi admin opzionali
+type ActivityWithAdmin = Activity & {
+  suspended?: boolean;
+  suspendedReason?: string;
+};
 
 export default function VisualizzaAttivitaPage() {
   const { user } = useAuth();
 
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activities, setActivities] = useState<ActivityWithAdmin[]>([]);
   const [treksMap, setTreksMap] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
 
@@ -21,6 +26,9 @@ export default function VisualizzaAttivitaPage() {
   const [selectedDate, setSelectedDate] = useState("");
   const [travelModeFilter, setTravelModeFilter] = useState("Tutti");
   const [participationFilter, setParticipationFilter] = useState("Tutte");
+  const [organizerFilter, setOrganizerFilter] = useState("Tutti");
+  const [suspendedFilter, setSuspendedFilter] = useState("Tutte"); // solo admin
+  
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,9 +37,10 @@ export default function VisualizzaAttivitaPage() {
   const [joinLoading, setJoinLoading] = useState(false);
 
   const currentUserID = user?._id;
+  const isAdmin = user?.role === "admin";
 
-  // Determina lo stato del bottone Partecipa per una singola attività
-  function getJoinState(activity: Activity): "join" | "organizer" | "participant" | "closed" | "full" | "expired" {
+  function getJoinState(activity: ActivityWithAdmin): "join" | "organizer" | "participant" | "closed" | "full" | "expired" | "admin" {
+    if (isAdmin) return "admin";
     if (activity.organizerID === currentUserID) return "organizer";
     if (new Date(activity.activityDate).getTime() < Date.now()) return "expired";
     if (activity.status !== "Aperto") return "closed";
@@ -46,7 +55,9 @@ export default function VisualizzaAttivitaPage() {
     statusFilter !== "Tutti" ||
     travelModeFilter !== "Tutti" ||
     selectedDate !== "" ||
-    participationFilter !== "Tutte";
+    participationFilter !== "Tutte" ||
+    organizerFilter !== "Tutti" ||
+    suspendedFilter !== "Tutte";
 
   function resetFilters() {
     setSearch("");
@@ -54,6 +65,8 @@ export default function VisualizzaAttivitaPage() {
     setTravelModeFilter("Tutti");
     setSelectedDate("");
     setParticipationFilter("Tutte");
+    setOrganizerFilter("Tutti");
+    setSuspendedFilter("Tutte");
   }
 
   const getStatusClass = (status: string) => {
@@ -70,12 +83,23 @@ export default function VisualizzaAttivitaPage() {
     const matchesTravelMode = travelModeFilter === "Tutti" || a.travelMode === travelModeFilter;
     const matchesDate = !selectedDate || new Date(a.activityDate).toISOString().split("T")[0] === selectedDate;
     const isParticipant = (a.partecipantList ?? []).includes(currentUserID ?? "");
+    const isOrganizer = a.organizerID === currentUserID;
+
     const matchesParticipation =
       participationFilter === "Tutte" ||
       (participationFilter === "Partecipo" && isParticipant) ||
       (participationFilter === "Non partecipo" && !isParticipant);
 
-    return matchesSearch && matchesStatus && matchesDate && matchesTravelMode && matchesParticipation;
+    const matchesOrganizer =
+      organizerFilter === "Tutti" ||
+      (organizerFilter === "Organizzo" && isOrganizer) ||
+      (organizerFilter === "Non organizzo" && !isOrganizer);
+    const matchesSuspended =
+      suspendedFilter === "Tutte" ||
+      (suspendedFilter === "Sospese" && a.suspended) ||
+      (suspendedFilter === "Non sospese" && !a.suspended);
+
+    return matchesSearch && matchesStatus && matchesDate && matchesTravelMode && matchesParticipation && matchesOrganizer && matchesSuspended;
   });
 
   const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
@@ -83,13 +107,11 @@ export default function VisualizzaAttivitaPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // const resActivities = await fetch("http://localhost:3000/activities");
         const resActivities = await fetch(`${API_BASE}/activities/`);
         if (!resActivities.ok) throw new Error("Errore nel recupero attività");
-        const activitiesData: Activity[] = await resActivities.json();
+        const activitiesData: ActivityWithAdmin[] = await resActivities.json();
         setActivities(activitiesData);
 
-        // const resTreks = await fetch("http://localhost:3000/treks");
         const resTreks = await fetch(`${API_BASE}/treks/`);
         if (!resTreks.ok) throw new Error("Errore nel recupero trek");
         const treksData: Trek[] = await resTreks.json();
@@ -108,7 +130,6 @@ export default function VisualizzaAttivitaPage() {
   async function confirmJoin(activity: Activity) {
     setJoinLoading(true);
     try {
-      // const res = await fetch(`http://localhost:3000/activities/${activity._id}/join`, {
       const res = await fetch(`${API_BASE}/activities/${activity._id}/join`, {
         method: "POST",
         credentials: "include",
@@ -120,7 +141,6 @@ export default function VisualizzaAttivitaPage() {
         throw new Error(err.error || err.message || "Errore");
       }
       const updated = await res.json();
-      // aggiorna l'attività nella lista
       setActivities((prev) => prev.map((a) => a._id === activity._id ? { ...a, partecipantList: updated.partecipantList?.map((p: any) => p._id ?? p) ?? [] } : a));
     } catch (err: any) {
     } finally {
@@ -171,19 +191,45 @@ export default function VisualizzaAttivitaPage() {
             <option value="bicycling">In bicicletta</option>
           </select>
         </div>
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Partecipazione</label>
 
+        {/* Filtro partecipazione — nascosto per admin (non partecipano) */}
+        {!isAdmin && (
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>Partecipazione</label>
+            <select value={participationFilter} onChange={(e) => setParticipationFilter(e.target.value)} className={styles.select}>
+              <option value="Tutte">Tutte</option>
+              <option value="Partecipo">A cui partecipo</option>
+              <option value="Non partecipo">A cui non partecipo</option>
+            </select>
+          </div>
+        )}
+
+        {/* Filtro organizzazione — nascosto per admin (non partecipano) */}
+
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Organizzazione</label>
           <select
-            value={participationFilter}
-            onChange={(e) => setParticipationFilter(e.target.value)}
+            value={organizerFilter}
+            onChange={(e) => setOrganizerFilter(e.target.value)}
             className={styles.select}
           >
-            <option value="Tutte">Tutte</option>
-            <option value="Partecipo">A cui partecipo</option>
-            <option value="Non partecipo">A cui non partecipo</option>
+            <option value="Tutti">Tutti</option>
+            <option value="Organizzo">Solo che organizzo</option>
+            <option value="Non organizzo">Non organizzo</option>
           </select>
         </div>
+
+        {/* Filtro sospensione — visibile a tutti */}
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Sospensione</label>
+          <select value={suspendedFilter} onChange={(e) => setSuspendedFilter(e.target.value)} className={styles.select}>
+            <option value="Tutte">Tutte</option>
+            <option value="Sospese">Solo sospese</option>
+            <option value="Non sospese">Non sospese</option>
+          </select>
+        </div>
+
+        
 
         {hasActiveFilters && (
           <div className={styles.filterGroup}>
@@ -201,22 +247,32 @@ export default function VisualizzaAttivitaPage() {
           const joinState = getJoinState(activity);
           const isExpired = joinState === "expired";
           const effectiveStatus = isExpired && activity.status === "Aperto" ? "Chiuso" : activity.status;
+          // L'admin non vede mai il pulsante Partecipa
           const isDisabled = joinState !== "join";
-          const buttonLabel = {
+          const isSuspended = activity.suspended;
+          const buttonLabel: Record<string, string> = {
             join: "Partecipa",
             organizer: "Organizzatore",
             participant: "Già iscritto",
             closed: "Non disponibile",
             full: "Al completo",
             expired: "Scaduta",
-          }[joinState];
+            admin: "Visualizza",
+          };
 
           return (
-            <Link to={`/attivita/${activity._id}`}>
-
-              <article key={activity._id} className={styles.activityCard}>
+            <Link key={activity._id} to={`/attivita/${activity._id}`}>
+              <article
+                className={`${styles.activityCard} ${activity.suspended ? styles.activityCardSuspended : ""}`}
+              >
                 <div className={styles.cardTop}>
-                  <span className={`${styles.statusBadge} ${getStatusClass(effectiveStatus)}`}>{effectiveStatus}</span>
+                  <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+                    {activity.suspended ? (
+                      <span className={`${styles.statusBadge} ${styles.statusSuspended}`}>Sospesa</span>
+                    ) : (
+                      <span className={`${styles.statusBadge} ${getStatusClass(effectiveStatus)}`}>{effectiveStatus}</span>
+                    )}
+                  </div>
                   <span className={styles.activityId}>#{activity._id}</span>
                 </div>
 
@@ -240,20 +296,24 @@ export default function VisualizzaAttivitaPage() {
                 </div>
 
                 <div className={styles.cardActions}>
-                  <button
-                    className={appStyles.primaryButtonSmall}
-                    disabled={isDisabled}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-
-                      if (!isDisabled) {
-                        setJoinModal({ activity });
-                      }
-                    }}
-                  >
-                    {buttonLabel}
-                  </button>
+                  {/* Admin: solo link alla pagina, nessun pulsante partecipa */}
+                  {isAdmin ? (
+                    <span className={`${styles.statusBadge} ${styles.statusSuspended}`} style={{ background: "rgba(155,89,182,0.1)", color: "#8e44ad", border: "1px solid rgba(155,89,182,0.2)" }}>
+                      Admin
+                    </span>
+                  ) : (
+                    <button
+                      className={appStyles.primaryButtonSmall}
+                      disabled={isDisabled || isSuspended}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!isDisabled) setJoinModal({ activity });
+                      }}
+                    >
+                      {buttonLabel[joinState]}
+                    </button>
+                  )}
                 </div>
               </article>
             </Link>

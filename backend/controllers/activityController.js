@@ -22,7 +22,8 @@ exports.getActivityById = async (req, res) => {
   try {
     const activity = await Activity
       .findById(req.params.id)
-      .populate("partecipantList", "nickname email nome cognome");
+      .populate("partecipantList", "nickname email nome cognome")
+      .populate("suspendedBy", "nickname email");
 
     if (!activity) {
       return res.status(404).json({ error: "Attività non trovata" });
@@ -161,7 +162,7 @@ exports.leaveActivity = async (req, res) => {
   }
 };
 
-// PATCH /activities/:id/cancel — solo organizzatore
+// PATCH /activities/:id/cancel — solo organizzatore (bloccato se sospesa)
 exports.cancelActivity = async (req, res) => {
   try {
     const userID = req.user?._id?.toString() || req.body.userID?.toString();
@@ -177,6 +178,9 @@ exports.cancelActivity = async (req, res) => {
 
     if (activity.organizerID?.toString() !== userID) {
       return res.status(403).json({ error: "Solo l'organizzatore può annullare l'attività" });
+    }
+    if (activity.suspended) {
+      return res.status(403).json({ error: "Attività sospesa dall'amministrazione — non puoi modificarne lo stato" });
     }
     if (activity.status === "Annullato") {
       return res.status(400).json({ error: "Attività già annullata" });
@@ -195,7 +199,7 @@ exports.cancelActivity = async (req, res) => {
   }
 };
 
-// PATCH /activities/:id/uncancel — solo organizzatore
+// PATCH /activities/:id/uncancel — solo organizzatore (bloccato se sospesa)
 exports.uncancelActivity = async (req, res) => {
   try {
     const userID = req.user?._id?.toString() || req.body.userID?.toString();
@@ -211,6 +215,9 @@ exports.uncancelActivity = async (req, res) => {
 
     if (activity.organizerID?.toString() !== userID) {
       return res.status(403).json({ error: "Solo l'organizzatore può riattivare l'attività" });
+    }
+    if (activity.suspended) {
+      return res.status(403).json({ error: "Attività sospesa dall'amministrazione — non puoi modificarne lo stato" });
     }
     if (activity.status === "Chiuso" || activity.status === "Aperto") {
       return res.status(400).json({ error: "Attività già attiva" });
@@ -249,6 +256,9 @@ exports.closeActivity = async (req, res) => {
     if (activity.organizerID?.toString() !== userID) {
       return res.status(403).json({ error: "Solo l'organizzatore può chiudere l'attività" });
     }
+    if (activity.suspended) {
+      return res.status(403).json({ error: "Attività sospesa dall'amministrazione — non puoi modificarne lo stato" });
+    }
     if (activity.status === "Chiuso") {
       return res.status(400).json({ error: "Attività già chiusa" });
     }
@@ -282,6 +292,9 @@ exports.openActivity = async (req, res) => {
     if (activity.organizerID?.toString() !== userID) {
       return res.status(403).json({ error: "Solo l'organizzatore può aprire l'attività" });
     }
+    if (activity.suspended) {
+      return res.status(403).json({ error: "Attività sospesa dall'amministrazione — non puoi modificarne lo stato" });
+    }
     if (activity.status === "Aperto") {
       return res.status(400).json({ error: "Attività già aperta" });
     }
@@ -302,20 +315,115 @@ exports.openActivity = async (req, res) => {
   }
 };
 
-// DELETE /activities/:id — solo organizzatore, eliminazione definitiva
-exports.deleteActivity = async (req, res) => { //FIX ME: solo admin
+// DELETE /activities/:id — organizzatore o admin
+exports.deleteActivity = async (req, res) => {
   try {
     const userID = req.user?._id?.toString() || req.body.userID?.toString();
+    const userRole = req.user?.role || req.body.userRole;
     if (!userID) return res.status(401).json({ error: "Non autenticato" });
 
     const activity = await Activity.findById(req.params.id);
     if (!activity) return res.status(404).json({ error: "Attività non trovata" });
-    if (activity.organizerID?.toString() !== userID) {
-      return res.status(403).json({ error: "Solo l'organizzatore può eliminare l'attività" });
+
+    const isAdmin = userRole === "admin";
+    const isOrganizer = activity.organizerID?.toString() === userID;
+
+    if (!isAdmin && !isOrganizer) {
+      return res.status(403).json({ error: "Solo l'organizzatore o un amministratore può eliminare l'attività" });
     }
 
     await Activity.findByIdAndDelete(req.params.id);
     res.json({ message: "Attività eliminata definitivamente" });
+  } catch (err) {
+    if (err.name === "CastError") return res.status(400).json({ error: "ID non valido" });
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ── ADMIN ────────────────────────────────────────────────────────────────────
+
+// PATCH /activities/:id/suspend — solo admin
+// Sospende l'attività: blocca tutte le azioni dell'organizzatore sullo status.
+// Il campo `reason` è opzionale ma consigliato: viene mostrato all'organizzatore nel banner.
+exports.suspendActivity = async (req, res) => {
+  try {
+    const adminID = req.user?._id?.toString() || req.body.userID?.toString();
+    const userRole = req.user?.role || req.body.userRole;
+    if (!adminID) return res.status(401).json({ error: "Non autenticato" });
+    if (userRole !== "admin") return res.status(403).json({ error: "Accesso riservato agli amministratori" });
+
+    const activity = await Activity.findById(req.params.id);
+    if (!activity) return res.status(404).json({ error: "Attività non trovata" });
+    if (activity.suspended) return res.status(400).json({ error: "Attività già sospesa" });
+
+    const reason = req.body.reason?.trim() || "";
+
+    const updated = await Activity.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          suspended: true,
+          statusBeforeSuspend: activity.status, // salva lo status attuale per ripristinarlo all'unsuspend
+          status: "Annullato",
+          suspendedReason: reason,
+          suspendedBy: adminID,
+          suspendedAt: new Date(),
+        },
+        $push: {
+          adminLog: { adminID, action: "suspend", reason, date: new Date() },
+        },
+      },
+      { returnDocument: "after" }
+    )
+      .populate("partecipantList", "nickname email nome cognome")
+      .populate("suspendedBy", "nickname email");
+
+    res.json(updated);
+  } catch (err) {
+    if (err.name === "CastError") return res.status(400).json({ error: "ID non valido" });
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// PATCH /activities/:id/unsuspend — solo admin
+// Rimuove la sospensione e ripristina il normale funzionamento per l'organizzatore.
+exports.unsuspendActivity = async (req, res) => {
+  try {
+    const adminID = req.user?._id?.toString() || req.body.userID?.toString();
+    const userRole = req.user?.role || req.body.userRole;
+    if (!adminID) return res.status(401).json({ error: "Non autenticato" });
+    if (userRole !== "admin") return res.status(403).json({ error: "Accesso riservato agli amministratori" });
+
+    const activity = await Activity.findById(req.params.id);
+    if (!activity) return res.status(404).json({ error: "Attività non trovata" });
+    if (!activity.suspended) return res.status(400).json({ error: "Attività non è sospesa" });
+
+    const reason = req.body.reason?.trim() || "";
+
+    // Ripristina lo status salvato prima della sospensione; fallback a "Aperto" se mancante
+    const restoredStatus = activity.statusBeforeSuspend || "Aperto";
+
+    const updated = await Activity.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          suspended: false,
+          status: restoredStatus,
+          statusBeforeSuspend: null,
+          suspendedReason: "",
+          suspendedBy: null,
+          suspendedAt: null,
+        },
+        $push: {
+          adminLog: { adminID, action: "unsuspend", reason, date: new Date() },
+        },
+      },
+      { returnDocument: "after" }
+    )
+      .populate("partecipantList", "nickname email nome cognome")
+      .populate("suspendedBy", "nickname email");
+
+    res.json(updated);
   } catch (err) {
     if (err.name === "CastError") return res.status(400).json({ error: "ID non valido" });
     res.status(500).json({ error: err.message });
