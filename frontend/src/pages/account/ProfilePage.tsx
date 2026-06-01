@@ -12,6 +12,16 @@ const VERIFY_MESSAGES: Record<string, { text: string; type: "success" | "error" 
   error:   { text: "Qualcosa è andato storto. Riprova.",      type: "error"   },
 };
 
+// Type per notifiche utente
+type UserNotification = {
+  _id: string;
+  type: string;
+  message: string;
+  read: boolean;
+  ref: string | null;
+  createdAt: string;
+};
+
 // Banner per messaggi di successo e errore
 function Banner({ msg, type, onClose }: {
   msg: string;
@@ -72,6 +82,11 @@ export default function ProfilePage() {
     confirm: false,
   });
 
+  // Notifiche
+  const [notifications, setNotifications] = useState<UserNotification[]>([]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const unread = notifications.filter(n => !n.read).length;
+
   useEffect(() => {
   if (searchParams.get("email-verified")) {
     setSearchParams({}, { replace: true });
@@ -88,10 +103,17 @@ export default function ProfilePage() {
       setCognome(data.cognome ?? "");
       setNickname(data.nickname ?? "");
       setEmail(data.email ?? "");
-      setAvatar(data.avatarUrl ?? null);
+      setAvatar(data.avatarUrl ?? null);     
     })
     .catch((err: Error) => setError(err.message))
     .finally(() => setLoading(false));
+    }, []);
+
+    // Carica notifiche utente
+    useEffect(() => {
+      http<UserNotification[]>("/users/me/notifications")
+        .then(setNotifications)
+        .catch(() => {});
     }, []);
 
 
@@ -254,12 +276,33 @@ export default function ProfilePage() {
       }
     }
 
+
+    /**
+     * Marca tutte le notifiche come lette.
+     * 
+     * @returns {Promise<void>}
+     */
+    async function markAllRead() {
+      try {
+        await http("/users/me/notifications/read-all", { method: "PUT" });
+        setNotifications(prev => prev.map(
+          n => ({ ...n, read: true})
+        ));
+
+      } catch(err: unknown) {
+         if(err instanceof Error) {
+          setError(err.message);
+      }
+    }
+  }
+
     if(loading) {
       return <p className={styles.message}>Caricamento profilo...</p>
     }
 
     return (
       <main className={styles.main}>
+
         {/* MESSAGGI */}
         {successMsg && 
         <Banner 
@@ -289,7 +332,7 @@ export default function ProfilePage() {
             )}
           </div>
 
-          <div>
+          <div className={styles.avatarInfo}>
             <p className={styles.label}>{nome} {cognome}</p>
             <p className={styles.hint}>@{nickname}</p>
             <div className={styles.avatarBtn}>
@@ -311,7 +354,19 @@ export default function ProfilePage() {
                 </button>
               )}
             </div>
-          </div>          
+          </div>  
+
+          {/* NOTIFICHE */}
+            <button 
+              className={styles.notifBtn}
+              onClick={() => setNotificationsOpen(true)}
+              aria-label="Notifications"
+            >
+              Notifiche
+              {unread > 0 && (
+                <span className={styles.notifBadge}>{unread}</span>
+              )}
+            </button>       
         </section>
 
         {/* INFO ACCOUNT */}
@@ -539,6 +594,43 @@ export default function ProfilePage() {
             OK
           </button>
         </div>
+      </Modal>
+
+      {/* MODAL NOTIFICHE */}
+      <Modal
+        isOpen={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+        title="Notifiche"
+      >
+        {notifications.length === 0 ? (
+          <p className={styles.hint}>Nessuna notifica</p>
+        ) : (
+          <>
+            {unread > 0 && (
+              <button 
+                className={styles.markAllBtn}
+                onClick={markAllRead}
+              >
+                Contrassegna tutte come lette
+              </button>
+            )}
+            <div className={styles.notifList}>
+              {notifications.map(n => (
+                <div 
+                  key={n._id}
+                  className={`${styles.notifItem} ${!n.read ? styles.notifUnread : styles.notifRead}`}
+                >
+                  <p className={styles.notifMsg}>{n.message}</p>
+                  <p className={styles.notifDate}>
+                    {new Date(n.createdAt).toLocaleDateString("it-IT", {
+                      day: "2-digit", month: "short", year: "numeric"
+                    })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </Modal>
 
       </main>

@@ -24,7 +24,7 @@ router.delete("/favorites/:trekId", requireAuth, userController.removeTrekFromFa
 router.get("/:id", userController.getUserById);
 
 router.get("/me/notifications", requireAuth, userController.getNotifications);
-router.put("/me/notifications/read-all", requierAuth, userController.markAllNotificationRead);
+router.put("/me/notifications/read-all", requireAuth, userController.markAllNotificationRead);
 
 
 module.exports = router;
