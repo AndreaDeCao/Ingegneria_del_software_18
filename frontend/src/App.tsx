@@ -35,8 +35,10 @@ import CreaVoceDiarioPage from "./pages/diario/CreaVoceDiarioPage";
 import DettagliVoceDiarioPage from "./pages/diario/DettagliVoceDiarioPage";
 
 import VisualizzaAttivitaPage from "./pages/attivita/VisualizzaListaAttivitaPage";
-import CreaAttivitaPage from "./pages/attivita/CreaAttivitaPage";
 import DettagliAttivita from "./pages/attivita/dettagliAttivita";
+import AdminVisualizzaAttivitaPage from "./pages/attivita/AdminVisualizzaAttivitaPage";
+import AdminDettagliAttivita from "./pages/attivita/AdminDettagliAttivita";
+import CreaAttivitaPage from "./pages/attivita/CreaAttivitaPage";
 
 import VersioneCorrentePage from "./pages/versione/VersioneCorrentePage";
 
@@ -116,9 +118,12 @@ export default function App() {
                   <Route path="/attivita/visualizza" element={<AppLayout><ProtectedRoute><VisualizzaAttivitaPage /></ProtectedRoute></AppLayout>} />
                   <Route path="/attivita/crea" element={<AppLayout><ProtectedRoute><CreaAttivitaPage /></ProtectedRoute></AppLayout>} />
                   <Route path="/attivita/:id" element={<AppLayout><ProtectedRoute><DettagliAttivita /></ProtectedRoute></AppLayout>} />
+                  
 
                   <Route path="/versione/corrente" element={<AppLayout><VersioneCorrentePage /></AppLayout>} />
 
+                  <Route path="/admin/attivita/visualizza" element={<AppLayout><ProtectedRoute><AdminVisualizzaAttivitaPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/admin/attivita/:id" element={<AppLayout><ProtectedRoute><AdminDettagliAttivita /></ProtectedRoute></AppLayout>} />
                   <Route path="/admin/segnalazioni" element={<AppLayout><GestioneSegnalazioniPage /></AppLayout>} />
 
 

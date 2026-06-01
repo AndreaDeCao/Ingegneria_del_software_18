@@ -97,7 +97,7 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
               Esplora
             </NavLink>
             <NavLink
-              to="/attivita/visualizza"
+              to="/admin/attivita/visualizza"
               className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
             >
               Attivita

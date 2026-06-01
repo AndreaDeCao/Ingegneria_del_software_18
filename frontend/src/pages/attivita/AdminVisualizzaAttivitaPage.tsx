@@ -10,25 +10,19 @@ import type { Trek } from "../../types/Trek";
 // Intervallo di polling in ms — aggiorna la lista senza ricaricare la pagina
 const POLL_INTERVAL_MS = 20_000;
 
-type JoinModal = { activity: ActivityWithUser } | null;
-
-type ActivityWithUser = Activity & {
+type ActivityWithAdmin = Activity & {
   suspended?: boolean;
   suspendedReason?: string;
   reports?: Array<{ reportStatus: string }>;
 };
 
-export default function VisualizzaListaAttivitaPage() {
+export default function AdminVisualizzaAttivitaPage() {
   const { user } = useAuth();
 
-  const [activities, setActivities] = useState<ActivityWithUser[]>([]);
+  const [activities, setActivities] = useState<ActivityWithAdmin[]>([]);
   const [treksMap, setTreksMap] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
 
-  const [statusFilter, setStatusFilter] = useState("Tutti");
-  const [selectedDate, setSelectedDate] = useState("");
-  const [travelModeFilter, setTravelModeFilter] = useState("Tutti");
-  const [participationFilter, setParticipationFilter] = useState("Tutte");
   const [organizerFilter, setOrganizerFilter] = useState("Tutti");
   const [suspendedFilter, setSuspendedFilter] = useState("Tutte");
   const [reportFilter, setReportFilter] = useState("Tutte");
@@ -36,43 +30,25 @@ export default function VisualizzaListaAttivitaPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [joinModal, setJoinModal] = useState<JoinModal>(null);
-  const [joinLoading, setJoinLoading] = useState(false);
-
   const currentUserID = user?._id;
 
   const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
-  function getJoinState(activity: ActivityWithUser): "join" | "organizer" | "participant" | "closed" | "full" | "expired" {
-    if (activity.organizerID === currentUserID) return "organizer";
-    if (new Date(activity.activityDate).getTime() < Date.now()) return "expired";
-    if (activity.status !== "Aperto") return "closed";
-    const list = activity.partecipantList ?? [];
-    if (list.includes(currentUserID ?? "")) return "participant";
-    if (list.length >= activity.maxParticipants) return "full";
-    return "join";
-  }
-
-  function hasAcceptedReport(a: ActivityWithUser) {
+  function hasAcceptedReport(a: ActivityWithAdmin) {
     return (a.reports ?? []).some((r) => r.reportStatus === "accepted");
+  }
+  function hasPendingReport(a: ActivityWithAdmin) {
+    return (a.reports ?? []).some((r) => r.reportStatus === "pending");
   }
 
   const hasActiveFilters =
     search !== "" ||
-    statusFilter !== "Tutti" ||
-    travelModeFilter !== "Tutti" ||
-    selectedDate !== "" ||
-    participationFilter !== "Tutte" ||
     organizerFilter !== "Tutti" ||
     suspendedFilter !== "Tutte" ||
     reportFilter !== "Tutte";
 
   function resetFilters() {
     setSearch("");
-    setStatusFilter("Tutti");
-    setTravelModeFilter("Tutti");
-    setSelectedDate("");
-    setParticipationFilter("Tutte");
     setOrganizerFilter("Tutti");
     setSuspendedFilter("Tutte");
     setReportFilter("Tutte");
@@ -90,16 +66,7 @@ export default function VisualizzaListaAttivitaPage() {
     const matchesSearch =
       a.title.toLowerCase().includes(search.toLowerCase()) ||
       a.description.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "Tutti" || a.status === statusFilter;
-    const matchesTravelMode = travelModeFilter === "Tutti" || a.travelMode === travelModeFilter;
-    const matchesDate = !selectedDate || new Date(a.activityDate).toISOString().split("T")[0] === selectedDate;
-    const isParticipant = (a.partecipantList ?? []).includes(currentUserID ?? "");
     const isOrganizer = a.organizerID === currentUserID;
-
-    const matchesParticipation =
-      participationFilter === "Tutte" ||
-      (participationFilter === "Partecipo" && isParticipant) ||
-      (participationFilter === "Non partecipo" && !isParticipant);
 
     const matchesOrganizer =
       organizerFilter === "Tutti" ||
@@ -114,27 +81,20 @@ export default function VisualizzaListaAttivitaPage() {
     const matchesReport =
       reportFilter === "Tutte" ||
       (reportFilter === "Segnalate" && hasAcceptedReport(a)) ||
-      (reportFilter === "Non segnalate" && !hasAcceptedReport(a));
+      (reportFilter === "Non segnalate" && !hasAcceptedReport(a)) ||
+      (reportFilter === "In attesa" && hasPendingReport(a));
 
-    return (
-      matchesSearch &&
-      matchesStatus &&
-      matchesDate &&
-      matchesTravelMode &&
-      matchesParticipation &&
-      matchesOrganizer &&
-      matchesSuspended &&
-      matchesReport
-    );
+    return matchesSearch && matchesOrganizer && matchesSuspended && matchesReport;
   });
 
   const fetchData = useCallback(async (silent = false) => {
     try {
       const resActivities = await fetch(`${API_BASE}/activities/`);
       if (!resActivities.ok) throw new Error("Errore nel recupero attivita");
-      const activitiesData: ActivityWithUser[] = await resActivities.json();
+      const activitiesData: ActivityWithAdmin[] = await resActivities.json();
       setActivities(activitiesData);
 
+      // I trek li carichiamo solo al primo fetch (non cambiano durante il polling)
       if (!silent) {
         const resTreks = await fetch(`${API_BASE}/treks/`);
         if (!resTreks.ok) throw new Error("Errore nel recupero trek");
@@ -161,35 +121,6 @@ export default function VisualizzaListaAttivitaPage() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  async function confirmJoin(activity: ActivityWithUser) {
-    setJoinLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/activities/${activity._id}/join`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userID: currentUserID }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || err.message || "Errore");
-      }
-      const updated = await res.json();
-      setActivities((prev) =>
-        prev.map((a) =>
-          a._id === activity._id
-            ? { ...a, partecipantList: updated.partecipantList?.map((p: any) => p._id ?? p) ?? [] }
-            : a
-        )
-      );
-    } catch (err: any) {
-      // errore silenzioso nella lista
-    } finally {
-      setJoinLoading(false);
-      setJoinModal(null);
-    }
-  }
-
   if (loading) return <main className={styles.page}><p className={styles.message}>Caricamento attivita...</p></main>;
   if (error) return <main className={styles.page}><p className={styles.messageError}>{error}</p></main>;
 
@@ -211,42 +142,6 @@ export default function VisualizzaListaAttivitaPage() {
       </div>
 
       <div className={styles.filtersBar}>
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Data</label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className={styles.dateInput}
-          />
-        </div>
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Status</label>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={styles.select}>
-            <option value="Tutti">Tutti</option>
-            <option value="Aperto">Aperto</option>
-            <option value="Chiuso">Chiuso</option>
-            <option value="Annullato">Annullato</option>
-          </select>
-        </div>
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Modalita di viaggio</label>
-          <select value={travelModeFilter} onChange={(e) => setTravelModeFilter(e.target.value)} className={styles.select}>
-            <option value="Tutti">Tutti</option>
-            <option value="walking">A piedi</option>
-            <option value="bicycling">In bicicletta</option>
-          </select>
-        </div>
-
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Partecipazione</label>
-          <select value={participationFilter} onChange={(e) => setParticipationFilter(e.target.value)} className={styles.select}>
-            <option value="Tutte">Tutte</option>
-            <option value="Partecipo">A cui partecipo</option>
-            <option value="Non partecipo">A cui non partecipo</option>
-          </select>
-        </div>
-
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Organizzazione</label>
           <select value={organizerFilter} onChange={(e) => setOrganizerFilter(e.target.value)} className={styles.select}>
@@ -271,6 +166,7 @@ export default function VisualizzaListaAttivitaPage() {
             <option value="Tutte">Tutte</option>
             <option value="Segnalate">Segnalate</option>
             <option value="Non segnalate">Non segnalate</option>
+            <option value="In attesa">In attesa di revisione</option>
           </select>
         </div>
 
@@ -284,27 +180,17 @@ export default function VisualizzaListaAttivitaPage() {
         )}
       </div>
 
-      {/* BOX ATTIVITA — vista utente */}
+      {/* BOX ATTIVITA — vista admin */}
       <section className={styles.activitiesGrid}>
         {filteredActivities.map((activity) => {
-          const joinState = getJoinState(activity);
-          const isExpired = joinState === "expired";
+          const isExpired = new Date(activity.activityDate).getTime() < Date.now();
           const effectiveStatus = isExpired && activity.status === "Aperto" ? "Chiuso" : activity.status;
-          const isDisabled = joinState !== "join";
           const isSuspended = activity.suspended;
           const isReported = hasAcceptedReport(activity);
-
-          const buttonLabel: Record<string, string> = {
-            join: "Partecipa",
-            organizer: "Organizzatore",
-            participant: "Gia iscritto",
-            closed: "Non disponibile",
-            full: "Al completo",
-            expired: "Scaduta",
-          };
+          const isPendingReport = hasPendingReport(activity);
 
           return (
-            <Link key={activity._id} to={`/attivita/${activity._id}`}>
+            <Link key={activity._id} to={`/admin/attivita/${activity._id}`}>
               <article
                 className={`${styles.activityCard} ${isSuspended ? styles.activityCardSuspended : ""} ${isReported ? styles.activityCardReported : ""}`}
               >
@@ -317,6 +203,9 @@ export default function VisualizzaListaAttivitaPage() {
                     )}
                     {isReported && (
                       <span className={`${styles.statusBadge} ${styles.statusReported}`}>Segnalata</span>
+                    )}
+                    {isPendingReport && (
+                      <span className={`${styles.statusBadge} ${styles.statusPendingReport}`}>In attesa</span>
                     )}
                   </div>
                   <span className={styles.activityId}>#{activity._id}</span>
@@ -342,44 +231,18 @@ export default function VisualizzaListaAttivitaPage() {
                 </div>
 
                 <div className={styles.cardActions}>
-                  <button
-                    className={appStyles.primaryButtonSmall}
-                    disabled={isDisabled || isSuspended}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (!isDisabled) setJoinModal({ activity });
-                    }}
+                  <span
+                    className={`${styles.statusBadge} ${styles.statusSuspended}`}
+                    style={{ background: "rgba(155,89,182,0.1)", color: "#8e44ad", border: "1px solid rgba(155,89,182,0.2)" }}
                   >
-                    {buttonLabel[joinState]}
-                  </button>
+                    Admin
+                  </span>
                 </div>
               </article>
             </Link>
           );
         })}
       </section>
-
-      {/* Modal conferma join dalla lista */}
-      {joinModal && (
-        <div className={styles.modalOverlay} onClick={() => setJoinModal(null)}>
-          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-            <h2 className={styles.modalTitle}>Conferma partecipazione</h2>
-            <p className={styles.modalBody}>
-              Stai per iscriverti a <strong>{joinModal.activity.title}</strong>.<br />
-              Il tuo <strong>nickname</strong> e la tua <strong>email</strong> saranno condivisi con l'organizzatore.
-            </p>
-            <div className={styles.modalActions}>
-              <button className={appStyles.secondaryButton} onClick={() => setJoinModal(null)} disabled={joinLoading}>
-                Annulla
-              </button>
-              <button className={appStyles.primaryButton} onClick={() => confirmJoin(joinModal.activity)} disabled={joinLoading}>
-                {joinLoading ? "Iscrizione in corso..." : "Conferma"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
