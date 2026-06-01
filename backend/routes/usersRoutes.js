@@ -11,5 +11,10 @@ router.get("/:id", userController.getUserById);
 router.post("/", userController.createUser);
 router.post("/favorites/:trekId", requireAuth, userController.addTrekToFavorites);
 
+router.get("/me", requireAuth, userController.getMe);
+router.put("/me", requireAuth, userController.updateMe);
+router.delete("/me", requireAuth, userController.deleteMe);
+router.get("/verify-email-change/:token", userController.verifyEmailChange);
+router.put("/me/avatar", requireAuth, userController.updateAvatar);
 router.delete("/favorites/:trekId", requireAuth, userController.removeTrekFromFavorites);
 module.exports = router;

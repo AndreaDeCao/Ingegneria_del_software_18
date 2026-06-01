@@ -4,13 +4,15 @@ const ActivitySchema = new mongoose.Schema({
     title: { type: String, required: true },
     
     description: String,
-    activityDate: Date, // Data e ora dell'attività. 
-    maxParticipants: Number,
+    activityDate: { type: Date, required: true}, // Data e ora dell'attività. 
+    maxParticipants: { type: Number, default: 10, max: 50},
+
     partecipantList: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 
     status: {
         type: String,
-        enum: ["Aperto", "Chiuso", "Annullato"]
+        enum: ["Aperto", "Chiuso", "Annullato"],
+        default: "Aperto"
     },
 
     travelMode: {
@@ -18,8 +20,21 @@ const ActivitySchema = new mongoose.Schema({
         enum: ["walking", "bicycling"]
     },
 
+    // Visibilità attività (public o private)
+    visibility: {
+        type: String,
+        enum: ["public", "private"],
+        default: "public",
+    },
+    
+    // Utetìnte che crea attività
     organizerID: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+
+    // ID Percorso dell'attività
     trekID: { type: mongoose.Schema.Types.ObjectId, ref: 'Trek' },
+
+    // Lista utenti invitati all'attività (può avere solo amici dell'organizzatore)
+    invitedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
     // ADMIN
     // Quando true: l'organizzatore non può modificare lo status;
@@ -56,6 +71,7 @@ const ActivitySchema = new mongoose.Schema({
             date:      { type: Date, default: Date.now },
         }
     ],
-});
+},
+{ timestamps: true });
 
 module.exports = mongoose.model("Activity", ActivitySchema);

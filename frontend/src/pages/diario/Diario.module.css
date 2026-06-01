@@ -269,6 +269,10 @@
   color: var(--text-secondary);
 }
 
+.friendSearchInput {
+  margin-top: 4px;
+}
+
 /* ACTION CARD */
 .actionCard {
   background: linear-gradient(135deg, #2d6a4f 0%, #3a7d5d 100%);
@@ -982,4 +986,81 @@
 .leaveButton:hover {
   background: rgba(231, 76, 60, 0.08);
   border-color: #e74c3c;
+}
+
+.friendsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+.friendItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.friendItem:hover {
+  border-color: var(--accent);
+}
+
+.friendItemSelected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-secondary));
+}
+
+.friendAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 13px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.friendAvatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.friendInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.friendName {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.friendNick {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.friendCheck {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
 }
