@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const DiaryEntry = require("../models/diary");
 const Trek = require("../models/treks");
+const User = require("../models/users");
+const Friendship = require("../models/friendship");
 
 // GET /api/diary --> restituisce le voci del diario dell'utente loggato
 const getDiary = async (req, res) => {
@@ -10,6 +12,7 @@ const getDiary = async (req, res) => {
       .find({ userId })
       // modifica il populate in getDiary
       .populate("trekId", "name difficulty duration lengthKm coordinates endCoordinates id")
+      .populate("amici", "nome cognome nickname avatarUrl")
       .sort({ data: -1 })
       .limit(100);
 
@@ -24,7 +27,8 @@ const getEntryById = async (req, res) => {
   try {
     const entry = await DiaryEntry
       .findOne({ _id: req.params.id, userId: req.userId })
-      .populate("trekId", "name difficulty duration lengthKm coordinates endCoordinates id");
+      .populate("trekId", "name difficulty duration lengthKm coordinates endCoordinates id")
+      .populate("amici", "nome cognome nickname avatarUrl");
 
     if (!entry) return res.status(404).json({ error: "Voce non trovata" });
     res.json(entry);
@@ -60,6 +64,19 @@ const createEntry = async (req, res) => {
     });
 
     const saved = await entry.save();
+
+    if(amici && amici.length > 0) {
+      const author = await User.findById(req.userId);
+      for(const friendId of amici) {
+        await addNotification(
+          friendId,
+          "diary_tag",
+          `${author.nickname} ti ha aggiunto in una voce del diario: "${titolo}"`,
+          saved._id
+        );
+      }
+    }
+
     res.status(201).json(saved);
 
   } catch (err) {
@@ -387,5 +404,29 @@ const getDiaryStats = async (req, res) => {
     });
   }
 };
+
+
+/**
+ * Aggiunge una notifica all'utente.
+ * 
+ * @param {string} userId - ID utente destinatario
+ * @param {string} type - Tipo di notifica
+ * @param {string} message - Testo della notifica
+ * @param {string|null} ref - ID risorsa correlata
+ */
+async function addNotification(userId, type, message, ref = null) {
+  try {
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        notifications: {
+          type, message, ref, createdAt: new Date()
+        }
+      }
+    });
+
+  } catch(err) {
+    console.error("addNotification error:", err.message);
+  }
+}
 
 module.exports = { getDiary, getEntryById, createEntry, updateEntry, deleteEntry, getDiaryStats};

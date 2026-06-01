@@ -1,4 +1,6 @@
 const Activity = require("../models/activities");
+const User = require("../models/users");
+const Friendship = require("../models/friendship");
 
 // GET tutti le attivita
 exports.getActivities = async (req, res) => {
@@ -58,6 +60,20 @@ exports.createActivity = async (req, res) => {
     }
 
     await newActivity.save();
+
+    const invitedUsers = req.body.invitedUsers || [];
+    if(invitedUsers.length > 0) {
+      const organizer = await User.findById(organizerID);
+      for(const invitedId of invitedUsers) {
+        await addNotification(
+          invitedId,
+          "activity_invite",
+          `${organizer.nickname} ti ha invitato all'attività "${newActivity.title}"`,
+          newActivity._id
+        );
+      }
+    }
+
     res.status(201).json(newActivity);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -104,6 +120,14 @@ exports.joinActivity = async (req, res) => {
     }
 
     await activity.save();
+
+    const joiner = await User.findById(userID);
+    await addNotification(
+      activity.organizerID.toString(),
+       "activity_join",
+        `${joiner.nickname} si è iscritto alla tua attività "${activity.title}"`,
+        activity._id
+    );
 
     const updated = await Activity
       .findById(activity._id)
@@ -321,3 +345,27 @@ exports.deleteActivity = async (req, res) => { //FIX ME: solo admin
     res.status(500).json({ error: err.message });
   }
 };
+
+
+/**
+ * Aggiunge una notifica all'utente.
+ * 
+ * @param {string} userId - ID utente destinatario
+ * @param {string} type - Tipo di notifica
+ * @param {string} message - Testo della notifica
+ * @param {string|null} ref - ID risorsa correlata
+ */
+async function addNotification(userId, type, message, ref = null) {
+  try {
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        notifications: {
+          type, message, ref, createdAt: new Date()
+        }
+      }
+    });
+
+  } catch(err) {
+    console.error("addNotification error:", err.message);
+  }
+}
