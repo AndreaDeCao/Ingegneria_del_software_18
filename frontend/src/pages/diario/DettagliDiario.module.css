@@ -244,6 +244,7 @@
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--accent) 6%, var(--card-bg));
   border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
+  margin-bottom: 16px;
 }
 
 .amiciLabel {
@@ -262,6 +263,8 @@
   border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
   color: var(--accent);
 }
+
+
 
 /* ANIMAZIONI */
 @keyframes fadeInUp {
