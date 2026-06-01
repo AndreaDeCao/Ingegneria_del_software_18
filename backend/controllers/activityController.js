@@ -150,8 +150,10 @@ exports.createActivity = async (req, res) => {
     //     }))
     //   );
     // }
+    
     //combinazione
-    const invitedUsers = req.body.invitedUsers || [];
+
+    // const invitedUsers = req.body.invitedUsers || []; //già dichiarata in const newActivity
     if (invitedUsers.length > 0) {
       // Crea i record di invito
       await ActivityInvitation.insertMany(
