@@ -235,6 +235,37 @@
 
 .actionButtonSecondary:hover { background: rgba(255,255,255,0.08); }
 
+.amiciRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 6%, var(--card-bg));
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
+  margin-bottom: 16px;
+}
+
+.amiciLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.amiciBadge {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--card-bg));
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+  color: var(--accent);
+}
+
+
+
 /* ANIMAZIONI */
 @keyframes fadeInUp {
   from {

@@ -87,7 +87,7 @@ exports.addTrekToFavorites = async (req, res) => {
     const { trekId } = req.params;
 
     // controlla esistenza trek
-    const trek = await findTrekByIdParam(trekId);
+    const trek = await Trek.findOne({ id: Number(trekId) });
 
     if (!trek) {
       return res.status(404).json({
@@ -106,7 +106,7 @@ exports.addTrekToFavorites = async (req, res) => {
 
     // controlla se già nei preferiti
     const alreadyFavorite = user.favoriteTreks.some(
-      (id) => id.toString() === trek._id.toString()
+      (id) => id.toString() === trek._id.toString() || id.toString() === trekId
     );
 
     if (alreadyFavorite) {
@@ -120,8 +120,11 @@ exports.addTrekToFavorites = async (req, res) => {
 
     await user.save();
 
-    const favoriteTreks = await getPopulatedFavoriteTreks(userId);
-    res.status(200).json({ favoriteTreks });
+    // ripopola i trek
+    const updatedUser = await User.findById(userId)
+      .populate("favoriteTreks");
+
+    res.status(200).json(updatedUser);
 
   } catch (err) {
     if (err.name === "CastError") {
@@ -171,7 +174,7 @@ exports.removeTrekFromFavorites = async (req, res) => {
     const { trekId } = req.params;
 
     // controlla esistenza trek
-    const trek = await findTrekByIdParam(trekId);
+    const trek = await Trek.findOne({ id: Number(trekId) });
 
     if (!trek) {
       return res.status(404).json({
@@ -199,13 +202,18 @@ exports.removeTrekFromFavorites = async (req, res) => {
       });
     }
 
-    await User.updateOne(
-      { _id: userId },
-      { $pull: { favoriteTreks: trek._id } }
+    // rimuovi trek dai preferiti
+    user.favoriteTreks = user.favoriteTreks.filter(
+      (id) => id.toString() !== trek._id.toString()
     );
 
-    const favoriteTreks = await getPopulatedFavoriteTreks(userId);
-    res.status(200).json({ favoriteTreks });
+    await user.save();
+
+    // ripopola i trek
+    const updatedUser = await User.findById(userId)
+      .populate("favoriteTreks");
+
+    res.status(200).json(updatedUser);
 
   } catch (err) {
     if (err.name === "CastError") {

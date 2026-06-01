@@ -72,6 +72,7 @@ async function sendEmailChangeVerification(toEmail, token) {
     });
 }
 
+
 async function sendTemporaryPasswordEmail(toEmail, tempPassword) {
   await transporter.sendMail({
     from: `"DoloMate" <${process.env.GMAIL_USER}>`,

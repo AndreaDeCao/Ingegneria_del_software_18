@@ -112,6 +112,7 @@ const updateEntry = async (req, res) => {
       trekId: trekObjectId,
       percorsoPersonalizzato: percorsoPersonalizzato ?? entry.percorsoPersonalizzato,
       gpxData: gpxData ?? entry.gpxData,
+      amici: req.body.amici ?? entry.amici,
       segnalazione: segnalazione?.tipo ? segnalazione : entry.segnalazione,
     });
 

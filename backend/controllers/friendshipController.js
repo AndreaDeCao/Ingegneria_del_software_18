@@ -57,7 +57,7 @@ exports.sendRequest = async (req, res) => {
           `${sender.nickname} ti ha inviato una richiesta di amicizia`,
           existing._id
         );
-
+        
         return res.status(200).json({ message: "Richiesta di amicizia inviata nuovamente", friendship: existing });
       }
     }
@@ -76,7 +76,7 @@ exports.sendRequest = async (req, res) => {
       `${sender.nickname} ti ha inviato una richiesta di amicizia`,
       newFriendship._id
     );
-
+    
     res.status(201).json({ message: "Richiesta di amicizia inviata", friendship: newFriendship });
 
   } catch(err) {
@@ -120,7 +120,7 @@ exports.acceptRequest = async (req, res) => {
       "friend_accepted",
       `${sender.nickname} ha accettato la tua richiesta di amicizia`,
       friendship._id
-    ); 
+    );
 
     res.json({ message: "Richiesta di amicizia accettata.", friendship });
 
@@ -327,6 +327,7 @@ exports.searchUsers = async (req, res) => {
         { nome: { $regex: query, $options: "i" } },
         { cognome: { $regex: query, $options: "i" } },
       ],
+      role: "user",
     }, {
       projection: { nome: 1, cognome: 1, nickname: 1, avatarUrl: 1 }
     }).limit(20).toArray();
@@ -340,14 +341,7 @@ exports.searchUsers = async (req, res) => {
   }
 };
 
-/**
- * Aggiunge una notifica all'utente
- * 
- * @param {string} userId - ID utente destinatario
- * @param {string} type - Tipo di notifica
- * @param {string} message - Testo della notifica
- * @param {string|null} ref - ID risorsa correlata
- */
+
 async function addNotification(userId, type, message, ref = null) {
   try {
     await User.findByIdAndUpdate(userId, {

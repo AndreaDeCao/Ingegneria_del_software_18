@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+
 import styles from "./attivitaPage.module.css";
 import appStyles from "../../App.module.css";
+
 import { useAuth } from "../../auth/AuthProvider";
+import { http } from "../../auth/api";
+
 import type { Activity } from "../../types/Activity";
 import type {Trek} from "../../types/Trek";
 import type {Organizer} from "../../types/Organizer";
 import type {Participant} from "../../types/Participant";
+import type {Friend} from "../../types/Friend"
+import type {ActivityInvite} from "../../types/ActivityInvite";
 
 type ActivityPopulated = Omit<Activity, "partecipantList"> & {
   partecipantList: Participant[];
@@ -15,6 +21,25 @@ type ActivityPopulated = Omit<Activity, "partecipantList"> & {
 type ModalType = "join" | "leave" | "cancel" | "uncancel" | "delete" | null;
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
+function Banner({
+  msg,
+  type,
+  onClose,
+}: {
+  msg: string;
+  type: "success" | "error";
+  onClose: () => void;
+}) {
+  return (
+    <div className={`${styles.banner} ${type === "success" ? styles.bannerSuccess : styles.bannerError}`}>
+      <span>{msg}</span>
+      <button className={styles.bannerClose} onClick={onClose} aria-label="Chiudi">
+        ✕
+      </button>
+    </div>
+  );
+}
 
 export default function DettagliAttivita() {
   const { id } = useParams();
@@ -29,71 +54,101 @@ export default function DettagliAttivita() {
 
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [actionMessage, setActionMessage] = useState("");
 
-  useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        // const resActivity = await fetch(`http://localhost:3000/activities/${id}`);
-        const resActivity = await fetch(`${API_BASE}/activities/${id}`);
-        if (!resActivity.ok) {
-          const err = await resActivity.json().catch(() => ({}));
-          throw new Error(err.error || err.message || `Errore ${resActivity.status}`);
-        }
-        const activityData: ActivityPopulated = await resActivity.json();
-        activityData.partecipantList = activityData.partecipantList ?? [];
-        setActivity(activityData);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [invitedUsers, setInvitedUsers] = useState<string[]>([]);
+  const [friendSearch, setFriendSearch] = useState("");
+  const [pendingInvites, setPendingInvites] = useState<ActivityInvite[]>([]);
+  const [myInvite, setMyInvite] = useState<ActivityInvite | null>(null);
 
-        if (activityData.trekID) {
-          // 1. Recupera l'id numerico partendo dall'_id Mongo
-          const resId = await fetch(
-            `${API_BASE}/treks/by-mongo-id/${activityData.trekID}`
-          );
+  const [banner, setBanner] = useState<{ msg: string; type: "success" | "error" } | null>(null);
 
-          if (!resId.ok) return;
+  async function loadPageData() {
+    try {
+      setError(null);
+      // const resActivity = await fetch(`http://localhost:3000/activities/${id}`);
+      const resActivity = await fetch(`${API_BASE}/activities/${id}`);
+      if (!resActivity.ok) {
+        const err = await resActivity.json().catch(() => ({}));
+        throw new Error(err.error || err.message || `Errore ${resActivity.status}`);
+      }
 
-          const { id } = await resId.json();
+      const activityData: ActivityPopulated = await resActivity.json();
+      activityData.partecipantList = activityData.partecipantList ?? [];
+      setActivity(activityData);
+
+      if (activityData.trekID) {
+        // 1. Recupera l'id numerico partendo dall'_id Mongo
+        const resId = await fetch(`${API_BASE}/treks/by-mongo-id/${activityData.trekID}`);
+        if (resId.ok) {
+          const { id: trekNumericId } = await resId.json();
 
           // 2. Recupera il trek usando l'id numerico
-          const resTrek = await fetch(`${API_BASE}/treks/${id}`);
-
+          const resTrek = await fetch(`${API_BASE}/treks/${trekNumericId}`);
           if (resTrek.ok) setTrek(await resTrek.json());
-
         }
-
-        if (activityData.organizerID) {
-          const resOrg = await fetch(`${API_BASE}/users/${activityData.organizerID}`);
-          if (resOrg.ok) setOrganizer(await resOrg.json());
-        }
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
       }
-    };
 
-    fetchAll();
-  }, [id]);
+      if (activityData.organizerID) {
+        const resOrg = await fetch(`${API_BASE}/users/${activityData.organizerID}`);
+        if (resOrg.ok) setOrganizer(await resOrg.json());
+      }
 
-  function showMessage(msg: string) {
-    setActionMessage(msg);
-    setTimeout(() => setActionMessage(""), 4000);
+      const currentUserId = user?._id;
+      const isOrganizerView =
+        !!currentUserId && activityData.organizerID?.toString() === currentUserId;
+
+      if (isOrganizerView) {
+        const [friendsData, pendingData] = await Promise.all([
+          http<Friend[]>("/api/friendships"),
+          http<ActivityInvite[]>(`/activities/${id}/invites`),
+        ]);
+        setFriends(friendsData);
+        setPendingInvites(pendingData);
+        setMyInvite(null);
+        setInvitedUsers([]);
+        setFriendSearch("");
+      } else if (currentUserId) {
+        const myInvites = await http<ActivityInvite[]>(`/activities/${id}/invites/me`);        
+        setMyInvite(myInvites[0] ?? null);
+        setPendingInvites([]);
+        setFriends([]);
+        setInvitedUsers([]);
+        setFriendSearch("");
+      } else {
+        setFriends([]);
+        setPendingInvites([]);
+        setMyInvite(null);
+        setInvitedUsers([]);
+        setFriendSearch("");
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Errore nel caricamento dei dati");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    setLoading(true);
+    void loadPageData();
+  }, [id, user?._id]);
+
+  function showBanner(msg: string, type: "success" | "error") {
+    setBanner({ msg, type });
   }
 
   async function handleAction(endpoint: string, method: string) {
     setActionLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/activities/${id}/${endpoint}`, {
+      const updated = await http<ActivityPopulated>(`/activities/${id}/${endpoint}`, {
         method,
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userID: user?._id }),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || err.message || "Errore");
-      }
-      const updated: ActivityPopulated = await res.json();
       updated.partecipantList = updated.partecipantList ?? [];
       setActivity(updated);
 //      showMessage(
@@ -107,7 +162,7 @@ export default function DettagliAttivita() {
 //        "N/A"
 //      );
     } catch (err: any) {
-      showMessage(err.message || "Errore");
+      showBanner(err.message || "Errore", "error");
     } finally {
       setActionLoading(false);
       setActiveModal(null);
@@ -117,19 +172,13 @@ export default function DettagliAttivita() {
   async function handleDelete() {
     setActionLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/activities/${id}`, {
+      await http<{ message: string }>(`/activities/${id}`, {
         method: "DELETE",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userID: user?._id }),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || err.message || "Errore durante l'eliminazione");
-      }
       navigate("/attivita/visualizza");
     } catch (err: any) {
-      showMessage(err.message || "Errore");
+      showBanner(err.message || "Errore", "error");
       setActiveModal(null);
     } finally {
       setActionLoading(false);
@@ -172,9 +221,123 @@ export default function DettagliAttivita() {
   const participantCount = activity.partecipantList.length;
   const spotsLeft = activity.maxParticipants - participantCount;
   const isExpired = new Date(activity.activityDate).getTime() < Date.now();
-  const canJoin = !isOrganizer && !isParticipant && activity.status === "Aperto" && spotsLeft > 0 && !isExpired;
+  const canJoin = !isOrganizer && !isParticipant && activity.visibility === "public" && activity.status === "Aperto" && spotsLeft > 0 && !isExpired;
+  const canInviteFriends = isOrganizer && activity.status === "Aperto" && !isExpired && spotsLeft > 0;
 
   const organizerName = organizer?.nickname || `${organizer?.nome ?? ""} ${organizer?.cognome ?? ""}`.trim() || organizer?.email || "—";
+  const inviteableFriends = friends.filter((friend) =>
+    !pendingInvites.some((invite) => invite.receiver._id === friend.user._id) &&
+    !activity.partecipantList.some((participant) => participant._id === friend.user._id)
+  );
+  const displayedInviteableFriends = inviteableFriends
+    .filter(({ user: f }) =>
+      `${f.nome} ${f.cognome} ${f.nickname}`
+        .toLowerCase()
+        .includes(friendSearch.toLowerCase())
+    )
+    .slice(0, 5); //limito a 5 risultati di amici
+
+  /**
+   * Gestisce selezione di amici da invitare.
+   *
+   * @param {string} userId - ID dell'amico
+   */
+  function toggleInvite(userId: string) {
+    setInvitedUsers((prev) => {
+      if (prev.includes(userId)) {
+        return prev.filter((id) => id !== userId);
+      }
+      if (prev.length >= spotsLeft) {
+        showBanner(`Puoi invitare al massimo ${spotsLeft} amici`, "error");
+        return prev;
+      }
+      return [...prev, userId];
+    });
+  }
+
+  async function sendInvites() {
+    if (!canInviteFriends) {
+      showBanner("Non puoi inviare inviti su questa attività", "error");
+      return;
+    }
+    if (invitedUsers.length === 0) {
+      showBanner("Seleziona almeno un amico da invitare", "error");
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      await Promise.all(
+        invitedUsers.map((friendId) =>
+          http(`/activities/${id}/invite/${friendId}`, { method: "POST" })
+        )
+      );
+
+      setInvitedUsers([]);
+      setFriendSearch("");
+      showBanner("Inviti inviati", "success");
+      await loadPageData();
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        showBanner(err.message, "error");
+      } else {
+        showBanner("Errore durante l'invio degli inviti", "error");
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function acceptInvite(inviteId: string) {
+    setActionLoading(true);
+    try {
+      await http(`/activities/${id}/invites/${inviteId}/accept`, { method: "PUT" });
+      showBanner("Invito accettato", "success");
+      await loadPageData();
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        showBanner(err.message, "error");
+      } else {
+        showBanner("Errore durante l'accettazione dell'invito", "error");
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function declineInvite(inviteId: string) {
+    setActionLoading(true);
+    try {
+      await http(`/activities/${id}/invites/${inviteId}/decline`, { method: "PUT" });
+      showBanner("Invito rifiutato", "success");
+      await loadPageData();
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        showBanner(err.message, "error");
+      } else {
+        showBanner("Errore durante il rifiuto dell'invito", "error");
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function cancelInvite(inviteId: string) {
+    setActionLoading(true);
+    try {
+      await http(`/activities/${id}/invites/${inviteId}/cancel`, { method: "PUT" });
+      showBanner("Invito revocato", "success");
+      await loadPageData();
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        showBanner(err.message, "error");
+      } else {
+        showBanner("Errore durante la revoca dell'invito", "error");
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  }
 
   return (
     <main className={styles.page}>
@@ -184,20 +347,25 @@ export default function DettagliAttivita() {
         <div className={appStyles.leftColumn}>
           <div style={{ paddingBottom: "20px" }}>
             {isOrganizer && (
-                <>
-                  <div className={styles.organizerBadge}>Sei l'organizzatore di questa attività</div>
-                </>
+              <>
+                <div className={styles.organizerBadge}>Sei l'organizzatore di questa attività</div>
+              </>
             )}
             {isParticipant && (
               <>
                 <div className={styles.alreadyJoinedBadge}>Partecipi a questa attività</div>
-                </>
+              </>
+            )}
+            {activity.visibility === "private" && (
+              <>
+                <div className={styles.visibilityBadge}>L'attività è privata</div>
+              </>
             )}
             {isExpired && (
-                <div className={styles.errorBox}>
-                  Questa attività è scaduta — la data era il {new Date(activity.activityDate).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" })}
-                </div>
-            )}
+              <div className={styles.errorBox}>
+                Questa attività è scaduta — la data era il {new Date(activity.activityDate).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" })}
+              </div>
+            )}  
           </div>
 
           {/* Hero */}
@@ -301,9 +469,11 @@ export default function DettagliAttivita() {
             )}
 
             {/* Non può partecipare */}
-            {!isOrganizer && !isParticipant && !canJoin && (
+            {!isOrganizer && !isParticipant && activity.visibility === "public" && !canJoin && (
               <button className={appStyles.primaryButton} disabled>
-                {activity.status !== "Aperto" ? `Iscrizione non disponibile (${activity.status ?? ""})` : "Attività al completo"}
+                {activity.status !== "Aperto"
+                  ? `Iscrizione non disponibile (${activity.status ?? ""})`
+                  : "Attività al completo"}
               </button>
             )}
 
@@ -318,13 +488,19 @@ export default function DettagliAttivita() {
               </>
             )}
 
-            {actionMessage && <p className={styles.message}>{actionMessage}</p>}
           </div>
 
         </div>
 
         {/* ── DESTRA ── */}
         <div className={appStyles.rightColumn}>
+            {banner && (
+              <Banner
+                msg={banner.msg}
+                type={banner.type}
+                onClose={() => setBanner(null)}
+              />
+            )}
             <div className={appStyles.buttonBox}>
               <Link to="/attivita/visualizza" className={appStyles.primaryButton}>
                 Lista attività
@@ -343,9 +519,13 @@ export default function DettagliAttivita() {
               <ul className={styles.participantList}>
                 {activity.partecipantList.map((p, i) => (
                   <li key={p._id} className={styles.participantItem}>
-                    <div className={styles.participantAvatar}>
-                      {(p.nickname?.[0] ?? p.email?.[0] ?? "?").toUpperCase()}
-                    </div>
+                    {p.avatarUrl ? (
+                      <img src={p.avatarUrl} alt={p.nickname} className={styles.participantAvatarImage} />
+                    ) : (
+                      <div className={styles.participantAvatar}>
+                        {(p.nickname?.[0] ?? p.email?.[0] ?? "?").toUpperCase()}
+                      </div>
+                    )}
                     <div className={styles.participantInfo}>
                       <span className={styles.participantNickname}>
                         {p.nickname}
@@ -358,6 +538,165 @@ export default function DettagliAttivita() {
               </ul>
             )}
           </div>
+
+          {canInviteFriends && (
+            <div className={styles.section}>
+              <label className={styles.label}>
+                Invita amici {spotsLeft > 0 ? `(max ${spotsLeft})` : "(nessun posto disponibile)"}
+              </label>
+
+              {spotsLeft <= 0 ? (
+                <p className={styles.emptyFriends}>
+                  Non ci sono posti disponibili per nuovi inviti.
+                </p>
+              ) : inviteableFriends.length === 0 ? (
+                <p className={styles.emptyFriends}>
+                  Non hai amici disponibili da invitare
+                </p>
+              ) : (
+                <>
+                  <input
+                    className={styles.input}
+                    placeholder="Cerca un amico..."
+                    value={friendSearch}
+                    onChange={(e) => setFriendSearch(e.target.value)}
+                  />
+
+                  <div className={styles.friendsList}>
+                    {displayedInviteableFriends.map(({ friendshipId, user: friend }) => {
+                        const isSelected = invitedUsers.includes(friend._id);
+                        return (
+                          <div
+                            key={friendshipId}
+                            onClick={() => toggleInvite(friend._id)}
+                            className={`${styles.friendItem} ${isSelected ? styles.friendItemSelected : ""}`}
+                          >
+                            {friend.avatarUrl ? (
+                              <img
+                                src={friend.avatarUrl}
+                                alt={friend.nickname}
+                                className={styles.friendAvatar}
+                              />
+                            ) : (
+                              <div className={styles.friendAvatarPlaceholder}>
+                                {friend.nome?.[0]?.toUpperCase() ?? "?"}
+                              </div>
+                            )}
+                            <div className={styles.friendInfo}>
+                              <p className={styles.friendName}>
+                                {friend.nome} {friend.cognome}
+                              </p>
+                              <p className={styles.friendNickname}>@{friend.nickname}</p>
+                            </div>
+                            <div className={styles.friendCheck}>
+                              {isSelected ? (
+                                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={2.5}>
+                                  <circle cx={12} cy={12} r={10} />
+                                  <path d="M8 12l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              ) : (
+                                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--border)" strokeWidth={2}>
+                                  <circle cx={12} cy={12} r={10} />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </>
+              )}
+
+              <button
+                className={appStyles.primaryButton}
+                onClick={sendInvites}
+                disabled={actionLoading || invitedUsers.length === 0 || spotsLeft <= 0}
+              >
+                {actionLoading ? "Invio in corso..." : "Invia inviti"}
+              </button>
+            </div>
+          )}
+
+          {pendingInvites.length > 0 && isOrganizer && (
+            <div className={styles.section}>
+              <h2 className={styles.detailSectionTitle}>
+                Inviti in attesa
+                <span className={styles.sectionCount}>{pendingInvites.length}</span>
+              </h2>
+
+              <div className={styles.inviteList}>
+                {pendingInvites.map((invite) => {
+                  const receiver = invite.receiver;
+                  return (
+                    <div key={invite._id} className={styles.inviteCard}>
+                      {receiver.avatarUrl ? (
+                        <img src={receiver.avatarUrl} alt={receiver.nickname} className={styles.friendAvatar} />
+                      ) : (
+                        <div className={styles.friendAvatarPlaceholder}>
+                          {receiver.nome?.[0]?.toUpperCase() ?? "?"}
+                        </div>
+                      )}
+                      <div className={styles.inviteInfo}>
+                        <p className={styles.friendName}>
+                          {receiver.nome} {receiver.cognome}
+                        </p>
+                        <p className={styles.friendNickname}>@{receiver.nickname}</p>
+                      </div>
+                      <div className={styles.inviteActions}>
+                        <span className={styles.pendingBadge}>In attesa</span>
+                        <button
+                          className={styles.leaveButton}
+                          onClick={() => cancelInvite(invite._id)}
+                          disabled={actionLoading}
+                        >
+                          Annulla invito
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {myInvite && !isParticipant && (
+            <div className={styles.section}>
+              <h2 className={styles.detailSectionTitle}>Invito ricevuto</h2>
+
+              <div className={styles.inviteCard}>
+                {myInvite.sender.avatarUrl ? (
+                  <img src={myInvite.sender.avatarUrl} alt={myInvite.sender.nickname} className={styles.friendAvatar} />
+                ) : (
+                  <div className={styles.friendAvatarPlaceholder}>
+                    {myInvite.sender.nome?.[0]?.toUpperCase() ?? "?"}
+                  </div>
+                )}
+                <div className={styles.inviteInfo}>
+                  <p className={styles.friendName}>
+                    {myInvite.sender.nome} {myInvite.sender.cognome}
+                  </p>
+                  <p className={styles.friendNickname}>@{myInvite.sender.nickname}</p>
+                </div>
+                <div className={styles.inviteActions}>
+                  <button
+                    className={styles.dangerButton}
+                    onClick={() => declineInvite(myInvite._id)}
+                    disabled={actionLoading}
+                  >
+                    Rifiuta
+                  </button>
+                  <button
+                    className={appStyles.primaryButton}
+                    onClick={() => acceptInvite(myInvite._id)}
+                    disabled={actionLoading}
+                  >
+                    Accetta
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          
         </div>
 
       </div>
