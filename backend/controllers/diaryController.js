@@ -10,7 +10,6 @@ const getDiary = async (req, res) => {
       .find({ userId })
       // modifica il populate in getDiary
       .populate("trekId", "name difficulty duration lengthKm coordinates endCoordinates id")
-      .populate("amici", "nome cognome nickname avatarUrl")
       .sort({ data: -1 })
       .limit(100);
 
@@ -25,8 +24,7 @@ const getEntryById = async (req, res) => {
   try {
     const entry = await DiaryEntry
       .findOne({ _id: req.params.id, userId: req.userId })
-      .populate("trekId", "name difficulty duration lengthKm coordinates endCoordinates id")
-      .populate("amici", "nome cognome nickname avatarUrl");
+      .populate("trekId", "name difficulty duration lengthKm coordinates endCoordinates id");
 
     if (!entry) return res.status(404).json({ error: "Voce non trovata" });
     res.json(entry);
@@ -97,7 +95,6 @@ const updateEntry = async (req, res) => {
       trekId: trekObjectId,
       percorsoPersonalizzato: percorsoPersonalizzato ?? entry.percorsoPersonalizzato,
       gpxData: gpxData ?? entry.gpxData,
-      amici: req.body.amici ?? entry.amici,
       segnalazione: segnalazione?.tipo ? segnalazione : entry.segnalazione,
     });
 

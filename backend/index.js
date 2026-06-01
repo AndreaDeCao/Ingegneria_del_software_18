@@ -59,7 +59,6 @@ const diaryRoutes = require("./routes/diaryRoutes");
 const eventRoutes = require("./routes/eventRoutes");
 
 const routeRoutes = require("./routes/routeRoutes");
-const friendshipRoutes = require("./routes/friendshipRoutes");
 
 app.use("/treks", trekRoutes);
 app.use("/users", userRoutes);
@@ -69,7 +68,6 @@ app.use("/api/weather", weatherRoutes);
 app.use("/api/diary", diaryRoutes);
 app.use("/api/trento-events", eventRoutes);
 app.use("/api/route", routeRoutes);
-app.use("/api/friendships", friendshipRoutes);
 
 // Connessione a MongoDB
 mongoose.connect(process.env.MONGODB_URI, { family: 4 })  // Imposta family: 4 per forzare l'uso di IPv4
@@ -90,7 +88,6 @@ mongoose.connect(process.env.MONGODB_URI, { family: 4 })  // Imposta family: 4 p
 //   if (!trek) return res.status(404).json({ error: "Percorso non trovato" });
 //   res.json(trek);
 // });
-
 
 app.listen(3000, () => {
   console.log("Server running on http://localhost:3000");

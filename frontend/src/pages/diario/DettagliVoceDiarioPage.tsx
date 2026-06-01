@@ -321,21 +321,6 @@ export default function DettagliVoceDiarioPage() {
             </div>
           )}
 
-          {/* AMICI */}
-          {entry.amici && entry.amici.length > 0 && (
-            <div className={styles.amiciRow}>
-              <span className={styles.amiciLabel}>Fatto con:</span>
-              {entry.amici.map((a, i) => (
-                <span
-                  key={i}
-                  className={styles.amiciBadge}
-                >
-                  @{a.nickname ?? a.nome}
-                </span>
-              ))}
-            </div>
-          )}
-
           {/* MAPPA */}
           <div className={styles.mapContainer}>
             <TrekMap

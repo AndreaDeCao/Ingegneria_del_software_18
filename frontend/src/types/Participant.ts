@@ -4,5 +4,4 @@ export type Participant = {
   email: string;
   nome?: string;
   cognome?: string;
-  avatarUrl?: string;
 };

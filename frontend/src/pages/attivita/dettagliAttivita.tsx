@@ -1,76 +1,27 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-
 import styles from "./attivitaPage.module.css";
 import appStyles from "../../App.module.css";
-
 import { useAuth } from "../../auth/AuthProvider";
-import { http } from "../../auth/api";
+import type {Trek} from "../../types/Trek";
+import type {Organizer} from "../../types/Organizer";
+import type {ActivityPopulated} from "../../types/ActivityPopulated";
 
-import type { Activity } from "../../types/Activity";
-import type { Trek } from "../../types/Trek";
-import type { Organizer } from "../../types/Organizer";
-import type { Participant } from "../../types/Participant";
-import type { Friend } from "../../types/Friend";
-import type { ActivityInvite } from "../../types/ActivityInvite";
-import type { ActivityPopulated } from "../../types/ActivityPopulated";
 
-// ActivityPopulated usato internamente (include partecipantList già popolata + campi admin)
-type ActivityFull = Omit<Activity, "partecipantList"> & {
-  partecipantList: Participant[];
-  suspended?: boolean;
-  suspendedReason?: string;
-  reports?: any[];
-};
-
-type ModalType =
-  | "join"
-  | "leave"
-  | "cancel"
-  | "uncancel"
-  | "delete"
-  | "suspend"
-  | "unsuspend"
-  | "report"
-  | null;
+type ModalType = "join" | "leave" | "cancel" | "uncancel" | "delete" | "suspend" | "unsuspend" | "report" | null;
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
-// Polling ogni 15 s — aggiorna stato attività senza ricaricare la pagina
+// Intervallo di polling in ms — aggiorna lo stato dell'attivita senza ricaricare la pagina
+// In questo modo quando admin accetta una segnalazione, il banner appare automaticamente
 const POLL_INTERVAL_MS = 15_000;
-
-// ── Banner success/error (dal branch testing) ─────────────────────────────
-function Banner({
-  msg,
-  type,
-  onClose,
-}: {
-  msg: string;
-  type: "success" | "error";
-  onClose: () => void;
-}) {
-  return (
-    <div
-      className={`${styles.banner} ${
-        type === "success" ? styles.bannerSuccess : styles.bannerError
-      }`}
-    >
-      <span>{msg}</span>
-      <button className={styles.bannerClose} onClick={onClose} aria-label="Chiudi">
-        ✕
-      </button>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default function DettagliAttivita() {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [activity, setActivity] = useState<ActivityFull | null>(null);
+  const [activity, setActivity] = useState<ActivityPopulated | null>(null);
   const [trek, setTrek] = useState<Trek | null>(null);
   const [organizer, setOrganizer] = useState<Organizer | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,163 +31,99 @@ export default function DettagliAttivita() {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
 
-  // ── Inviti amici (branch testing) ──
-  const [friends, setFriends] = useState<Friend[]>([]);
-  const [invitedUsers, setInvitedUsers] = useState<string[]>([]);
-  const [friendSearch, setFriendSearch] = useState("");
-  const [pendingInvites, setPendingInvites] = useState<ActivityInvite[]>([]);
-  const [myInvite, setMyInvite] = useState<ActivityInvite | null>(null);
-
-  // ── Banner success/error (branch testing) ──
-  const [banner, setBanner] = useState<{ msg: string; type: "success" | "error" } | null>(null);
-
-  // ── Sospensione (branch admin) ──
+  // Motivo sospensione (campo opzionale nella modale suspend)
   const [suspendReason, setSuspendReason] = useState("");
 
-  // ── Segnalazioni (branch admin) ──
+  // Segnalazione
   const [reportReason, setReportReason] = useState("");
   const [reportSuccess, setReportSuccess] = useState(false);
 
-  // ── Polling: ricarica solo l'attività senza resettare il resto ─────────────
-  const refreshActivity = useCallback(async () => {
+  // Carica solo i dati dell'attivita (senza trek/organizer, gia caricati una volta sola)
+  const refreshActivity = useCallback(async (silent = false) => {
     if (!id) return;
     try {
-      const res = await fetch(`${API_BASE}/activities/${id}`);
-      if (!res.ok) return;
-      const data: ActivityFull = await res.json();
-      data.partecipantList = data.partecipantList ?? [];
-      setActivity(data);
+      const resActivity = await fetch(`${API_BASE}/activities/${id}`);
+      if (!resActivity.ok) return;
+      const activityData: ActivityPopulated = await resActivity.json();
+      activityData.partecipantList = activityData.partecipantList ?? [];
+      setActivity(activityData);
     } catch {
-      // silenzioso
+      // silenzioso — non blocca il render
     }
   }, [id]);
 
-  // ── Caricamento completo pagina ───────────────────────────────────────────
-  async function loadPageData() {
-    try {
-      setError(null);
-      const resActivity = await fetch(`${API_BASE}/activities/${id}`);
-      if (!resActivity.ok) {
-        const err = await resActivity.json().catch(() => ({}));
-        throw new Error(err.error || err.message || `Errore ${resActivity.status}`);
-      }
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const resActivity = await fetch(`${API_BASE}/activities/${id}`);
+        if (!resActivity.ok) {
+          const err = await resActivity.json().catch(() => ({}));
+          throw new Error(err.error || err.message || `Errore ${resActivity.status}`);
+        }
+        const activityData: ActivityPopulated = await resActivity.json();
+        activityData.partecipantList = activityData.partecipantList ?? [];
+        setActivity(activityData);
 
-      const activityData: ActivityFull = await resActivity.json();
-      activityData.partecipantList = activityData.partecipantList ?? [];
-      setActivity(activityData);
-
-      if (activityData.trekID) {
-        const resId = await fetch(`${API_BASE}/treks/by-mongo-id/${activityData.trekID}`);
-        if (resId.ok) {
-          const { id: trekNumericId } = await resId.json();
-          const resTrek = await fetch(`${API_BASE}/treks/${trekNumericId}`);
+        if (activityData.trekID) {
+          const resId = await fetch(`${API_BASE}/treks/by-mongo-id/${activityData.trekID}`);
+          if (!resId.ok) return;
+          const { id } = await resId.json();
+          const resTrek = await fetch(`${API_BASE}/treks/${id}`);
           if (resTrek.ok) setTrek(await resTrek.json());
         }
+
+        if (activityData.organizerID) {
+          const resOrg = await fetch(`${API_BASE}/users/${activityData.organizerID}`);
+          if (resOrg.ok) setOrganizer(await resOrg.json());
+        }
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      if (activityData.organizerID) {
-        const resOrg = await fetch(`${API_BASE}/users/${activityData.organizerID}`);
-        if (resOrg.ok) setOrganizer(await resOrg.json());
-      }
+    fetchAll();
+  }, [id]);
 
-      const currentUserId = user?._id;
-      const isOrganizerView =
-        !!currentUserId && activityData.organizerID?.toString() === currentUserId;
-      const isAdminView = user?.role === "admin";
-
-      if (isOrganizerView) {
-        // Organizzatore: carica lista amici + inviti pendenti sull'attività
-        const [friendsData, pendingData] = await Promise.all([
-          http<Friend[]>("/api/friendships"),
-          http<ActivityInvite[]>(`/activities/${id}/invites`),
-        ]);
-        setFriends(friendsData);
-        setPendingInvites(pendingData);
-        setMyInvite(null);
-        setInvitedUsers([]);
-        setFriendSearch("");
-      } else if (currentUserId && !isAdminView) {
-        // Utente normale: controlla se ha un invito ricevuto
-        const myInvites = await http<ActivityInvite[]>(`/activities/${id}/invites/me`);
-        setMyInvite(myInvites[0] ?? null);
-        setPendingInvites([]);
-        setFriends([]);
-        setInvitedUsers([]);
-        setFriendSearch("");
-      } else {
-        setFriends([]);
-        setPendingInvites([]);
-        setMyInvite(null);
-        setInvitedUsers([]);
-        setFriendSearch("");
-      }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Errore nel caricamento dei dati");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    setLoading(true);
-    void loadPageData();
-  }, [id, user?._id]);
-
-  // Polling automatico
+  // Polling automatico — aggiorna lo stato dell'attivita (segnalazioni, sospensione, partecipanti)
+  // senza che l'utente debba ricaricare la pagina manualmente
   useEffect(() => {
     const interval = setInterval(() => {
-      void refreshActivity();
+      refreshActivity(true);
     }, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [refreshActivity]);
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
-  function showBanner(msg: string, type: "success" | "error") {
-    setBanner({ msg, type });
-  }
 
   function showMessage(msg: string) {
     setActionMessage(msg);
     setTimeout(() => setActionMessage(""), 4000);
   }
 
-  // ── Azioni generiche (join, leave, cancel, uncancel, open, close) ─────────
   async function handleAction(endpoint: string, method: string) {
     setActionLoading(true);
     try {
-      const updated = await http<ActivityFull>(`/activities/${id}/${endpoint}`, {
+      const res = await fetch(`${API_BASE}/activities/${id}/${endpoint}`, {
         method,
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userID: user?._id, userRole: user?.role }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || err.message || "Errore");
+      }
+      const updated: ActivityPopulated = await res.json();
       updated.partecipantList = updated.partecipantList ?? [];
       setActivity(updated);
     } catch (err: any) {
-      showBanner(err.message || "Errore", "error");
+      showMessage(err.message || "Errore");
     } finally {
       setActionLoading(false);
       setActiveModal(null);
     }
   }
 
-  // ── Delete ────────────────────────────────────────────────────────────────
-  async function handleDelete() {
-    setActionLoading(true);
-    try {
-      await http<{ message: string }>(`/activities/${id}`, {
-        method: "DELETE",
-        body: JSON.stringify({ userID: user?._id, userRole: user?.role }),
-      });
-      navigate("/attivita/visualizza");
-    } catch (err: any) {
-      showBanner(err.message || "Errore", "error");
-      setActiveModal(null);
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
-  // ── Sospensione (admin) ───────────────────────────────────────────────────
   async function handleSuspend() {
     setActionLoading(true);
     try {
@@ -250,7 +137,7 @@ export default function DettagliAttivita() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || err.message || "Errore");
       }
-      const updated: ActivityFull = await res.json();
+      const updated: ActivityPopulated = await res.json();
       updated.partecipantList = updated.partecipantList ?? [];
       setActivity(updated);
       setSuspendReason("");
@@ -275,7 +162,7 @@ export default function DettagliAttivita() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || err.message || "Errore");
       }
-      const updated: ActivityFull = await res.json();
+      const updated: ActivityPopulated = await res.json();
       updated.partecipantList = updated.partecipantList ?? [];
       setActivity(updated);
     } catch (err: any) {
@@ -286,7 +173,28 @@ export default function DettagliAttivita() {
     }
   }
 
-  // ── Segnalazioni (admin + utente) ─────────────────────────────────────────
+  async function handleDelete() {
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/activities/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userID: user?._id, userRole: user?.role }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || err.message || "Errore durante l'eliminazione");
+      }
+      navigate("/attivita/visualizza");
+    } catch (err: any) {
+      showMessage(err.message || "Errore");
+      setActiveModal(null);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   async function handleReport() {
     setActionLoading(true);
     try {
@@ -323,7 +231,7 @@ export default function DettagliAttivita() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || err.message || "Errore");
       }
-      const updated: ActivityFull = await res.json();
+      const updated: ActivityPopulated = await res.json();
       updated.partecipantList = updated.partecipantList ?? [];
       setActivity(updated);
     } catch (err: any) {
@@ -333,85 +241,6 @@ export default function DettagliAttivita() {
     }
   }
 
-  // ── Inviti amici (branch testing) ─────────────────────────────────────────
-  function toggleInvite(userId: string) {
-    setInvitedUsers((prev) => {
-      if (prev.includes(userId)) return prev.filter((uid) => uid !== userId);
-      if (prev.length >= spotsLeft) {
-        showBanner(`Puoi invitare al massimo ${spotsLeft} amici`, "error");
-        return prev;
-      }
-      return [...prev, userId];
-    });
-  }
-
-  async function sendInvites() {
-    if (!canInviteFriends) {
-      showBanner("Non puoi inviare inviti su questa attività", "error");
-      return;
-    }
-    if (invitedUsers.length === 0) {
-      showBanner("Seleziona almeno un amico da invitare", "error");
-      return;
-    }
-    setActionLoading(true);
-    try {
-      await Promise.all(
-        invitedUsers.map((friendId) =>
-          http(`/activities/${id}/invite/${friendId}`, { method: "POST" })
-        )
-      );
-      setInvitedUsers([]);
-      setFriendSearch("");
-      showBanner("Inviti inviati", "success");
-      await loadPageData();
-    } catch (err: unknown) {
-      showBanner(err instanceof Error ? err.message : "Errore durante l'invio degli inviti", "error");
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
-  async function acceptInvite(inviteId: string) {
-    setActionLoading(true);
-    try {
-      await http(`/activities/${id}/invites/${inviteId}/accept`, { method: "PUT" });
-      showBanner("Invito accettato", "success");
-      await loadPageData();
-    } catch (err: unknown) {
-      showBanner(err instanceof Error ? err.message : "Errore durante l'accettazione dell'invito", "error");
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
-  async function declineInvite(inviteId: string) {
-    setActionLoading(true);
-    try {
-      await http(`/activities/${id}/invites/${inviteId}/decline`, { method: "PUT" });
-      showBanner("Invito rifiutato", "success");
-      await loadPageData();
-    } catch (err: unknown) {
-      showBanner(err instanceof Error ? err.message : "Errore durante il rifiuto dell'invito", "error");
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
-  async function cancelInvite(inviteId: string) {
-    setActionLoading(true);
-    try {
-      await http(`/activities/${id}/invites/${inviteId}/cancel`, { method: "PUT" });
-      showBanner("Invito revocato", "success");
-      await loadPageData();
-    } catch (err: unknown) {
-      showBanner(err instanceof Error ? err.message : "Errore durante la revoca dell'invito", "error");
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
-  // ── Helpers UI ────────────────────────────────────────────────────────────
   const getStatusClass = (status: string) => {
     switch (status) {
       case "Annullato": return styles.statusCancelled;
@@ -439,139 +268,99 @@ export default function DettagliAttivita() {
       hour: "2-digit", minute: "2-digit",
     });
 
-  // ── Guards ────────────────────────────────────────────────────────────────
-  if (loading) return <main className={styles.page}><p className={styles.message}>Caricamento attività...</p></main>;
-  if (error || !activity) return <main className={styles.page}><p className={styles.messageError}>{error || "Attività non trovata"}</p></main>;
+  if (loading) return <main className={styles.page}><p className={styles.message}>Caricamento attivita...</p></main>;
+  if (error || !activity) return <main className={styles.page}><p className={styles.messageError}>{error || "Attivita non trovata"}</p></main>;
 
-  // ── Variabili derivate ────────────────────────────────────────────────────
   const currentUserID = user?._id;
-  const isAdmin      = user?.role === "admin";
-  const isOrganizer  = !isAdmin && !!currentUserID && activity.organizerID?.toString() === currentUserID;
+  const isAdmin = user?.role === "admin";
+  const isOrganizer = !isAdmin && !!currentUserID && activity.organizerID?.toString() === currentUserID;
   const isParticipant = !isOrganizer && !isAdmin && activity.partecipantList.some((p) => p._id === currentUserID);
   const participantCount = activity.partecipantList.length;
   const spotsLeft = activity.maxParticipants - participantCount;
   const isExpired = new Date(activity.activityDate).getTime() < Date.now();
   const isSuspended = activity.suspended === true;
+  const canJoin = !isOrganizer && !isAdmin && !isParticipant && activity.status === "Aperto" && spotsLeft > 0 && !isExpired;
 
-  // canJoin: solo utenti normali, attività pubblica, aperta, non scaduta, posti disponibili
-  const canJoin =
-    !isOrganizer &&
-    !isAdmin &&
-    !isParticipant &&
-    activity.visibility === "public" &&
-    activity.status === "Aperto" &&
-    spotsLeft > 0 &&
-    !isExpired;
+  const organizerName = organizer?.nickname || `${organizer?.nome ?? ""} ${organizer?.cognome ?? ""}`.trim() || organizer?.email || "—";
 
-  // L'organizzatore può invitare amici se l'attività è aperta, non scaduta, ci sono posti
-  const canInviteFriends = isOrganizer && activity.status === "Aperto" && !isExpired && spotsLeft > 0;
-
-  const organizerName =
-    organizer?.nickname ||
-    `${organizer?.nome ?? ""} ${organizer?.cognome ?? ""}`.trim() ||
-    organizer?.email ||
-    "—";
-
-  // Amici invitabili: esclude chi ha già un invito pendente o è già partecipante
-  const inviteableFriends = friends.filter(
-    (friend) =>
-      !pendingInvites.some((invite) => invite.receiver._id === friend.user._id) &&
-      !activity.partecipantList.some((p) => p._id === friend.user._id)
-  );
-  const displayedInviteableFriends = inviteableFriends
-    .filter(({ user: f }) =>
-      `${f.nome} ${f.cognome} ${f.nickname}`.toLowerCase().includes(friendSearch.toLowerCase())
-    )
-    .slice(0, 5);
-
-  // Segnalazioni (admin)
-  const reports = activity.reports ?? [];
-  const myReport =
-    !isAdmin && !isOrganizer && currentUserID
-      ? reports.find(
-          (r: any) => (r.reportedBy?._id ?? r.reportedBy)?.toString() === currentUserID
-        )
-      : undefined;
+  // Segnalazioni: l'utente ha gia segnalato questa attivita?
+  const reports = (activity as any).reports ?? [];
+  // Segnalazione dell'utente corrente (se presente)
+  const myReport = !isAdmin && !isOrganizer && currentUserID
+    ? reports.find((r: any) => (r.reportedBy?._id ?? r.reportedBy)?.toString() === currentUserID)
+    : undefined;
   const hasAlreadyReported = !!myReport;
+  // Segnalazioni accettate — visibili a tutti
   const acceptedReports = reports.filter((r: any) => r.reportStatus === "accepted");
   const hasAcceptedReport = acceptedReports.length > 0;
+  // Segnalazioni in attesa — solo admin (le dismissed non vengono mostrate nel pannello admin di questa pagina)
   const pendingReports = reports.filter((r: any) => r.reportStatus === "pending");
 
-  // ─────────────────────────────────────────────────────────────────────────
   return (
     <main className={styles.page}>
       <div className={appStyles.contentLayout}>
 
-        {/* ══════════════════ COLONNA SINISTRA ══════════════════ */}
+        {/* ── SINISTRA ── */}
         <div className={appStyles.leftColumn}>
 
-          {/* Banner sospensione (admin) */}
+          {/* Banner sospensione */}
           {isSuspended && (
             <div className={styles.suspendedBanner}>
-              <span className={styles.suspendedBannerTitle}>Attività sospesa dall'amministrazione</span>
-              <span className={styles.suspendedBannerReason}>
-                {activity.suspendedReason
-                  ? `Motivo: ${activity.suspendedReason}`
-                  : "Nessun motivo specificato. Contatta l'amministrazione per maggiori informazioni."}
-              </span>
+              <span className={styles.suspendedBannerTitle}>Attivita sospesa dall'amministrazione</span>
+              {activity.suspendedReason && (
+                <span className={styles.suspendedBannerReason}>Motivo: {activity.suspendedReason}</span>
+              )}
+              {!activity.suspendedReason && (
+                <span className={styles.suspendedBannerReason}>Nessun motivo specificato. Contatta l'amministrazione per maggiori informazioni.</span>
+              )}
             </div>
           )}
 
-          {/* Banner segnalazione accettata */}
+          {/* Banner segnalazione accettata — visibile a tutti (testo diverso per organizzatore) */}
           {hasAcceptedReport && (
             <div className={styles.reportedBanner}>
               <span className={styles.reportedBannerTitle}>
-                {isOrganizer ? "La tua attività è stata segnalata" : "Questa attività è stata segnalata"}
+                {isOrganizer
+                  ? "La tua attivita e stata segnalata"
+                  : "Questa attivita e stata segnalata"}
               </span>
               <span className={styles.reportedBannerReason}>
                 {isOrganizer
-                  ? `${acceptedReports.length} segnalazion${acceptedReports.length === 1 ? "e" : "i"} accettat${acceptedReports.length === 1 ? "a" : "e"} dall'amministrazione. Controlla il contenuto e contatta l'amministrazione se ritieni sia un errore.`
+                  ? `${acceptedReports.length} segnalazion${acceptedReports.length === 1 ? "e" : "i"} accettat${acceptedReports.length === 1 ? "a" : "e"} dall'amministrazione. Controlla il contenuto dell'attivita e contatta l'amministrazione se ritieni sia un errore.`
                   : `${acceptedReports.length} segnalazion${acceptedReports.length === 1 ? "e" : "i"} accettat${acceptedReports.length === 1 ? "a" : "e"} dall'amministrazione. Procedi con cautela.`}
               </span>
             </div>
           )}
 
-          {/* Badge ruolo / stato */}
           <div style={{ paddingBottom: "20px" }}>
             {isAdmin && (
-              <div className={styles.adminBadge}>Stai visualizzando questa attività come amministratore</div>
+              <div className={styles.adminBadge}>Stai visualizzando questa attivita come amministratore</div>
             )}
             {isOrganizer && !isSuspended && (
-              <div className={styles.organizerBadge}>Sei l'organizzatore di questa attività</div>
+              <div className={styles.organizerBadge}>Sei l'organizzatore di questa attivita</div>
             )}
             {isOrganizer && isSuspended && (
               <div className={styles.organizerBadge}>
-                Sei l'organizzatore — la gestione è temporaneamente bloccata dall'amministrazione
+                Sei l'organizzatore — la gestione e temporaneamente bloccata dall'amministrazione
               </div>
             )}
             {isParticipant && (
-              <div className={styles.alreadyJoinedBadge}>Partecipi a questa attività</div>
-            )}
-            {activity.visibility === "private" && (
-              <div className={styles.visibilityBadge}>L'attività è privata</div>
+              <div className={styles.alreadyJoinedBadge}>Partecipi a questa attivita</div>
             )}
             {isExpired && (
               <div className={styles.errorBox}>
-                Questa attività è scaduta — la data era il{" "}
-                {new Date(activity.activityDate).toLocaleDateString("it-IT", {
-                  day: "2-digit", month: "long", year: "numeric",
-                })}
+                Questa attivita e scaduta — la data era il {new Date(activity.activityDate).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" })}
               </div>
             )}
           </div>
 
-          {/* ── Hero ── */}
+          {/* Hero */}
           <div className={styles.detailHero}>
             <div className={styles.detailHeroTop}>
               <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
                 {(() => {
-                  const effectiveStatus =
-                    activity.status === "Aperto" && isExpired ? "Chiuso" : activity.status;
-                  return (
-                    <span className={`${styles.statusBadge} ${getStatusClass(effectiveStatus ?? "")}`}>
-                      {effectiveStatus ?? "—"}
-                    </span>
-                  );
+                  const effectiveStatus = (activity.status === "Aperto" && isExpired) ? "Chiuso" : activity.status;
+                  return <span className={`${styles.statusBadge} ${getStatusClass(effectiveStatus ?? "")}`}>{effectiveStatus ?? "—"}</span>;
                 })()}
                 {isSuspended && (
                   <span className={`${styles.statusBadge} ${styles.statusSuspended}`}>Sospesa</span>
@@ -592,7 +381,7 @@ export default function DettagliAttivita() {
             {activity.description && <p className={styles.detailDescription}>{activity.description}</p>}
           </div>
 
-          {/* ── Info grid ── */}
+          {/* Info grid */}
           <div className={styles.detailGrid}>
             <div className={styles.detailCard}>
               <div>
@@ -602,9 +391,10 @@ export default function DettagliAttivita() {
               </div>
             </div>
 
+            {/* dal secondo file: Modalita */}
             <div className={styles.detailCard}>
               <div>
-                <span className={styles.detailCardLabel}>Modalità</span>
+                <span className={styles.detailCardLabel}>Modalita</span>
                 <span className={styles.detailCardValue}>{formatTravelMode(activity.travelMode ?? "")}</span>
               </div>
             </div>
@@ -614,13 +404,12 @@ export default function DettagliAttivita() {
                 <span className={styles.detailCardLabel}>Partecipanti</span>
                 <span className={styles.detailCardValue}>{participantCount} / {activity.maxParticipants}</span>
                 <span className={styles.detailCardSub}>
-                  {spotsLeft > 0
-                    ? `${spotsLeft} post${spotsLeft === 1 ? "o" : "i"} disponibil${spotsLeft === 1 ? "e" : "i"}`
-                    : "Attività al completo"}
+                  {spotsLeft > 0 ? `${spotsLeft} post${spotsLeft === 1 ? "o" : "i"} disponibil${spotsLeft === 1 ? "e" : "i"}` : "Attivita al completo"}
                 </span>
               </div>
             </div>
 
+            {/* dal secondo file: Organizzatore */}
             <div className={styles.detailCard}>
               <div>
                 <span className={styles.detailCardLabel}>Organizzatore</span>
@@ -630,61 +419,43 @@ export default function DettagliAttivita() {
             </div>
           </div>
 
-          {/* ── Trek details ── */}
+          {/* Trek details - dal secondo file, piu completo */}
           {trek && (trek.lengthKm || trek.duration || trek.difficulty || trek.description) && (
             <Link to={`/treks/${trek.id}`} className={styles.formCard}>
               <h2 className={styles.detailSectionTitle}>Dettagli del trek</h2>
               {trek.name && <p className={styles.activityName}>{trek.name}</p>}
               <div className={styles.activityInfo}>
-                {trek.difficulty && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>Difficoltà</span>
-                    <span className={styles.infoValue}>{trek.difficulty}</span>
-                  </div>
-                )}
-                {trek.lengthKm && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>Distanza</span>
-                    <span className={styles.infoValue}>{trek.lengthKm} km</span>
-                  </div>
-                )}
-                {trek.duration && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>Durata stimata</span>
-                    <span className={styles.infoValue}>{trek.duration}</span>
-                  </div>
-                )}
+                {trek.difficulty && <div className={styles.infoItem}><span className={styles.infoLabel}>Difficolta</span><span className={styles.infoValue}>{trek.difficulty}</span></div>}
+                {trek.lengthKm && <div className={styles.infoItem}><span className={styles.infoLabel}>Distanza</span><span className={styles.infoValue}>{trek.lengthKm} km</span></div>}
+                {trek.duration && <div className={styles.infoItem}><span className={styles.infoLabel}>Durata stimata</span><span className={styles.infoValue}>{trek.duration}</span></div>}
               </div>
             </Link>
           )}
 
-          {/* ══════════ AZIONI ══════════ */}
+          {/* ── AZIONI ── */}
           <div className={styles.detailActions}>
 
             {/* ── PANNELLO ADMIN ── */}
             {isAdmin && (
               <div className={styles.adminPanel}>
                 <span className={styles.adminPanelTitle}>Pannello amministratore</span>
+
                 <div className={styles.buttonActions}>
                   {!isSuspended ? (
                     <button className={styles.suspendButton} onClick={() => setActiveModal("suspend")}>
-                      Sospendi attività
+                      Sospendi attivita
                     </button>
                   ) : (
-                    <button
-                      className={appStyles.primaryButton}
-                      onClick={handleUnsuspend}
-                      disabled={actionLoading}
-                    >
+                    <button className={appStyles.primaryButton} onClick={handleUnsuspend} disabled={actionLoading}>
                       {actionLoading ? "Attendere..." : "Rimuovi sospensione"}
                     </button>
                   )}
                   <button className={styles.dangerButton} onClick={() => setActiveModal("delete")}>
-                    Elimina attività
+                    Elimina attivita
                   </button>
                 </div>
 
-                {/* Segnalazioni pendenti */}
+                {/* Segnalazioni in attesa — solo admin */}
                 {pendingReports.length > 0 && (
                   <div className={styles.adminReportsSection}>
                     <span className={styles.adminReportsSectionTitle}>
@@ -694,12 +465,15 @@ export default function DettagliAttivita() {
                       <div key={r._id} className={styles.adminReportItem}>
                         <div className={styles.adminReportMeta}>
                           <span className={styles.adminReportUser}>
-                            {r.reportedBy?.nickname ? `@${r.reportedBy.nickname}` : r.reportedBy?.email ?? "Utente"}
+                            {r.reportedBy?.nickname
+                              ? `@${r.reportedBy.nickname}`
+                              : r.reportedBy?.email ?? "Utente"}
                           </span>
                           <span className={styles.adminReportDate}>
                             {new Date(r.reportedAt).toLocaleDateString("it-IT")}
                           </span>
                         </div>
+                        {/* Dettagli aggiuntivi utente */}
                         <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginBottom: "4px" }}>
                           {r.reportedBy?.email && <span>{r.reportedBy.email}</span>}
                           {(r.reportedBy?.nome || r.reportedBy?.cognome) && (
@@ -730,30 +504,32 @@ export default function DettagliAttivita() {
                   </div>
                 )}
 
-                {/* Segnalazioni accettate */}
-                {acceptedReports.length > 0 && (
+                {/* Segnalazioni accettate — solo admin (le dismissed non vengono mostrate in questa pagina) */}
+                {reports.filter((r: any) => r.reportStatus === "accepted").length > 0 && (
                   <div className={styles.adminReportsSection}>
-                    <span className={styles.adminReportsSectionTitle}>Segnalazioni accettate</span>
-                    {acceptedReports.map((r: any) => (
+                    <span className={styles.adminReportsSectionTitle}>
+                      Segnalazioni accettate
+                    </span>
+                    {reports.filter((r: any) => r.reportStatus === "accepted").map((r: any) => (
                       <div key={r._id} className={styles.adminReportItem}>
                         <div className={styles.adminReportMeta}>
                           <span className={styles.adminReportUser}>
-                            {r.reportedBy?.nickname ? `@${r.reportedBy.nickname}` : r.reportedBy?.email ?? "Utente"}
+                            {r.reportedBy?.nickname
+                              ? `@${r.reportedBy.nickname}`
+                              : r.reportedBy?.email ?? "Utente"}
                           </span>
-                          <span
-                            className={`${styles.statusBadge} ${styles.statusReported}`}
-                            style={{ fontSize: "11px", padding: "3px 8px" }}
-                          >
+                          <span className={`${styles.statusBadge} ${styles.statusReported}`} style={{ fontSize: "11px", padding: "3px 8px" }}>
                             Accettata
                           </span>
                         </div>
                         {r.reason && <p className={styles.adminReportReason}>{r.reason}</p>}
+                        {/* Admin puo rimuovere il banner rigettando una segnalazione accettata */}
                         <div className={styles.adminReportActions}>
                           <button
                             className={styles.dismissReportButton}
                             onClick={() => handleReportAction(r._id, "dismiss")}
                             disabled={actionLoading}
-                            title="Rimuove il banner 'Segnalata' dall'attività"
+                            title="Rimuove il banner 'Segnalata' dall'attivita"
                           >
                             Rimuovi segnalazione
                           </button>
@@ -765,138 +541,143 @@ export default function DettagliAttivita() {
               </div>
             )}
 
-            {/* ── ORGANIZZATORE ── */}
+            {/* ── ORGANIZZATORE ──── */}
             {isOrganizer && (
-              <div className={styles.buttonActions}>
-                {activity.status !== "Annullato" && (
-                  <button
-                    className={styles.dangerButton}
-                    disabled={isExpired || isSuspended}
-                    title={isSuspended ? "Attività sospesa — azione non disponibile" : undefined}
-                    onClick={() => setActiveModal("cancel")}
-                  >
-                    Annulla attività
-                  </button>
-                )}
-                {activity.status === "Annullato" && (
-                  <button
-                    className={styles.dangerButton}
-                    disabled={isExpired || isSuspended}
-                    title={isSuspended ? "Attività sospesa — azione non disponibile" : undefined}
-                    onClick={() => setActiveModal("uncancel")}
-                  >
-                    Riattiva attività
-                  </button>
-                )}
-                {activity.status !== "Annullato" &&
-                  activity.status === "Chiuso" &&
-                  participantCount < activity.maxParticipants && (
+              <>
+                <div className={styles.buttonActions}>
+                  {activity.status !== "Annullato" && (
                     <button
                       className={styles.dangerButton}
                       disabled={isExpired || isSuspended}
-                      title={isSuspended ? "Attività sospesa — azione non disponibile" : undefined}
-                      onClick={() => handleAction("open", "PATCH")}
+                      title={isSuspended ? "Attivita sospesa — azione non disponibile" : undefined}
+                      onClick={() => setActiveModal("cancel")}
                     >
-                      Apri attività
+                      Annulla attivita
                     </button>
                   )}
-                {activity.status !== "Annullato" && activity.status === "Aperto" && (
+                  {activity.status === "Annullato" && (
+                    <button
+                      className={styles.dangerButton}
+                      disabled={isExpired || isSuspended}
+                      title={isSuspended ? "Attivita sospesa — azione non disponibile" : undefined}
+                      onClick={() => setActiveModal("uncancel")}
+                    >
+                      Riattiva attivita
+                    </button>
+                  )}
+                  {activity.status !== "Annullato" && activity.status === "Chiuso" && participantCount < activity.maxParticipants && (
+                    <button
+                      className={styles.dangerButton}
+                      disabled={isExpired || isSuspended}
+                      title={isSuspended ? "Attivita sospesa — azione non disponibile" : undefined}
+                      onClick={() => handleAction("open", "PATCH")}
+                    >
+                      Apri attivita
+                    </button>
+                  )}
+                  {activity.status !== "Annullato" && activity.status === "Aperto" && (
+                    <button
+                      className={styles.dangerButton}
+                      disabled={isExpired || isSuspended}
+                      title={isSuspended ? "Attivita sospesa — azione non disponibile" : undefined}
+                      onClick={() => handleAction("close", "PATCH")}
+                    >
+                      Chiudi attivita
+                    </button>
+                  )}
                   <button
                     className={styles.dangerButton}
-                    disabled={isExpired || isSuspended}
-                    title={isSuspended ? "Attività sospesa — azione non disponibile" : undefined}
-                    onClick={() => handleAction("close", "PATCH")}
+                    disabled={isSuspended}
+                    title={isSuspended ? "Attivita sospesa — azione non disponibile" : undefined}
+                    onClick={() => setActiveModal("delete")}
                   >
-                    Chiudi attività
+                    Elimina attivita
                   </button>
-                )}
-                <button
-                  className={styles.dangerButton}
-                  disabled={isSuspended}
-                  title={isSuspended ? "Attività sospesa — azione non disponibile" : undefined}
-                  onClick={() => setActiveModal("delete")}
-                >
-                  Elimina attività
-                </button>
-              </div>
+                </div>
+              </>
             )}
 
-            {/* ── Può partecipare ── */}
+            {/* Puo partecipare */}
             {canJoin && (
               <button className={appStyles.primaryButton} onClick={() => setActiveModal("join")}>
-                Partecipa all'attività
+                Partecipa all'attivita
               </button>
             )}
 
-            {/* ── Non può partecipare (utente normale) ── */}
+            {/* Non puo partecipare (utente normale, non organizzatore) */}
             {!isOrganizer && !isAdmin && !isParticipant && !canJoin && (
               <button className={appStyles.primaryButton} disabled>
-                {activity.status !== "Aperto"
-                  ? `Iscrizione non disponibile (${activity.status ?? ""})`
-                  : activity.visibility === "private"
-                  ? "Attività privata — solo su invito"
-                  : "Attività al completo"}
+                {activity.status !== "Aperto" ? `Iscrizione non disponibile (${activity.status ?? ""})` : "Attivita al completo"}
               </button>
             )}
 
-            {/* ── Già partecipante ── */}
+            {/* Gia partecipante */}
             {isParticipant && (
               <div className={styles.buttonActions}>
-                <button
-                  className={styles.leaveButton}
-                  disabled={isExpired || isSuspended}
-                  onClick={() => setActiveModal("leave")}
-                >
-                  Lascia attività
+                <button className={styles.leaveButton} disabled={isExpired || isSuspended} onClick={() => setActiveModal("leave")}>
+                  Lascia attivita
                 </button>
               </div>
             )}
 
-            {/* ── Segnala attività (utenti non organizzatori, non admin) ── */}
+            {/* Segnala attivita — visibile agli utenti non organizzatori, non admin */}
             {!isOrganizer && !isAdmin && currentUserID && (
               <div style={{ marginTop: "8px" }}>
+                {/* Segnalazione appena inviata in questa sessione (prima che il polling aggiorni) */}
                 {reportSuccess && !hasAlreadyReported && (
                   <div className={styles.reportedConfirmBadge}>
                     Segnalazione inviata. L'amministrazione esaminerà la segnalazione.
                   </div>
                 )}
+
+                {/* Segnalazione esistente — mostra stato in base a come admin ha agito */}
                 {hasAlreadyReported && (
                   <div className={styles.reportedConfirmBadge}>
                     {myReport.reportStatus === "pending" && (
                       <>
-                        <strong>Hai segnalato questa attività.</strong>
+                        <strong>Hai segnalato questa attivita.</strong>
                         <br />
-                        La segnalazione è in attesa di revisione.
-                        {myReport.reason && <><br /><span style={{ opacity: 0.8 }}>Motivo: {myReport.reason}</span></>}
+                        La segnalazione e in attesa di revisione da parte dell'amministrazione.
+                        {myReport.reason && (
+                          <><br /><span style={{ opacity: 0.8 }}>Motivo: {myReport.reason}</span></>
+                        )}
                         <br />
                         <span style={{ opacity: 0.7, fontSize: "12px" }}>
-                          Segnalata il{" "}
-                          {new Date(myReport.reportedAt).toLocaleDateString("it-IT", {
-                            day: "2-digit", month: "long", year: "numeric",
-                          })}
+                          Segnalata il {new Date(myReport.reportedAt).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" })}
                         </span>
                       </>
                     )}
                     {myReport.reportStatus === "accepted" && (
                       <>
-                        <strong>La tua segnalazione è stata accettata dall'amministrazione.</strong>
+                        <strong>La tua segnalazione e stata accettata dall'amministrazione.</strong>
                         <br />
-                        Grazie per la segnalazione. L'attività è ora contrassegnata come segnalata.
-                        {myReport.reason && <><br /><span style={{ opacity: 0.8 }}>Motivo: {myReport.reason}</span></>}
+                        Grazie per la segnalazione. L'attivita e ora contrassegnata come segnalata.
+                        {myReport.reason && (
+                          <><br /><span style={{ opacity: 0.8 }}>Motivo: {myReport.reason}</span></>
+                        )}
                       </>
                     )}
                     {myReport.reportStatus === "dismissed" && (
                       <>
-                        <strong>La tua segnalazione è stata esaminata e rigettata dall'amministrazione.</strong>
-                        {myReport.reason && <><br /><span style={{ opacity: 0.8 }}>Motivo inviato: {myReport.reason}</span></>}
-                        {myReport.reviewNote && <><br /><span style={{ opacity: 0.8 }}>Nota admin: {myReport.reviewNote}</span></>}
+                        <strong>La tua segnalazione e stata esaminata e rigettata dall'amministrazione.</strong>
+                        {myReport.reason && (
+                          <><br /><span style={{ opacity: 0.8 }}>Motivo inviato: {myReport.reason}</span></>
+                        )}
+                        {myReport.reviewNote && (
+                          <><br /><span style={{ opacity: 0.8 }}>Nota admin: {myReport.reviewNote}</span></>
+                        )}
                       </>
                     )}
                   </div>
                 )}
+
+                {/* Pulsante visibile solo se l'utente non ha ancora segnalato */}
                 {!hasAlreadyReported && !reportSuccess && (
-                  <button className={styles.reportButton} onClick={() => setActiveModal("report")}>
-                    Segnala attività
+                  <button
+                    className={styles.reportButton}
+                    onClick={() => setActiveModal("report")}
+                  >
+                    Segnala attivita
                   </button>
                 )}
               </div>
@@ -904,26 +685,20 @@ export default function DettagliAttivita() {
 
             {actionMessage && <p className={styles.message}>{actionMessage}</p>}
           </div>
+
         </div>
 
-        {/* ══════════════════ COLONNA DESTRA ══════════════════ */}
+        {/* ── DESTRA ── */}
         <div className={appStyles.rightColumn}>
-
-          {/* Banner success/error (branch testing) */}
-          {banner && (
-            <Banner msg={banner.msg} type={banner.type} onClose={() => setBanner(null)} />
-          )}
-
           <div className={appStyles.buttonBox}>
             <Link to="/attivita/visualizza" className={appStyles.primaryButton}>
-              Lista attività
+              Lista attivita
             </Link>
             <Link to="/attivita/crea" className={appStyles.primaryButton}>
-              + Crea attività
+              + Crea attivita
             </Link>
           </div>
 
-          {/* ── Lista partecipanti ── */}
           <div className={styles.formCard}>
             <h2 className={styles.detailSectionTitle}>Partecipanti ({participantCount})</h2>
 
@@ -933,26 +708,15 @@ export default function DettagliAttivita() {
               <ul className={styles.participantList}>
                 {activity.partecipantList.map((p, i) => (
                   <li key={p._id} className={styles.participantItem}>
-                    {/* Avatar con immagine (branch testing) */}
-                    {p.avatarUrl ? (
-                      <img
-                        src={p.avatarUrl}
-                        alt={p.nickname}
-                        className={styles.participantAvatarImage}
-                      />
-                    ) : (
-                      <div className={styles.participantAvatar}>
-                        {(p.nickname?.[0] ?? p.email?.[0] ?? "?").toUpperCase()}
-                      </div>
-                    )}
+                    <div className={styles.participantAvatar}>
+                      {(p.nickname?.[0] ?? p.email?.[0] ?? "?").toUpperCase()}
+                    </div>
                     <div className={styles.participantInfo}>
                       <span className={styles.participantNickname}>
                         {p.nickname}
                         {i === 0 && <span className={styles.organizerTag}> (organizzatore) </span>}
                       </span>
-                      {(isOrganizer || isAdmin) && (
-                        <span className={styles.participantEmail}>{p.email}</span>
-                      )}
+                      {(isOrganizer || isAdmin) && <span className={styles.participantEmail}>{p.email}</span>}
                     </div>
                   </li>
                 ))}
@@ -960,166 +724,19 @@ export default function DettagliAttivita() {
             )}
           </div>
 
-          {/* ── Invita amici (solo organizzatore) ── */}
-          {canInviteFriends && (
-            <div className={styles.section}>
-              <label className={styles.label}>
-                Invita amici {spotsLeft > 0 ? `(max ${spotsLeft})` : "(nessun posto disponibile)"}
-              </label>
-
-              {spotsLeft <= 0 ? (
-                <p className={styles.emptyFriends}>Non ci sono posti disponibili per nuovi inviti.</p>
-              ) : inviteableFriends.length === 0 ? (
-                <p className={styles.emptyFriends}>Non hai amici disponibili da invitare</p>
-              ) : (
-                <>
-                  <input
-                    className={styles.input}
-                    placeholder="Cerca un amico..."
-                    value={friendSearch}
-                    onChange={(e) => setFriendSearch(e.target.value)}
-                  />
-                  <div className={styles.friendsList}>
-                    {displayedInviteableFriends.map(({ friendshipId, user: friend }) => {
-                      const isSelected = invitedUsers.includes(friend._id);
-                      return (
-                        <div
-                          key={friendshipId}
-                          onClick={() => toggleInvite(friend._id)}
-                          className={`${styles.friendItem} ${isSelected ? styles.friendItemSelected : ""}`}
-                        >
-                          {friend.avatarUrl ? (
-                            <img
-                              src={friend.avatarUrl}
-                              alt={friend.nickname}
-                              className={styles.friendAvatar}
-                            />
-                          ) : (
-                            <div className={styles.friendAvatarPlaceholder}>
-                              {friend.nome?.[0]?.toUpperCase() ?? "?"}
-                            </div>
-                          )}
-                          <div className={styles.friendInfo}>
-                            <p className={styles.friendName}>{friend.nome} {friend.cognome}</p>
-                            <p className={styles.friendNickname}>@{friend.nickname}</p>
-                          </div>
-                          <div className={styles.friendCheck}>
-                            {isSelected ? (
-                              <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={2.5}>
-                                <circle cx={12} cy={12} r={10} />
-                                <path d="M8 12l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            ) : (
-                              <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--border)" strokeWidth={2}>
-                                <circle cx={12} cy={12} r={10} />
-                              </svg>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-
-              <button
-                className={appStyles.primaryButton}
-                onClick={sendInvites}
-                disabled={actionLoading || invitedUsers.length === 0 || spotsLeft <= 0}
-              >
-                {actionLoading ? "Invio in corso..." : "Invia inviti"}
-              </button>
-            </div>
-          )}
-
-          {/* ── Inviti pendenti (organizzatore) ── */}
-          {pendingInvites.length > 0 && isOrganizer && (
-            <div className={styles.section}>
-              <h2 className={styles.detailSectionTitle}>
-                Inviti in attesa
-                <span className={styles.sectionCount}>{pendingInvites.length}</span>
-              </h2>
-              <div className={styles.inviteList}>
-                {pendingInvites.map((invite) => {
-                  const receiver = invite.receiver;
-                  return (
-                    <div key={invite._id} className={styles.inviteCard}>
-                      {receiver.avatarUrl ? (
-                        <img src={receiver.avatarUrl} alt={receiver.nickname} className={styles.friendAvatar} />
-                      ) : (
-                        <div className={styles.friendAvatarPlaceholder}>
-                          {receiver.nome?.[0]?.toUpperCase() ?? "?"}
-                        </div>
-                      )}
-                      <div className={styles.inviteInfo}>
-                        <p className={styles.friendName}>{receiver.nome} {receiver.cognome}</p>
-                        <p className={styles.friendNickname}>@{receiver.nickname}</p>
-                      </div>
-                      <div className={styles.inviteActions}>
-                        <span className={styles.pendingBadge}>In attesa</span>
-                        <button
-                          className={styles.leaveButton}
-                          onClick={() => cancelInvite(invite._id)}
-                          disabled={actionLoading}
-                        >
-                          Annulla invito
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* ── Invito ricevuto (utente non partecipante) ── */}
-          {myInvite && !isParticipant && (
-            <div className={styles.section}>
-              <h2 className={styles.detailSectionTitle}>Invito ricevuto</h2>
-              <div className={styles.inviteCard}>
-                {myInvite.sender.avatarUrl ? (
-                  <img src={myInvite.sender.avatarUrl} alt={myInvite.sender.nickname} className={styles.friendAvatar} />
-                ) : (
-                  <div className={styles.friendAvatarPlaceholder}>
-                    {myInvite.sender.nome?.[0]?.toUpperCase() ?? "?"}
-                  </div>
-                )}
-                <div className={styles.inviteInfo}>
-                  <p className={styles.friendName}>{myInvite.sender.nome} {myInvite.sender.cognome}</p>
-                  <p className={styles.friendNickname}>@{myInvite.sender.nickname}</p>
-                </div>
-                <div className={styles.inviteActions}>
-                  <button
-                    className={styles.dangerButton}
-                    onClick={() => declineInvite(myInvite._id)}
-                    disabled={actionLoading}
-                  >
-                    Rifiuta
-                  </button>
-                  <button
-                    className={appStyles.primaryButton}
-                    onClick={() => acceptInvite(myInvite._id)}
-                    disabled={actionLoading}
-                  >
-                    Accetta
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
         </div>
+
       </div>
 
-      {/* ══════════════════ MODALI ══════════════════ */}
+      {/* ── MODALI ── */}
 
+      {/* Join */}
       {activeModal === "join" && (
         <div className={styles.modalOverlay} onClick={() => setActiveModal(null)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
             <h2 className={styles.modalTitle}>Conferma partecipazione</h2>
             <p className={styles.modalBody}>
-              Il tuo <strong>nickname</strong> sarà visibile a tutti nella pagina dell'attività e la tua{" "}
-              <strong>email</strong> sarà condivisa con l'organizzatore (<strong>{organizerName}</strong>).
+              Il tuo <strong>nickname</strong> sara visibile a tutti nella pagina dell'attivita e la tua <strong>email</strong> sara condivisa con l'organizzatore (<strong>{organizerName}</strong>).
             </p>
             <div className={styles.modalActions}>
               <button className={appStyles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Annulla</button>
@@ -1131,59 +748,63 @@ export default function DettagliAttivita() {
         </div>
       )}
 
+      {/* Leave */}
       {activeModal === "leave" && (
         <div className={styles.modalOverlay} onClick={() => setActiveModal(null)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-            <h2 className={styles.modalTitle}>Lascia attività</h2>
-            <p className={styles.modalBody}>Sei sicuro di voler abbandonare questa attività? Potrai re-iscriverti finché ci sono posti disponibili.</p>
+            <h2 className={styles.modalTitle}>Lascia attivita</h2>
+            <p className={styles.modalBody}>Sei sicuro di voler abbandonare questa attivita? Potrai re-iscriverti finche ci sono posti disponibili.</p>
             <div className={styles.modalActions}>
               <button className={appStyles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Annulla</button>
               <button className={styles.dangerButton} onClick={() => handleAction("leave", "POST")} disabled={actionLoading}>
-                {actionLoading ? "Attendere..." : "Lascia attività"}
+                {actionLoading ? "Attendere..." : "Lascia attivita"}
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Cancel */}
       {activeModal === "cancel" && (
         <div className={styles.modalOverlay} onClick={() => setActiveModal(null)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-            <h2 className={styles.modalTitle}>Annulla attività</h2>
-            <p className={styles.modalBody}>Sei sicuro di voler annullare <strong>{activity.title}</strong>? Questa azione è reversibile.</p>
+            <h2 className={styles.modalTitle}>Annulla attivita</h2>
+            <p className={styles.modalBody}>Sei sicuro di voler annullare <strong>{activity.title}</strong>? Questa azione e reversibile.</p>
             <div className={styles.modalActions}>
               <button className={appStyles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Indietro</button>
               <button className={styles.dangerButton} onClick={() => handleAction("cancel", "PATCH")} disabled={actionLoading}>
-                {actionLoading ? "Attendere..." : "Annulla attività"}
+                {actionLoading ? "Attendere..." : "Annulla attivita"}
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Uncancel */}
       {activeModal === "uncancel" && (
         <div className={styles.modalOverlay} onClick={() => setActiveModal(null)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-            <h2 className={styles.modalTitle}>Riattiva attività</h2>
-            <p className={styles.modalBody}>Sei sicuro di voler riattivare <strong>{activity.title}</strong>? Questa azione potrebbe riaprire l'attività a nuovi partecipanti.</p>
+            <h2 className={styles.modalTitle}>Riattiva attivita</h2>
+            <p className={styles.modalBody}>Sei sicuro di voler riattivare <strong>{activity.title}</strong>? Questa azione potrebbe riaprire l'attivita a nuovi partecipanti.</p>
             <div className={styles.modalActions}>
               <button className={appStyles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Indietro</button>
               <button className={styles.dangerButton} onClick={() => handleAction("uncancel", "PATCH")} disabled={actionLoading}>
-                {actionLoading ? "Attendere..." : "Riattiva attività"}
+                {actionLoading ? "Attendere..." : "Riattiva attivita"}
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Delete */}
       {activeModal === "delete" && (
         <div className={styles.modalOverlay} onClick={() => setActiveModal(null)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-            <h2 className={styles.modalTitle}>Elimina attività</h2>
+            <h2 className={styles.modalTitle}>Elimina attivita</h2>
             <p className={styles.modalBody}>
               Stai per eliminare definitivamente <strong>{activity.title}</strong> dal database.
               <br /><br />
-              <strong>Questa operazione è irreversibile</strong> e non potrà essere annullata.
+              <strong>Questa operazione e irreversibile</strong> e non potra essere annullata.
             </p>
             <div className={styles.modalActions}>
               <button className={appStyles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Annulla</button>
@@ -1195,14 +816,15 @@ export default function DettagliAttivita() {
         </div>
       )}
 
+      {/* Suspend */}
       {activeModal === "suspend" && (
         <div className={styles.modalOverlay} onClick={() => setActiveModal(null)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-            <h2 className={styles.modalTitle}>Sospendi attività</h2>
+            <h2 className={styles.modalTitle}>Sospendi attivita</h2>
             <p className={styles.modalBody}>
               Stai per sospendere <strong>{activity.title}</strong>.<br /><br />
-              L'organizzatore non potrà modificare lo stato dell'attività finché la sospensione è attiva.
-              Un banner di avviso sarà visibile a tutti.
+              L'organizzatore non potra modificare lo stato dell'attivita finche la sospensione e attiva.
+              Un banner di avviso sara visibile a tutti.
             </p>
             <div>
               <label className={styles.label} style={{ marginBottom: "6px", display: "block" }}>
@@ -1217,28 +839,25 @@ export default function DettagliAttivita() {
               />
             </div>
             <div className={styles.modalActions}>
-              <button
-                className={appStyles.secondaryButton}
-                onClick={() => { setActiveModal(null); setSuspendReason(""); }}
-                disabled={actionLoading}
-              >
+              <button className={appStyles.secondaryButton} onClick={() => { setActiveModal(null); setSuspendReason(""); }} disabled={actionLoading}>
                 Annulla
               </button>
               <button className={styles.suspendButton} onClick={handleSuspend} disabled={actionLoading}>
-                {actionLoading ? "Attendere..." : "Sospendi attività"}
+                {actionLoading ? "Attendere..." : "Sospendi attivita"}
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Unsuspend */}
       {activeModal === "unsuspend" && (
         <div className={styles.modalOverlay} onClick={() => setActiveModal(null)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
             <h2 className={styles.modalTitle}>Rimuovi sospensione</h2>
             <p className={styles.modalBody}>
               Stai per rimuovere la sospensione da <strong>{activity.title}</strong>.<br /><br />
-              L'organizzatore riacquisirà il controllo completo sull'attività.
+              L'organizzatore riacquistera il controllo completo sull'attivita.
             </p>
             <div className={styles.modalActions}>
               <button className={appStyles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Annulla</button>
@@ -1250,12 +869,13 @@ export default function DettagliAttivita() {
         </div>
       )}
 
+      {/* Report */}
       {activeModal === "report" && (
         <div className={styles.modalOverlay} onClick={() => setActiveModal(null)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-            <h2 className={styles.modalTitle}>Segnala attività</h2>
+            <h2 className={styles.modalTitle}>Segnala attivita</h2>
             <p className={styles.modalBody}>
-              La tua segnalazione sarà esaminata dall'amministrazione. Puoi specificare il motivo qui sotto.
+              La tua segnalazione sara esaminata dall'amministrazione. Puoi specificare il motivo qui sotto.
             </p>
             <div>
               <label className={styles.label} style={{ marginBottom: "6px", display: "block" }}>
@@ -1270,11 +890,7 @@ export default function DettagliAttivita() {
               />
             </div>
             <div className={styles.modalActions}>
-              <button
-                className={appStyles.secondaryButton}
-                onClick={() => { setActiveModal(null); setReportReason(""); }}
-                disabled={actionLoading}
-              >
+              <button className={appStyles.secondaryButton} onClick={() => { setActiveModal(null); setReportReason(""); }} disabled={actionLoading}>
                 Annulla
               </button>
               <button className={styles.reportButton} onClick={handleReport} disabled={actionLoading}>

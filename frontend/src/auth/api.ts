@@ -6,7 +6,6 @@ export type SafeUser = {
   nickname: string;
   role: "user" | "admin";
   favoriteTreks: string[]; // Array di ID dei trek preferiti
-  avatarUrl: string | null;
 };
 
 export type LoginRequest = {
@@ -55,7 +54,6 @@ async function ensureCsrfToken(): Promise<string> {
 // Funzione helper per fare richieste HTTP al backend, gestendo automaticamente i cookie e gli errori
 export async function http<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
-    ...init, //Prima parto dai default del chiamante, poi impongo le regole obbligatorie personali
     credentials: "include",
     headers: {
       "Content-Type": "application/json", 
@@ -63,6 +61,7 @@ export async function http<T>(path: string, init?: RequestInit): Promise<T> {
       ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
       ...(init?.headers ?? {}),// Includiamo eventuali header aggiuntivi passati tramite init
     },
+    ...init,
   });
 
   const isAuthEndpoint = path.includes("/auth/login") || path.includes("/auth/register") || path.includes("/auth/refresh");

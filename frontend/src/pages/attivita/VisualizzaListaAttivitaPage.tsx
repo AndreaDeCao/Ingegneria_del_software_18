@@ -3,10 +3,9 @@ import styles from "./attivitaPage.module.css";
 import appStyles from "../../App.module.css";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
-import { http } from "../../auth/api";
 
-import type { Activity } from "../../types/Activity";
-import type { Trek } from "../../types/Trek";
+import type {Activity} from "../../types/Activity";
+import type {Trek} from "../../types/Trek";
 
 // Intervallo di polling in ms — aggiorna la lista senza ricaricare la pagina
 const POLL_INTERVAL_MS = 20_000;
@@ -30,9 +29,13 @@ export default function VisualizzaAttivitaPage() {
   const [selectedDate, setSelectedDate] = useState("");
   const [travelModeFilter, setTravelModeFilter] = useState("Tutti");
   const [participationFilter, setParticipationFilter] = useState("Tutte");
-  const [visibilityFilter, setVisibilityFilter] = useState("Tutte");
   const [organizerFilter, setOrganizerFilter] = useState("Tutti");
   const [suspendedFilter, setSuspendedFilter] = useState("Tutte");
+  // Filtro segnalazioni:
+  //   "Tutte"              — nessun filtro
+  //   "Segnalate"          — ha almeno una segnalazione accettata (admin: include anche pending)
+  //   "Non segnalate"      — nessuna segnalazione accettata
+  //   "In attesa" (admin)  — ha segnalazioni pending
   const [reportFilter, setReportFilter] = useState("Tutte");
 
   const [loading, setLoading] = useState(true);
@@ -46,16 +49,10 @@ export default function VisualizzaAttivitaPage() {
 
   const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
-  // ------------------------------------------------------------------ helpers
-
-  function getJoinState(
-    activity: ActivityWithAdmin
-  ): "join" | "organizer" | "participant" | "closed" | "full" | "expired" | "private" | "admin" {
+  function getJoinState(activity: ActivityWithAdmin): "join" | "organizer" | "participant" | "closed" | "full" | "expired" | "admin" {
     if (isAdmin) return "admin";
     if (activity.organizerID === currentUserID) return "organizer";
     if (new Date(activity.activityDate).getTime() < Date.now()) return "expired";
-    // visibilità privata: solo admin o organizzatore possono vedere il pulsante (già gestiti sopra)
-    if ((activity as any).visibility === "private") return "private";
     if (activity.status !== "Aperto") return "closed";
     const list = activity.partecipantList ?? [];
     if (list.includes(currentUserID ?? "")) return "participant";
@@ -63,6 +60,7 @@ export default function VisualizzaAttivitaPage() {
     return "join";
   }
 
+  // Helpers segnalazioni
   function hasAcceptedReport(a: ActivityWithAdmin) {
     return (a.reports ?? []).some((r) => r.reportStatus === "accepted");
   }
@@ -70,23 +68,12 @@ export default function VisualizzaAttivitaPage() {
     return (a.reports ?? []).some((r) => r.reportStatus === "pending");
   }
 
-  const getStatusClass = (status: string) => {
-    switch (status) {
-      case "Annullato": return styles.statusCancelled;
-      case "Chiuso":    return styles.statusClosed;
-      default:          return styles.statusAvailable;
-    }
-  };
-
-  // ------------------------------------------------------------------ filtri
-
   const hasActiveFilters =
     search !== "" ||
     statusFilter !== "Tutti" ||
     travelModeFilter !== "Tutti" ||
     selectedDate !== "" ||
     participationFilter !== "Tutte" ||
-    visibilityFilter !== "Tutte" ||
     organizerFilter !== "Tutti" ||
     suspendedFilter !== "Tutte" ||
     reportFilter !== "Tutte";
@@ -97,23 +84,24 @@ export default function VisualizzaAttivitaPage() {
     setTravelModeFilter("Tutti");
     setSelectedDate("");
     setParticipationFilter("Tutte");
-    setVisibilityFilter("Tutte");
     setOrganizerFilter("Tutti");
     setSuspendedFilter("Tutte");
     setReportFilter("Tutte");
   }
 
+  const getStatusClass = (status: string) => {
+    switch (status) {
+      case "Annullato": return styles.statusCancelled;
+      case "Chiuso":    return styles.statusClosed;
+      default:          return styles.statusAvailable;
+    }
+  };
+
   const filteredActivities = activities.filter((a) => {
-    const description = a.description ?? "";
-    const matchesSearch =
-      a.title.toLowerCase().includes(search.toLowerCase()) ||
-      description.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = a.title.toLowerCase().includes(search.toLowerCase()) || a.description.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "Tutti" || a.status === statusFilter;
     const matchesTravelMode = travelModeFilter === "Tutti" || a.travelMode === travelModeFilter;
-    const matchesDate =
-      !selectedDate ||
-      new Date(a.activityDate).toISOString().split("T")[0] === selectedDate;
-
+    const matchesDate = !selectedDate || new Date(a.activityDate).toISOString().split("T")[0] === selectedDate;
     const isParticipant = (a.partecipantList ?? []).includes(currentUserID ?? "");
     const isOrganizer = a.organizerID === currentUserID;
 
@@ -121,13 +109,6 @@ export default function VisualizzaAttivitaPage() {
       participationFilter === "Tutte" ||
       (participationFilter === "Partecipo" && isParticipant) ||
       (participationFilter === "Non partecipo" && !isParticipant);
-
-    const matchesVisibility =
-      visibilityFilter === "Tutte"
-        ? true
-        : visibilityFilter === "Pubblica"
-          ? (a as any).visibility === "public"
-          : (a as any).visibility === "private";
 
     const matchesOrganizer =
       organizerFilter === "Tutti" ||
@@ -145,46 +126,32 @@ export default function VisualizzaAttivitaPage() {
       (reportFilter === "Non segnalate" && !hasAcceptedReport(a)) ||
       (reportFilter === "In attesa" && isAdmin && hasPendingReport(a));
 
-    return (
-      matchesSearch &&
-      matchesStatus &&
-      matchesDate &&
-      matchesTravelMode &&
-      matchesParticipation &&
-      matchesVisibility &&
-      matchesOrganizer &&
-      matchesSuspended &&
-      matchesReport
-    );
+    return matchesSearch && matchesStatus && matchesDate && matchesTravelMode && matchesParticipation && matchesOrganizer && matchesSuspended && matchesReport;
   });
 
-  // ------------------------------------------------------------------ fetch / polling
+  // Fetch attivita e trek (chiamata completa — usata anche per il polling)
+  const fetchData = useCallback(async (silent = false) => {
+    try {
+      const resActivities = await fetch(`${API_BASE}/activities/`);
+      if (!resActivities.ok) throw new Error("Errore nel recupero attivita");
+      const activitiesData: ActivityWithAdmin[] = await resActivities.json();
+      setActivities(activitiesData);
 
-  const fetchData = useCallback(
-    async (silent = false) => {
-      try {
-        const resActivities = await fetch(`${API_BASE}/activities/`);
-        if (!resActivities.ok) throw new Error("Errore nel recupero attività");
-        const activitiesData: ActivityWithAdmin[] = await resActivities.json();
-        setActivities(activitiesData);
-
-        // I trek li carichiamo solo al primo fetch (non cambiano durante il polling)
-        if (!silent) {
-          const resTreks = await fetch(`${API_BASE}/treks/`);
-          if (!resTreks.ok) throw new Error("Errore nel recupero trek");
-          const treksData: Trek[] = await resTreks.json();
-          const map: Record<string, string> = {};
-          treksData.forEach((t) => { map[t._id] = t.name; });
-          setTreksMap(map);
-        }
-      } catch (err: any) {
-        if (!silent) setError(err.message);
-      } finally {
-        if (!silent) setLoading(false);
+      // I trek li carichiamo solo al primo fetch (non cambiano durante il polling)
+      if (!silent) {
+        const resTreks = await fetch(`${API_BASE}/treks/`);
+        if (!resTreks.ok) throw new Error("Errore nel recupero trek");
+        const treksData: Trek[] = await resTreks.json();
+        const map: Record<string, string> = {};
+        treksData.forEach((t) => { map[t._id] = t.name; });
+        setTreksMap(map);
       }
-    },
-    [API_BASE]
-  );
+    } catch (err: any) {
+      if (!silent) setError(err.message);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, [API_BASE]);
 
   // Caricamento iniziale
   useEffect(() => {
@@ -199,77 +166,49 @@ export default function VisualizzaAttivitaPage() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // ------------------------------------------------------------------ join
-
   async function confirmJoin(activity: Activity) {
     setJoinLoading(true);
     try {
-      const updated = await http<Activity>(`/activities/${activity._id}/join`, {
+      const res = await fetch(`${API_BASE}/activities/${activity._id}/join`, {
         method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userID: currentUserID }),
       });
-      setActivities((prev) =>
-        prev.map((a) =>
-          a._id === activity._id
-            ? {
-                ...a,
-                partecipantList:
-                  updated.partecipantList?.map((p: any) => p._id ?? p) ?? [],
-                status: updated.status ?? a.status,
-              }
-            : a
-        )
-      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || err.message || "Errore");
+      }
+      const updated = await res.json();
+      setActivities((prev) => prev.map((a) => a._id === activity._id ? { ...a, partecipantList: updated.partecipantList?.map((p: any) => p._id ?? p) ?? [] } : a));
     } catch (err: any) {
-      if (err instanceof Error) setError(err.message);
     } finally {
       setJoinLoading(false);
       setJoinModal(null);
     }
   }
 
-  // ------------------------------------------------------------------ render
-
-  if (loading)
-    return (
-      <main className={styles.page}>
-        <p className={styles.message}>Caricamento attività...</p>
-      </main>
-    );
-  if (error)
-    return (
-      <main className={styles.page}>
-        <p className={styles.messageError}>{error}</p>
-      </main>
-    );
+  if (loading) return <main className={styles.page}><p className={styles.message}>Caricamento attivita...</p></main>;
+  if (error) return <main className={styles.page}><p className={styles.messageError}>{error}</p></main>;
 
   return (
     <main className={styles.page}>
-      <h1 className={styles.pageTitle}>Attività in programma</h1>
+      <h1 className={styles.pageTitle}>Attivita in programma</h1>
 
       <div className={styles.listHeader}>
-        <div>
-          <h2 className={styles.sectionTitle}>Lista attività</h2>
-          <span className={styles.sectionCount}>{activities.length} attività</span>
-        </div>
+        <input
+          className={styles.searchInput}
+          type="text"
+          placeholder="Cerca per titolo o descrizione..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
         <Link to="/attivita/crea" className={appStyles.primaryButton}>
-          + Crea attività
+          + Crea attivita
         </Link>
       </div>
 
-      {/* FILTRI */}
       <div className={styles.filtersBar}>
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Ricerca</label>
-          <input
-            type="text"
-            placeholder="Cerca attività..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className={styles.searchInput}
-          />
-        </div>
-
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Data</label>
           <input
@@ -279,43 +218,28 @@ export default function VisualizzaAttivitaPage() {
             className={styles.dateInput}
           />
         </div>
-
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Status</label>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className={styles.select}
-          >
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={styles.select}>
             <option value="Tutti">Tutti</option>
             <option value="Aperto">Aperto</option>
             <option value="Chiuso">Chiuso</option>
             <option value="Annullato">Annullato</option>
           </select>
         </div>
-
         <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Modalità di viaggio</label>
-          <select
-            value={travelModeFilter}
-            onChange={(e) => setTravelModeFilter(e.target.value)}
-            className={styles.select}
-          >
+          <label className={styles.filterLabel}>Modalita di viaggio</label>
+          <select value={travelModeFilter} onChange={(e) => setTravelModeFilter(e.target.value)} className={styles.select}>
             <option value="Tutti">Tutti</option>
             <option value="walking">A piedi</option>
             <option value="bicycling">In bicicletta</option>
           </select>
         </div>
 
-        {/* Partecipazione — nascosta per admin */}
         {!isAdmin && (
           <div className={styles.filterGroup}>
             <label className={styles.filterLabel}>Partecipazione</label>
-            <select
-              value={participationFilter}
-              onChange={(e) => setParticipationFilter(e.target.value)}
-              className={styles.select}
-            >
+            <select value={participationFilter} onChange={(e) => setParticipationFilter(e.target.value)} className={styles.select}>
               <option value="Tutte">Tutte</option>
               <option value="Partecipo">A cui partecipo</option>
               <option value="Non partecipo">A cui non partecipo</option>
@@ -324,51 +248,30 @@ export default function VisualizzaAttivitaPage() {
         )}
 
         <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Visibilità</label>
-          <select
-            value={visibilityFilter}
-            onChange={(e) => setVisibilityFilter(e.target.value)}
-            className={styles.select}
-          >
-            <option value="Tutte">Tutte</option>
-            <option value="Pubblica">Pubblica</option>
-            <option value="Privata">Privata</option>
-          </select>
-        </div>
-
-        <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Organizzazione</label>
-          <select
-            value={organizerFilter}
-            onChange={(e) => setOrganizerFilter(e.target.value)}
-            className={styles.select}
-          >
+          <select value={organizerFilter} onChange={(e) => setOrganizerFilter(e.target.value)} className={styles.select}>
             <option value="Tutti">Tutti</option>
             <option value="Organizzo">Solo che organizzo</option>
             <option value="Non organizzo">Non organizzo</option>
           </select>
         </div>
 
+        {/* Filtro sospensione */}
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Sospensione</label>
-          <select
-            value={suspendedFilter}
-            onChange={(e) => setSuspendedFilter(e.target.value)}
-            className={styles.select}
-          >
+          <select value={suspendedFilter} onChange={(e) => setSuspendedFilter(e.target.value)} className={styles.select}>
             <option value="Tutte">Tutte</option>
             <option value="Sospese">Solo sospese</option>
             <option value="Non sospese">Non sospese</option>
           </select>
         </div>
 
+        {/* Filtro segnalazioni:
+            - utenti: vedono solo le accettate
+            - admin: vedono anche quelle in attesa */}
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Segnalazioni</label>
-          <select
-            value={reportFilter}
-            onChange={(e) => setReportFilter(e.target.value)}
-            className={styles.select}
-          >
+          <select value={reportFilter} onChange={(e) => setReportFilter(e.target.value)} className={styles.select}>
             <option value="Tutte">Tutte</option>
             <option value="Segnalate">Segnalate</option>
             <option value="Non segnalate">Non segnalate</option>
@@ -380,7 +283,7 @@ export default function VisualizzaAttivitaPage() {
           <div className={styles.filterGroup}>
             <label className={styles.filterLabel}>&nbsp;</label>
             <button className={styles.resetFiltersButton} onClick={resetFilters}>
-              ✕ Azzera filtri
+              Azzera filtri
             </button>
           </div>
         )}
@@ -391,8 +294,8 @@ export default function VisualizzaAttivitaPage() {
         {filteredActivities.map((activity) => {
           const joinState = getJoinState(activity);
           const isExpired = joinState === "expired";
-          const effectiveStatus =
-            isExpired && activity.status === "Aperto" ? "Chiuso" : activity.status;
+          const effectiveStatus = isExpired && activity.status === "Aperto" ? "Chiuso" : activity.status;
+          const isDisabled = joinState !== "join";
           const isSuspended = activity.suspended;
           const isReported = hasAcceptedReport(activity);
           const isPendingReport = isAdmin && hasPendingReport(activity);
@@ -400,40 +303,30 @@ export default function VisualizzaAttivitaPage() {
           const buttonLabel: Record<string, string> = {
             join: "Partecipa",
             organizer: "Organizzatore",
-            participant: "Già iscritto",
+            participant: "Gia iscritto",
             closed: "Non disponibile",
             full: "Al completo",
             expired: "Scaduta",
-            private: "Privata",
             admin: "Visualizza",
           };
 
           return (
-            <article
-              key={activity._id}
-              className={`${styles.activityCard} ${isSuspended ? styles.activityCardSuspended : ""} ${isReported ? styles.activityCardReported : ""}`}
-            >
-              <Link to={`/attivita/${activity._id}`} className={styles.activityLink}>
+            <Link key={activity._id} to={`/attivita/${activity._id}`}>
+              <article
+                className={`${styles.activityCard} ${isSuspended ? styles.activityCardSuspended : ""} ${isReported ? styles.activityCardReported : ""}`}
+              >
                 <div className={styles.cardTop}>
                   <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
                     {isSuspended ? (
-                      <span className={`${styles.statusBadge} ${styles.statusSuspended}`}>
-                        Sospesa
-                      </span>
+                      <span className={`${styles.statusBadge} ${styles.statusSuspended}`}>Sospesa</span>
                     ) : (
-                      <span className={`${styles.statusBadge} ${getStatusClass(effectiveStatus)}`}>
-                        {effectiveStatus}
-                      </span>
+                      <span className={`${styles.statusBadge} ${getStatusClass(effectiveStatus)}`}>{effectiveStatus}</span>
                     )}
                     {isReported && (
-                      <span className={`${styles.statusBadge} ${styles.statusReported}`}>
-                        Segnalata
-                      </span>
+                      <span className={`${styles.statusBadge} ${styles.statusReported}`}>Segnalata</span>
                     )}
                     {isPendingReport && (
-                      <span className={`${styles.statusBadge} ${styles.statusPendingReport}`}>
-                        In attesa
-                      </span>
+                      <span className={`${styles.statusBadge} ${styles.statusPendingReport}`}>In attesa</span>
                     )}
                   </div>
                   <span className={styles.activityId}>#{activity._id}</span>
@@ -450,51 +343,35 @@ export default function VisualizzaAttivitaPage() {
                 <div className={styles.activityInfo}>
                   <div className={styles.infoItem}>
                     <span className={styles.infoLabel}>Data</span>
-                    <span className={styles.infoValue}>
-                      {new Date(activity.activityDate).toLocaleDateString("it-IT")}
-                    </span>
+                    <span className={styles.infoValue}>{new Date(activity.activityDate).toLocaleDateString("it-IT")}</span>
                   </div>
                   <div className={styles.infoItem}>
                     <span className={styles.infoLabel}>Partecipanti</span>
-                    <span className={styles.infoValue}>
-                      {(activity.partecipantList ?? []).length} / {activity.maxParticipants}
-                    </span>
+                    <span className={styles.infoValue}>{(activity.partecipantList ?? []).length} / {activity.maxParticipants}</span>
                   </div>
                 </div>
-              </Link>
 
-              <div className={styles.cardActions}>
-                {isAdmin ? (
-                  <span
-                    className={`${styles.statusBadge} ${styles.statusSuspended}`}
-                    style={{
-                      background: "rgba(155,89,182,0.1)",
-                      color: "#8e44ad",
-                      border: "1px solid rgba(155,89,182,0.2)",
-                    }}
-                  >
-                    Admin
-                  </span>
-                ) : joinState === "join" ? (
-                  <button
-                    type="button"
-                    className={appStyles.primaryButtonSmall}
-                    disabled={!!isSuspended}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setJoinModal({ activity });
-                    }}
-                  >
-                    {buttonLabel[joinState]}
-                  </button>
-                ) : (
-                  <span className={styles.activityStateBadge}>
-                    {buttonLabel[joinState]}
-                  </span>
-                )}
-              </div>
-            </article>
+                <div className={styles.cardActions}>
+                  {isAdmin ? (
+                    <span className={`${styles.statusBadge} ${styles.statusSuspended}`} style={{ background: "rgba(155,89,182,0.1)", color: "#8e44ad", border: "1px solid rgba(155,89,182,0.2)" }}>
+                      Admin
+                    </span>
+                  ) : (
+                    <button
+                      className={appStyles.primaryButtonSmall}
+                      disabled={isDisabled || isSuspended}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!isDisabled) setJoinModal({ activity });
+                      }}
+                    >
+                      {buttonLabel[joinState]}
+                    </button>
+                  )}
+                </div>
+              </article>
+            </Link>
           );
         })}
       </section>
@@ -506,22 +383,11 @@ export default function VisualizzaAttivitaPage() {
             <h2 className={styles.modalTitle}>Conferma partecipazione</h2>
             <p className={styles.modalBody}>
               Stai per iscriverti a <strong>{joinModal.activity.title}</strong>.<br />
-              Il tuo <strong>nickname</strong> e la tua <strong>email</strong> saranno
-              condivisi con l'organizzatore.
+              Il tuo <strong>nickname</strong> e la tua <strong>email</strong> saranno condivisi con l'organizzatore.
             </p>
             <div className={styles.modalActions}>
-              <button
-                className={appStyles.secondaryButton}
-                onClick={() => setJoinModal(null)}
-                disabled={joinLoading}
-              >
-                Annulla
-              </button>
-              <button
-                className={appStyles.primaryButton}
-                onClick={() => confirmJoin(joinModal.activity)}
-                disabled={joinLoading}
-              >
+              <button className={appStyles.secondaryButton} onClick={() => setJoinModal(null)} disabled={joinLoading}>Annulla</button>
+              <button className={appStyles.primaryButton} onClick={() => confirmJoin(joinModal.activity)} disabled={joinLoading}>
                 {joinLoading ? "Iscrizione in corso..." : "Conferma"}
               </button>
             </div>

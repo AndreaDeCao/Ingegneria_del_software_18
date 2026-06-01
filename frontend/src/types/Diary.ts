@@ -11,13 +11,7 @@ export type DiaryEntry = {
 
   percorsoPersonalizzato?: string;
   gpxData?: string;
-  amici?: {
-    _id: string;
-    nome: string;
-    cognome: string;
-    nickname: string;
-    avatarUrl: string;
-  }[];
+  amici?: string[];
   segnalazione?: {
     tipo: "Sentiero danneggiato" | "Neve/ghiaccio" | "Sentiero chiuso" | "Fauna pericolosa" | "Altro";
     descrizione?: string;

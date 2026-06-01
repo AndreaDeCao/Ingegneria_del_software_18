@@ -12,7 +12,6 @@ type AuthContextValue = {
   login: (req: LoginRequest) => Promise<void>;
   register: (req: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
 };
 
 
@@ -137,11 +136,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAccessToken(null); // pulisce il token JWT memorizzato in memoria quando l'utente effettua il logout
         setUser(null);
       },
-
-      refreshUser: async () => {
-        const r = await authApi.me();
-        setUser(r.user);
-      }
     }),
     [user, loading]
   );

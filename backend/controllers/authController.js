@@ -27,7 +27,6 @@ function safeUser(userDoc) {
     email: userDoc.email,
     nickname: userDoc.nickname,
     role: userDoc.role,
-    avatarUrl: userDoc.avatarUrl ?? null,
     favoriteTreks: userDoc.favoriteTreks ?? [],
   };
 }

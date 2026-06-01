@@ -14,14 +14,6 @@ const SEGNALAZIONE_TIPI = [
   "Altro",
 ];
 
-type FriendOption = {
-  _id: string;
-  nome: string;
-  cognome: string;
-  nickname: string;
-  avatarUrl?: string;
-}
-
 export default function CreaVoceDiarioPage() {
   const navigate = useNavigate();
 
@@ -50,34 +42,11 @@ export default function CreaVoceDiarioPage() {
   const [errors, setErrors]     = useState<string[]>([]);
   const [success, setSuccess]   = useState(false);
 
-  // Amici selezionati
-  const [friendOptions, setFriendOptions] = useState<FriendOption[]>([]);
-  const [selectedFriends, setSelectedFriends] = useState<FriendOption[]>([]);
-  const [friendSearch, setFriendSearch] = useState("");
-
-  const filteredFriends = friendOptions.filter(f => {
-    const q = friendSearch.toLowerCase();
-    const fullName = `${f.nome} ${f.cognome}`.toLowerCase();
-    return (
-      !selectedFriends.some(s => s._id === f._id) && (
-        f.nickname.toLowerCase().includes(q) ||
-        f.nome.toLowerCase().includes(q) ||
-        f.cognome.toLowerCase().includes(q) ||
-        fullName.includes(q)
-      )
-    );
-  })
-  .slice(0, 5);
-
   const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
   useEffect(() => {
     fetch(`${API_BASE}/treks`)
       .then(r => r.json()).then(setTreks).catch(() => {});
-
-      http<{ friendshipId: string; user: FriendOption }[]>("/api/friendships")
-        .then(data => setFriendOptions(data.map(f => f.user)))
-        .catch(() => {});
   }, []);
 
   function handleGpxUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -191,7 +160,6 @@ export default function CreaVoceDiarioPage() {
       trekId: modalitaPercorso === "predefinito" ? trekId : undefined,
       percorsoPersonalizzato: modalitaPercorso === "personalizzato" ? percorsoPersonalizzato : undefined,
       gpxData: gpxData || undefined,
-      amici: selectedFriends.map(f => f._id),
       segnalazione: segnalazioneAttiva && segnalazioneTipo
         ? { tipo: segnalazioneTipo, descrizione: segnalazioneDesc || undefined }
         : undefined,
@@ -447,73 +415,10 @@ export default function CreaVoceDiarioPage() {
             <div className={styles.card}>
               <h3 className={appStyles.sectionTitle}>Amici</h3>
               <p className={styles.hint}>Chi era con te?</p>
-
-              {friendOptions.length === 0 ? (
-                <p className={styles.hint}>Non hai ancora amici aggiunti.</p>
-              ) : (
-                <>
-                  {selectedFriends.length > 0 && (
-                    <div className={styles.friendsList}>
-                      {selectedFriends.map(f => (
-                        <div
-                          key={f._id}
-                          className={`${styles.friendItem} ${styles.friendItemSelected}`}
-                          onClick={() => setSelectedFriends(prev => prev.filter(s => s._id !== f._id))}
-                        >
-                          <div className={styles.friendAvatar}>
-                            {f.avatarUrl
-                              ? <img src={f.avatarUrl} alt="avatar" className={styles.friendAvatarImg} />
-                              : <span>{f.nome[0].toUpperCase()}</span>
-                            }
-                          </div>
-                          <div className={styles.friendInfo}>
-                            <p className={styles.friendName}>{f.nome} {f.cognome}</p>
-                            <p className={styles.friendNick}>@{f.nickname}</p>
-                          </div>
-                          <span className={styles.friendCheck}>✓</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <input
-                    className={`${styles.input} ${selectedFriends.length > 0 ? styles.friendSearchInput : ""}`}
-                    placeholder="Cerca amico..."
-                    value={friendSearch}
-                    onChange={e => setFriendSearch(e.target.value)}
-                  />
-
-                  {filteredFriends.length > 0 && (
-                    <div className={styles.friendsList}>
-                      {filteredFriends.map(f => (
-                        <div
-                          key={f._id}
-                          className={styles.friendItem}
-                          onClick={() => {
-                            setSelectedFriends(prev => [...prev, f]);
-                            setFriendSearch("");
-                          }}
-                        >
-                          <div className={styles.friendAvatar}>
-                            {f.avatarUrl
-                              ? <img src={f.avatarUrl} alt="avatar" className={styles.friendAvatarImg} />
-                              : <span>{f.nome[0].toUpperCase()}</span>
-                            }
-                          </div>
-                          <div className={styles.friendInfo}>
-                            <p className={styles.friendName}>{f.nome} {f.cognome}</p>
-                            <p className={styles.friendNick}>@{f.nickname}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {friendSearch.length > 0 && filteredFriends.length === 0 && (
-                    <p className={styles.hint}>Nessun amico trovato.</p>
-                  )}
-                </>
-              )}
+              <button className={styles.friendsButton} disabled>
+                <span>👥 Aggiungi amici</span>
+                <span className={styles.friendsBadge}>Presto disponibile</span>
+              </button>
             </div>
 
             {/* RIEPILOGO + SALVA */}

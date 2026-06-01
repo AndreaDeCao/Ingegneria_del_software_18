@@ -18,7 +18,7 @@ import Treks from "./pages/Treks/Treks";
 import MyTreks from "./pages/Treks/FavoriteTreks";
 import TrekDetails from "./pages/Treks/TrekDetails";
 
-import Friends from "./pages/amici/Friends";
+import Friends from "./pages/Friends";
 import Home from "./pages/Home";
 
 import Privacy from "./pages/informativa/Privacy";
