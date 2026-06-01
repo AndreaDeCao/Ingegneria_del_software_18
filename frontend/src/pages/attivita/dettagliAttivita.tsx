@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import styles from "./attivitaPage.module.css";
 import appStyles from "../../App.module.css";
 import { useAuth } from "../../auth/AuthProvider";
+import { http } from "../../auth/api";
 import type { Activity } from "../../types/Activity";
 import type {Trek} from "../../types/Trek";
 import type {Organizer} from "../../types/Organizer";
@@ -83,17 +84,10 @@ export default function DettagliAttivita() {
   async function handleAction(endpoint: string, method: string) {
     setActionLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/activities/${id}/${endpoint}`, {
+      const updated = await http<ActivityPopulated>(`/activities/${id}/${endpoint}`, {
         method,
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userID: user?._id }),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || err.message || "Errore");
-      }
-      const updated: ActivityPopulated = await res.json();
       updated.partecipantList = updated.partecipantList ?? [];
       setActivity(updated);
 //      showMessage(
@@ -117,16 +111,10 @@ export default function DettagliAttivita() {
   async function handleDelete() {
     setActionLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/activities/${id}`, {
+      await http<{ message: string }>(`/activities/${id}`, {
         method: "DELETE",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userID: user?._id }),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || err.message || "Errore durante l'eliminazione");
-      }
       navigate("/attivita/visualizza");
     } catch (err: any) {
       showMessage(err.message || "Errore");

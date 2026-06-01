@@ -143,20 +143,10 @@ export default function CreaAttivitaPage() {
         organizerID: user?._id,
       };
 
-      // const res = await fetch("http://localhost:3000/activities", {
-      const res = await fetch(`${API_BASE}/activities/`, {
+      const created = await http<{ _id: string }>("/activities/", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify(body),
       });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || err.message || "Errore backend");
-      }
-
-      const created = await res.json();
       navigate(`/attivita/${created._id}`);
 
     } catch(err: unknown) {
