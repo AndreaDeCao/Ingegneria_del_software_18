@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import styles from "../attivita/attivitaPage.module.css";
 import reportStyles from "./GestioneSegnalazioni.module.css";
 import appStyles from "../../App.module.css";
@@ -10,13 +10,21 @@ const POLL_INTERVAL_MS = 20_000;
 
 type ReportStatus = "pending" | "accepted" | "dismissed";
 
+type PopulatedUser = {
+  _id: string;
+  nickname?: string;
+  nome?: string;
+  cognome?: string;
+  email?: string;
+};
+
 type Report = {
   _id: string;
-  reportedBy: { _id: string; nickname?: string; email?: string } | string;
+  reportedBy: PopulatedUser | string;
   reason: string;
   reportedAt: string;
   reportStatus: ReportStatus;
-  reviewedBy?: { _id: string; nickname?: string; email?: string } | string | null;
+  reviewedBy?: PopulatedUser | string | null;
   reviewedAt?: string | null;
   reviewNote?: string;
 };
@@ -26,7 +34,7 @@ type ActivityWithReports = {
   title: string;
   status: string;
   activityDate: string;
-  organizerID: string;
+  organizerID: PopulatedUser | string;
   trekID: string;
   reports: Report[];
   suspended?: boolean;
@@ -36,26 +44,35 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export default function GestioneSegnalazioniPage() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const filterParam = searchParams.get("filter");
 
   const [activities, setActivities] = useState<ActivityWithReports[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState<string | null>(null); // reportId in azione
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Filtri
-  const [categoryFilter, setCategoryFilter] = useState("Tutti"); // "Tutti" | "Attivita" (per ora solo attivita)
-  const [statusFilter, setStatusFilter] = useState("all"); // "all" | "pending" | "accepted" | "dismissed"
+  const [categoryFilter, setCategoryFilter] = useState(() => {
+    if (filterParam === "activity") return "Attivita";
+    if (filterParam === "user") return "Utenti";
+    return "Tutti";
+  });
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const isAdmin = user?.role === "admin";
 
   const fetchAll = useCallback(async (silent = false) => {
     if (!isAdmin) return;
     try {
+      // Ora getActivities restituisce i dati già popolati
       const res = await fetch(`${API_BASE}/activities/`);
       if (!res.ok) throw new Error("Errore nel recupero attivita");
       const data: ActivityWithReports[] = await res.json();
-      // Tieni solo quelle con almeno una segnalazione
-      setActivities(data.filter((a) => (a.reports ?? []).length > 0));
+
+      // Filtra solo attività con segnalazioni
+      const withReports = data.filter((a) => (a.reports ?? []).length > 0);
+      setActivities(withReports);
     } catch (err: any) {
       if (!silent) setError(err.message);
     } finally {
@@ -68,7 +85,7 @@ export default function GestioneSegnalazioniPage() {
     fetchAll(false);
   }, [fetchAll]);
 
-  // Polling automatico — aggiorna in background senza mostrare spinner
+  // Polling automatico
   useEffect(() => {
     const interval = setInterval(() => {
       fetchAll(true);
@@ -101,13 +118,26 @@ export default function GestioneSegnalazioniPage() {
     }
   }
 
-  // Rimuove tutte le segnalazioni accettate dall'attivita (admin)
-  // Usa dismiss su ogni segnalazione accettata per "pulire" il banner
-  async function handleRemoveAcceptedReports(activityId: string, acceptedReportIds: string[]) {
-    for (const reportId of acceptedReportIds) {
-      await handleReportAction(activityId, reportId, "dismiss");
+  // Helper per ottenere il nickname del segnalatore
+  const getReporterName = (report: Report): string => {
+    const reportedBy = report.reportedBy;
+    if (reportedBy && typeof reportedBy === 'object' && !Array.isArray(reportedBy)) {
+      return reportedBy.nickname || reportedBy.email || "Utente";
     }
-  }
+    if (typeof reportedBy === "string") {
+      return reportedBy;
+    }
+    return "Utente sconosciuto";
+  };
+
+  // Helper per ottenere il nickname dell'organizzatore
+  const getOrganizerName = (activity: ActivityWithReports): string => {
+    const organizer = activity.organizerID;
+    if (organizer && typeof organizer === 'object' && !Array.isArray(organizer)) {
+      return organizer.nickname || organizer.email || "Organizzatore";
+    }
+    return "Organizzatore sconosciuto";
+  };
 
   if (!isAdmin) {
     return (
@@ -128,9 +158,15 @@ export default function GestioneSegnalazioniPage() {
   const flatReports: FlatReport[] = [];
   activities.forEach((a) => {
     (a.reports ?? []).forEach((r) => {
+      // Applica filtro categoria
+      if (categoryFilter !== "Tutti" && categoryFilter !== "Attivita") {
+        return; // FIXME: Quando implementato filtro utenti
+      }
+      
       const matchesStatus =
         statusFilter === "all" ||
         r.reportStatus === statusFilter;
+      
       if (matchesStatus) {
         flatReports.push({ activity: a, report: r });
       }
@@ -188,6 +224,9 @@ export default function GestioneSegnalazioniPage() {
           >
             <option value="Tutti">Tutti</option>
             <option value="Attivita">Attivita</option>
+            {/* FIXME: Quando implementate segnalazioni utenti, sbloccare questa opzione
+            <option value="Utenti">Utenti</option>
+            */}
           </select>
         </div>
 
@@ -213,10 +252,20 @@ export default function GestioneSegnalazioniPage() {
       {/* LISTA SEGNALAZIONI */}
       <div className={reportStyles.reportList}>
         {flatReports.map(({ activity, report }) => {
-          const reporter =
-            typeof report.reportedBy === "object"
-              ? report.reportedBy.nickname ?? report.reportedBy.email ?? "Utente"
-              : "Utente";
+          const reporterName = getReporterName(report);
+          const organizerName = getOrganizerName(activity);
+          
+          const reporterEmail = typeof report.reportedBy === "object" ? report.reportedBy.email : null;
+          const reporterFullName = typeof report.reportedBy === "object" 
+            ? [report.reportedBy.nome, report.reportedBy.cognome].filter(Boolean).join(" ")
+            : null;
+
+          const organizerEmail = typeof activity.organizerID === "object" ? activity.organizerID.email : null;
+          const organizerFullName = typeof activity.organizerID === "object"
+            ? [activity.organizerID.nome, activity.organizerID.cognome]
+                .filter(Boolean)
+                .join(" ")
+            : null;
 
           const isPending = report.reportStatus === "pending";
           const isAccepted = report.reportStatus === "accepted";
@@ -240,12 +289,53 @@ export default function GestioneSegnalazioniPage() {
               </div>
 
               {/* Meta */}
+              {/* Segnalatore */}
               <div className={reportStyles.reportMeta}>
-                <span>Segnalata da <strong>{reporter}</strong></span>
+                <span>
+                  Segnalata da <strong>{reporterName}</strong>
+
+                  {reporterEmail && reporterName !== reporterEmail && (
+                    <>
+                      <span style={{ opacity: 0.5, margin: "0 6px" }}>·</span>
+                      <span style={{ opacity: 0.7 }}>{reporterEmail}</span>
+                    </>
+                  )}
+
+                  {reporterFullName && (
+                    <>
+                      <span style={{ opacity: 0.5, margin: "0 6px" }}>·</span>
+                      <span style={{ opacity: 0.7 }}>{reporterFullName}</span>
+                    </>
+                  )}
+                </span>
+
                 <span className={reportStyles.reportDate}>
                   {new Date(report.reportedAt).toLocaleDateString("it-IT", {
-                    day: "2-digit", month: "long", year: "numeric",
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
                   })}
+                </span>
+              </div>
+
+              {/* Organizzatore */}
+              <div className={reportStyles.reportMeta}>
+                <span>
+                  Organizzatore <strong>{organizerName}</strong>
+
+                  {organizerEmail && organizerName !== organizerEmail && (
+                    <>
+                      <span style={{ opacity: 0.5, margin: "0 6px" }}>·</span>
+                      <span style={{ opacity: 0.7 }}>{organizerEmail}</span>
+                    </>
+                  )}
+
+                  {organizerFullName && (
+                    <>
+                      <span style={{ opacity: 0.5, margin: "0 6px" }}>·</span>
+                      <span style={{ opacity: 0.7 }}>{organizerFullName}</span>
+                    </>
+                  )}
                 </span>
               </div>
 
@@ -286,7 +376,7 @@ export default function GestioneSegnalazioniPage() {
                 </div>
               )}
 
-              {/* Segnalazione accettata — admin puo rimuovere il banner (rigettando la segnalazione) */}
+              {/* Segnalazione accettata — admin puo rimuovere il banner */}
               {isAccepted && (
                 <div className={reportStyles.reportActions}>
                   <button

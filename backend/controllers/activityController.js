@@ -3,27 +3,33 @@ const Activity = require("../models/activities");
 // GET tutti le attivita
 exports.getActivities = async (req, res) => {
   try {
-    const activities = await Activity.find();
+    const activities = await Activity.find()
+      .populate("organizerID", "nickname email nome cognome")
+      .populate("reports.reportedBy", "nickname email nome cognome")
+      .populate("reports.reviewedBy", "nickname email");
+    
     const now = new Date();
-    activities.forEach(async (activity) => {
+    for (const activity of activities) {
       if (activity.status === "Aperto" && activity.activityDate < now) {
         activity.status = "Chiuso";
         await activity.save();
       }
-    });
+    }
     res.json(activities);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// GET attività per ID — popola partecipantList con nickname ed email
+// GET attività per ID
 exports.getActivityById = async (req, res) => {
   try {
     const activity = await Activity
       .findById(req.params.id)
       .populate("partecipantList", "nickname email nome cognome")
-      .populate("suspendedBy", "nickname email");
+      .populate("suspendedBy", "nickname email")
+      .populate("reports.reportedBy", "nickname email nome cognome")
+      .populate("reports.reviewedBy", "nickname email");
 
     if (!activity) {
       return res.status(404).json({ error: "Attività non trovata" });

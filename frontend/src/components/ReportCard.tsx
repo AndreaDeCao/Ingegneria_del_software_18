@@ -34,6 +34,16 @@ function ReportCard({
   status = "pending",
   targetLink,
 }: ReportCardProps) {
+  // Helper per troncare ID lunghi
+  const formatIdOrName = (value: string): string => {
+    if (!value) return "Sconosciuto";
+    // Se sembra un ObjectId MongoDB (24 caratteri esadecimali)
+    if (value.match(/^[0-9a-fA-F]{24}$/)) {
+      return value.slice(0, 8) + "...";
+    }
+    return value;
+  };
+
   return (
     <Link to={targetLink} className={styles.reportCardLink}>
       <article className={styles.reportCard}>
@@ -50,7 +60,9 @@ function ReportCard({
               <div className={styles.reportMetaItem}>
                 <span className={styles.reportMetaLabel}>Organizzatore:</span>
                 <span className={styles.reportMetaValue}>
-                  {organizerName !== "Organizzatore sconosciuto" ? `@${organizerName}` : organizerName}
+                  {organizerName !== "Organizzatore sconosciuto" && !organizerName.match(/^[0-9a-fA-F]{24}$/)
+                    ? `@${organizerName}`
+                    : formatIdOrName(organizerName)}
                 </span>
               </div>
             )}
@@ -58,17 +70,19 @@ function ReportCard({
             <div className={styles.reportMetaItem}>
               <span className={styles.reportMetaLabel}>Segnalato da:</span>
               <span className={styles.reportMetaValue}>
-                {reportedByName && reportedByName !== "Utente sconosciuto"
+                {reportedByName && reportedByName !== "Utente sconosciuto" && !reportedByName.match(/^[0-9a-fA-F]{24}$/)
                   ? `@${reportedByName}`
-                  : reportedBy || "Utente sconosciuto"}
+                  : formatIdOrName(reportedByName || reportedBy)}
               </span>
             </div>
 
             {reportCount && reportCount > 1 && (
-              <div className={styles.reportMetaItem}>
-                <span className={styles.reportMetaLabel}>Segnalazioni totali:</span>
-                <span className={styles.reportMetaValue}>{reportCount}</span>
-              </div>
+              <>
+                <div className={styles.reportMetaItem}>
+                  <span className={styles.reportMetaLabel}>Segnalazioni totali:</span>
+                  <span className={styles.reportMetaValue}>{reportCount}</span>
+                </div>
+              </>
             )}
           </div>
 
