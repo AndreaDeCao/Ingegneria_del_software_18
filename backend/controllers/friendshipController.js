@@ -293,6 +293,7 @@ exports.searchUsers = async (req, res) => {
         { nome: { $regex: query, $options: "i" } },
         { cognome: { $regex: query, $options: "i" } },
       ],
+      role: "user",
     }, {
       projection: { nome: 1, cognome: 1, nickname: 1, avatarUrl: 1 }
     }).limit(20).toArray();
