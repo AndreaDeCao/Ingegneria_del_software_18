@@ -229,6 +229,13 @@ export default function DettagliAttivita() {
     !pendingInvites.some((invite) => invite.receiver._id === friend.user._id) &&
     !activity.partecipantList.some((participant) => participant._id === friend.user._id)
   );
+  const displayedInviteableFriends = inviteableFriends
+    .filter(({ user: f }) =>
+      `${f.nome} ${f.cognome} ${f.nickname}`
+        .toLowerCase()
+        .includes(friendSearch.toLowerCase())
+    )
+    .slice(0, 5); //limito a 5 risultati di amici
 
   /**
    * Gestisce selezione di amici da invitare.
@@ -556,13 +563,7 @@ export default function DettagliAttivita() {
                   />
 
                   <div className={styles.friendsList}>
-                    {inviteableFriends
-                      .filter(({ user: f }) =>
-                        `${f.nome} ${f.cognome} ${f.nickname}`
-                          .toLowerCase()
-                          .includes(friendSearch.toLowerCase())
-                      )
-                      .map(({ friendshipId, user: friend }) => {
+                    {displayedInviteableFriends.map(({ friendshipId, user: friend }) => {
                         const isSelected = invitedUsers.includes(friend._id);
                         return (
                           <div

@@ -53,7 +53,7 @@ export default function CreaAttivitaPage() {
         .toLowerCase()
         .includes(friendSearch.toLowerCase())
     )
-    .slice(0, 5);
+    .slice(0, 5); //limito a 5 risultati di amici
 
   const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
