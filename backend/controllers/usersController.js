@@ -487,3 +487,57 @@ exports.deleteAvatar = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+/* NOTIFHCE */
+
+/**
+ * Restituisce le notifiche dell'utente, dalla più recente.
+ *
+ * @route GET /users/me/notifications
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con array di notifiche
+ */
+exports.getNotifications = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if(!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+
+    const sorted = [...user.notifications]. sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    res.json(sorted);
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/**
+ * Marca tutte le notifiche come lette.
+ *
+ * @route PUT /users/me/notifications/read-all
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con messaggio di conferma
+ */
+exports.markAllNotificationRead = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if(!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+
+    user.notifications.forEach(n => { n.read = true; });
+    await user.save({ validateModifiedOnly: true });
+
+    res.json({ message: "Tutte le notifiche sono segnate come lette" });
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
