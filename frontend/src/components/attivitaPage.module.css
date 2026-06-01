@@ -1,0 +1,914 @@
+/* ── GENERICI ────────────────────────────────────────────────────────────── */
+
+.page {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+}
+
+.pageTitle {
+  font-size: 34px;
+  font-family: var(--font-display);
+  color: var(--text-primary);
+}
+
+.message {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.messageError {
+  marginTop: 12;
+  padding: 12;
+  borderRadius: 8;
+  border: "1px solid #f5c6cb";
+  background: "#fdecea";
+  color: "#7a1f1f";
+}
+
+
+/* ── FORM (CreaAttivitaPage) ─────────────────────────────────────────────── */
+
+.formCard {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  transition: transform 0.25s ease;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.input,
+.textarea,
+select {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: border 0.2s ease, background 0.2s ease;
+}
+
+.input:focus,
+.textarea:focus,
+select:focus {
+  border-color: var(--accent);
+  background: var(--card-bg);
+}
+
+.textarea {
+  resize: vertical;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ── BOTTONI ─────────────────────────────────────────────────────────────── */
+.dangerButton {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(231, 76, 60, 0.12);
+  color: #e74c3c;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.dangerButton:hover {
+  background: rgba(231, 76, 60, 0.22);
+  transform: translateY(-1px);
+}
+
+.dangerButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.leaveButton {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  background: transparent;
+  color: #e74c3c;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.leaveButton:hover {
+  background: rgba(231, 76, 60, 0.08);
+  border-color: #e74c3c;
+}
+
+.leaveButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+
+/* ── LISTA ATTIVITÀ (VisualizzaListaAttivitaPage) ────────────────────────── */
+
+.listHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.sectionTitle {
+  font-size: 22px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.sectionCount {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.filtersBar {
+  display: flex;
+  gap: 12px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filterLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #444;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 220px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.select {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.dateInput {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.resetFiltersButton {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.resetFiltersButton:hover {
+  background: rgba(231, 76, 60, 0.08);
+  color: #e74c3c;
+  border-color: rgba(231, 76, 60, 0.35);
+}
+
+.activitiesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 18px;
+}
+
+.activityCard {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.activityCard:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Card sospesa — bordo arancione per distinguerla visivamente nella lista */
+.activityCardSuspended {
+  border-color: rgba(230, 126, 34, 0.5) !important;
+}
+
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.activityId {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.statusBadge {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.statusAvailable {
+  background: rgba(46, 204, 113, 0.12);
+  color: #27ae60;
+}
+
+.statusClosed {
+  background: rgba(241, 196, 15, 0.15);
+  color: #d4a017;
+}
+
+.statusCancelled {
+  background: rgba(231, 76, 60, 0.12);
+  color: #e74c3c;
+}
+
+/* Badge "Sospesa" da affiancare allo status badge nella card */
+.statusSuspended {
+  background: rgba(230, 126, 34, 0.15);
+  color: #e67e22;
+}
+
+.activityTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.trekName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: -6px;
+}
+
+.activityName {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  flex: 1;
+}
+
+.activityDescription {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.activityInfo {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.infoLabel {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.infoValue {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.cardActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+
+/* ── DETTAGLI ATTIVITÀ (DettagliAttivita) ────────────────────────────────── */
+
+.breadcrumb {
+  margin-bottom: 16px;
+}
+
+.breadcrumbLink {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.breadcrumbLink:hover {
+  opacity: 0.7;
+}
+
+.detailHero {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.detailHeroTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detailTitle {
+  font-size: 32px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.detailTrekName {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.detailDescription {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.detailCard {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.detailCard:hover {
+  border-color: var(--accent);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.detailCard > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detailCardLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-secondary);
+}
+
+.detailCardValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.detailCardSub {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.detailSectionTitle {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--text-primary);
+}
+
+.detailActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.buttonActions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+}
+
+.buttonActions > button {
+  flex: 1;
+  min-width: 140px;
+}
+
+.detailActions .primaryButton,
+.detailActions .dangerButton,
+.detailActions .leaveButton {
+  align-self: flex-start;
+  margin-top: 0;
+}
+
+
+/* ── LISTA PARTECIPANTI ──────────────────────────────────────────────────── */
+
+.participantList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.participantItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.participantAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  font-weight: 700;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.participantInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.participantNickname {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.participantEmail {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.organizerTag {
+  font-size: 13px;
+  margin-left: 4px;
+  color: var(--text-secondary);;
+}
+
+
+/* ── BADGE STATO UTENTE ──────────────────────────────────────────────────── */
+
+.organizerBadge,
+.alreadyJoinedBadge,
+.adminBadge,
+.errorBox {
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.errorBox {
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(248, 113, 113, 0.14);
+  color: #991b1b;
+}
+
+.organizerBadge {
+  background: rgba(46, 204, 113, 0.1);
+  color: #27ae60;
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.alreadyJoinedBadge {
+  background: rgba(52, 152, 219, 0.1);
+  color: #2980b9;
+  border: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+/* Badge identità admin nella pagina dettagli */
+.adminBadge {
+  background: rgba(155, 89, 182, 0.1);
+  color: #8e44ad;
+  border: 1px solid rgba(155, 89, 182, 0.3);
+}
+
+/* ── BANNER SOSPENSIONE ──────────────────────────────────────────────────── */
+
+/* Banner arancione visibile sia all'organizzatore che all'admin */
+.suspendedBanner {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(230, 126, 34, 0.45);
+  background: rgba(230, 126, 34, 0.1);
+  color: #a04000;
+  font-size: 14px;
+  font-weight: 600;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.suspendedBannerTitle {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.suspendedBannerReason {
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+/* ── PANNELLO ADMIN (DettagliAttivita) ───────────────────────────────────── */
+
+/* Contenitore azioni riservate all'admin */
+.adminPanel {
+  background: rgba(155, 89, 182, 0.06);
+  border: 1px solid rgba(155, 89, 182, 0.25);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adminPanelTitle {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #8e44ad;
+}
+
+/* Bottone sospendi — tono arancione */
+.suspendButton {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(230, 126, 34, 0.12);
+  color: #c0530a;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.suspendButton:hover {
+  background: rgba(230, 126, 34, 0.22);
+  transform: translateY(-1px);
+}
+
+.suspendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Textarea per il motivo della sospensione nella modale */
+.suspendReasonInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+  transition: border 0.2s ease;
+}
+
+.suspendReasonInput:focus {
+  border-color: #e67e22;
+}
+
+
+/* ── MODAL ───────────────────────────────────────────────────────────────── */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(3px);
+}
+
+.modalCard {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  max-width: 440px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.modalTitle {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--text-primary);
+}
+
+.modalBody {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.modalActions .primaryButton,
+.modalActions .secondaryButton,
+.modalActions .dangerButton {
+  margin-top: 0;
+}
+
+/* Badge "Segnalata" nella lista e nel dettaglio */
+.statusReported {
+  background: rgba(230, 180, 34, 0.15);
+  color: #a07800;
+}
+
+/* Badge segnalazione in attesa — visibile solo admin */
+.statusPendingReport {
+  background: rgba(230, 140, 34, 0.15);
+  color: #8a4a00;
+}
+
+/* Card con segnalazione accettata — bordo giallo-ambra */
+.activityCardReported {
+  border-color: rgba(230, 180, 34, 0.5) !important;
+}
+
+/* Banner segnalazione accettata — visibile a tutti */
+.reportedBanner {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(230, 180, 34, 0.45);
+  background: rgba(230, 180, 34, 0.1);
+  color: #6b4e00;
+  font-size: 14px;
+  font-weight: 600;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.reportedBannerTitle {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.reportedBannerReason {
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+/* Bottone "Segnala attività" — tono neutro discreto */
+.reportButton {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.reportButton:hover {
+  background: rgba(230, 180, 34, 0.08);
+  color: #a07800;
+  border-color: rgba(230, 180, 34, 0.4);
+}
+
+.reportButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Badge conferma segnalazione già inviata */
+.reportedConfirmBadge {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(230, 180, 34, 0.35);
+  background: rgba(230, 180, 34, 0.08);
+  color: #7a5500;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ── PANNELLO ADMIN — SEZIONE SEGNALAZIONI ───────────────────────────────── */
+
+.adminReportsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid rgba(155, 89, 182, 0.2);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+.adminReportsSectionTitle {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #8e44ad;
+}
+
+.adminReportItem {
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.adminReportMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.adminReportUser {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.adminReportDate {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.adminReportReason {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.adminReportActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+/* Bottone accetta segnalazione — verde */
+.acceptReportButton {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(46, 204, 113, 0.12);
+  color: #1a7a40;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.acceptReportButton:hover {
+  background: rgba(46, 204, 113, 0.22);
+}
+
+.acceptReportButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Bottone rigetta segnalazione — grigio neutro */
+.dismissReportButton {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.dismissReportButton:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.dismissReportButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
