@@ -1,5 +1,6 @@
 const Activity = require("../models/activities");
 const Friendship = require("../models/friendship");
+const ActivityInvitation = require("../models/activityInvitation");
 const User = require("../models/users");
 
 
@@ -152,11 +153,10 @@ exports.joinActivity = async (req, res) => {
       return res.status(400).json({ error: "Sei l'organizzatore di questa attività" });
     }
 
-    if(activity.visibility === "private") {
-      const isInvited = activity.invitedUsers.some((id) => id.toString() === userID);
-      if(!isInvited) {
-        return res.status(403).json({ error: "Questa attività è privata. Devi essere invitato per partecipare" });
-      }
+    if (activity.visibility === "private") {
+      return res.status(403).json({
+        error: "Questa attività è privata. Devi accettare l'invito per partecipare",
+      });
     }
 
     const alreadyJoined = activity.partecipantList.some(
@@ -215,6 +215,17 @@ exports.leaveActivity = async (req, res) => {
     );
     if (activity.partecipantList.length === before) {
       return res.status(400).json({ error: "Non sei iscritto a questa attività" });
+    }
+
+    const invitation = await ActivityInvitation.findOne({
+      activity: activity._id,
+      receiver: userID.toString(),
+    });
+    if (invitation) {
+      invitation.status = "declined";
+      invitation.declinedAt = new Date();
+      invitation.acceptedAt = undefined;
+      await invitation.save();
     }
 
     if (activity.status === "Chiuso" && activity.partecipantList.length < activity.maxParticipants) {
@@ -391,6 +402,353 @@ exports.deleteActivity = async (req, res) => { //FIX ME: solo admin
     res.json({ message: "Attività eliminata definitivamente" });
   } catch (err) {
     if (err.name === "CastError") return res.status(400).json({ error: "ID non valido" });
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Invia un invito a partecipare all'attività.
+ * Solo l'organizzatore può invitare i propri amici.
+ *
+ * @route POST /activities/:id/invite/:userId
+ */
+exports.sendActivityInvite = async (req, res) => {
+  try {
+    const organizerId = req.userId?.toString();
+    const receiverId = req.params.userId?.toString();
+
+    if (!organizerId) {
+      return res.status(401).json({ error: "Non autenticato" });
+    }
+
+    const activity = await Activity.findById(req.params.id);
+    if (!activity) {
+      return res.status(404).json({ error: "Attività non trovata" });
+    }
+
+    if (activity.organizerID?.toString() !== organizerId) {
+      return res.status(403).json({ error: "Solo l'organizzatore può invitare amici" });
+    }
+
+    if (activity.status !== "Aperto") {
+      return res.status(400).json({ error: "L'attività non è aperta agli inviti" });
+    }
+
+    if (activity.activityDate <= new Date()) {
+      return res.status(400).json({ error: "Attività già passata" });
+    }
+
+    if (receiverId === organizerId) {
+      return res.status(400).json({ error: "Non puoi invitare te stesso" });
+    }
+
+    const receiver = await User.findById(receiverId);
+    if (!receiver) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+
+    const alreadyParticipant = activity.partecipantList.some((id) => id.toString() === receiverId);
+    if (alreadyParticipant) {
+      return res.status(400).json({ error: "L'utente partecipa già a questa attività" });
+    }
+
+    const friendship = await Friendship.findOne({
+      $or: [
+        { sender: organizerId, receiver: receiverId, status: "accepted" },
+        { sender: receiverId, receiver: organizerId, status: "accepted" },
+      ],
+    });
+
+    if (!friendship) {
+      return res.status(400).json({ error: "Puoi invitare solo i tuoi amici" });
+    }
+
+    const existing = await ActivityInvitation.findOne({
+      activity: activity._id,
+      sender: organizerId,
+      receiver: receiverId,
+    });
+
+    if (existing) {
+      if (existing.status === "pending") {
+        return res.status(400).json({ error: "Invito già in attesa" });
+      }
+
+      existing.status = "pending";
+      existing.acceptedAt = undefined;
+      existing.declinedAt = undefined;
+      await existing.save();
+
+      const populated = await ActivityInvitation.findById(existing._id)
+        .populate("sender", "nome cognome nickname avatarUrl")
+        .populate("receiver", "nome cognome nickname avatarUrl");
+
+      return res.status(200).json({
+        message: "Invito inviato nuovamente",
+        invitation: populated,
+      });
+    }
+
+    const invitation = new ActivityInvitation({
+      activity: activity._id,
+      sender: organizerId,
+      receiver: receiverId,
+      status: "pending",
+    });
+
+    await invitation.save();
+
+    const populated = await ActivityInvitation.findById(invitation._id)
+      .populate("sender", "nome cognome nickname avatarUrl")
+      .populate("receiver", "nome cognome nickname avatarUrl");
+
+    res.status(201).json({
+      message: "Invito inviato",
+      invitation: populated,
+    });
+  } catch (err) {
+    if (err.name === "CastError") {
+      return res.status(400).json({ error: "ID non valido" });
+    }
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Restituisce gli inviti pendenti di una specifica attività.
+ * Solo l'organizzatore può visualizzarli.
+ *
+ * @route GET /activities/:id/invites
+ */
+exports.getActivityInvites = async (req, res) => {
+  try {
+    const activity = await Activity.findById(req.params.id);
+    if (!activity) {
+      return res.status(404).json({ error: "Attività non trovata" });
+    }
+
+    if (activity.organizerID?.toString() !== req.userId) {
+      return res.status(403).json({ error: "Solo l'organizzatore può vedere gli inviti" });
+    }
+
+    const invitations = await ActivityInvitation.find({
+      activity: activity._id,
+      status: "pending",
+    })
+      .populate("sender", "nome cognome nickname avatarUrl")
+      .populate("receiver", "nome cognome nickname avatarUrl")
+      .sort({ createdAt: 1 });
+
+    res.json(invitations);
+  } catch (err) {
+    if (err.name === "CastError") {
+      return res.status(400).json({ error: "ID non valido" });
+    }
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Restituisce l'eventuale invito ricevuto dall'utente per una specifica attività.
+ *
+ * @route GET /activities/:id/invites/me
+ */
+exports.getMyActivityInvite = async (req, res) => {
+  try {
+    const invitation = await ActivityInvitation.findOne({
+      activity: req.params.id,
+      receiver: req.userId,
+      status: "pending",
+    })
+      .populate("sender", "nome cognome nickname avatarUrl")
+      .populate("receiver", "nome cognome nickname avatarUrl");
+
+    res.json(invitation ? [invitation] : []);
+  } catch (err) {
+    if (err.name === "CastError") {
+      return res.status(400).json({ error: "ID non valido" });
+    }
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Accetta un invito all'attività.
+ *
+ * @route PUT /activities/:id/invites/:inviteId/accept
+ */
+exports.acceptActivityInvite = async (req, res) => {
+  try {
+    const invitation = await ActivityInvitation.findById(req.params.inviteId);
+    if (!invitation) {
+      return res.status(404).json({ error: "Invito non trovato" });
+    }
+
+    if (invitation.activity.toString() !== req.params.id) {
+      return res.status(400).json({ error: "Invito non valido per questa attività" });
+    }
+
+    if (invitation.receiver.toString() !== req.userId) {
+      return res.status(403).json({ error: "Non autorizzato ad accettare questo invito" });
+    }
+
+    if (invitation.status !== "pending") {
+      return res.status(400).json({ error: "L'invito non è in stato pending" });
+    }
+
+    const activity = await Activity.findById(invitation.activity);
+    if (!activity) {
+      return res.status(404).json({ error: "Attività non trovata" });
+    }
+
+    if (activity.activityDate <= new Date()) {
+      return res.status(400).json({ error: "Attività già passata" });
+    }
+
+    if (activity.status !== "Aperto") {
+      return res.status(400).json({ error: "L'attività non è aperta alle iscrizioni" });
+    }
+
+    const alreadyParticipant = activity.partecipantList.some(
+      (id) => id.toString() === req.userId.toString()
+    );
+    if (alreadyParticipant) {
+      return res.status(400).json({ error: "Sei già iscritto a questa attività" });
+    }
+
+    if (activity.partecipantList.length >= activity.maxParticipants) {
+      return res.status(400).json({ error: "L'attività ha raggiunto il numero massimo di partecipanti" });
+    }
+
+    activity.partecipantList.push(req.userId);
+    if (activity.partecipantList.length >= activity.maxParticipants) {
+      activity.status = "Chiuso";
+    }
+    await activity.save();
+
+    invitation.status = "accepted";
+    invitation.acceptedAt = new Date();
+    invitation.declinedAt = undefined;
+    await invitation.save();
+
+    const updatedActivity = await Activity.findById(activity._id)
+      .populate("partecipantList", "nickname email nome cognome")
+      .populate("organizerID", "nome cognome nickname avatarUrl");
+
+    const populatedInvitation = await ActivityInvitation.findById(invitation._id)
+      .populate("sender", "nome cognome nickname avatarUrl")
+      .populate("receiver", "nome cognome nickname avatarUrl");
+
+    res.json({
+      message: "Invito accettato",
+      activity: updatedActivity,
+      invitation: populatedInvitation,
+    });
+  } catch (err) {
+    if (err.name === "CastError") {
+      return res.status(400).json({ error: "ID non valido" });
+    }
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Rifiuta un invito all'attività.
+ *
+ * @route PUT /activities/:id/invites/:inviteId/decline
+ */
+exports.declineActivityInvite = async (req, res) => {
+  try {
+    const invitation = await ActivityInvitation.findById(req.params.inviteId);
+    if (!invitation) {
+      return res.status(404).json({ error: "Invito non trovato" });
+    }
+
+    if (invitation.activity.toString() !== req.params.id) {
+      return res.status(400).json({ error: "Invito non valido per questa attività" });
+    }
+
+    if (invitation.receiver.toString() !== req.userId) {
+      return res.status(403).json({ error: "Non autorizzato a rifiutare questo invito" });
+    }
+
+    if (invitation.status !== "pending") {
+      return res.status(400).json({ error: "L'invito non è in stato pending" });
+    }
+
+    invitation.status = "declined";
+    invitation.declinedAt = new Date();
+    invitation.acceptedAt = undefined;
+    await invitation.save();
+
+    const populatedInvitation = await ActivityInvitation.findById(invitation._id)
+      .populate("sender", "nome cognome nickname avatarUrl")
+      .populate("receiver", "nome cognome nickname avatarUrl");
+
+    res.json({
+      message: "Invito rifiutato",
+      invitation: populatedInvitation,
+    });
+  } catch (err) {
+    if (err.name === "CastError") {
+      return res.status(400).json({ error: "ID non valido" });
+    }
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Revoca un invito all'attività.
+ * Solo l'organizzatore può revocare un invito ancora pending.
+ *
+ * @route PUT /activities/:id/invites/:inviteId/cancel
+ */
+exports.cancelActivityInvite = async (req, res) => {
+  try {
+    const organizerId = req.userId?.toString();
+    if (!organizerId) {
+      return res.status(401).json({ error: "Non autenticato" });
+    }
+
+    const activity = await Activity.findById(req.params.id);
+    if (!activity) {
+      return res.status(404).json({ error: "Attività non trovata" });
+    }
+
+    if (activity.organizerID?.toString() !== organizerId) {
+      return res.status(403).json({ error: "Solo l'organizzatore può revocare gli inviti" });
+    }
+
+    const invitation = await ActivityInvitation.findById(req.params.inviteId);
+    if (!invitation) {
+      return res.status(404).json({ error: "Invito non trovato" });
+    }
+
+    if (invitation.activity.toString() !== req.params.id) {
+      return res.status(400).json({ error: "Invito non valido per questa attività" });
+    }
+
+    if (invitation.status !== "pending") {
+      return res.status(400).json({ error: "Puoi revocare solo un invito in attesa" });
+    }
+
+    invitation.status = "declined";
+    invitation.declinedAt = new Date();
+    invitation.acceptedAt = undefined;
+    await invitation.save();
+
+    const populatedInvitation = await ActivityInvitation.findById(invitation._id)
+      .populate("sender", "nome cognome nickname avatarUrl")
+      .populate("receiver", "nome cognome nickname avatarUrl");
+
+    res.json({
+      message: "Invito revocato",
+      invitation: populatedInvitation,
+    });
+  } catch (err) {
+    if (err.name === "CastError") {
+      return res.status(400).json({ error: "ID non valido" });
+    }
     res.status(500).json({ error: err.message });
   }
 };

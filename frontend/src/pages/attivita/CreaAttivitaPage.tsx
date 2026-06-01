@@ -6,21 +6,21 @@ import type { Trek } from "../../types/Trek";
 import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
 import { Link, useNavigate } from "react-router-dom";
+import type {Friend} from "../../types/Friend"
 
 
 
-
-// Type dell'amico di un utente
-type Friend = {
-  friendshipId: string;
-  user: {
-    _id: string;
-    nome: string;
-    cognome: string;
-    nickname: string;
-    avatarUrl?: string;
-  };
-};
+// // Type dell'amico di un utente
+// type Friend = {
+//   friendshipId: string;
+//   user: {
+//     _id: string;
+//     nome: string;
+//     cognome: string;
+//     nickname: string;
+//     avatarUrl?: string;
+//   };
+// };
 
 
 /**
@@ -241,121 +241,121 @@ export default function CreaAttivitaPage() {
               </div>
             </div>
 
-          {/* DESCRIZIONE */}
-          <div className={styles.section}>
-            <label className={styles.label}>Descrizione</label>
-            <textarea
-              className={styles.textarea}
-              rows={4}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-
-          {/* Visibilità */}
-          <div className={styles.section}>
-            <label className={styles.label}>Visibilità</label>
-            <select
-              className={styles.input}
-              value={visibility}
-              onChange={(e) => {
-                setVisibility(e.target.value as "public" | "private");
-                setInvitedUsers([]);
-              }}
-            >
-              <option value="public">Pubblica</option>
-              <option value="private">Privata</option>
-            </select>
-          </div>
-
-          {/* SELEZIONA AMICI */}
-          <div className={styles.section}>
-            <label className={styles.label}>
-              Invita amici ({invitedUsers.length}/{maxParticipants - 1} posti disponibili)
-            </label>
-
-            {friends.length === 0 ? (
-              <p className={styles.emptyFriends}>
-                Non hai ancora amici da invitare
-              </p>
-            ) : (
-              <>
-              <input 
-                className={styles.input}
-                placeholder="Cerca un amico..."
-                value={friendSearch}
-                onChange={(e) => setFriendSearch(e.target.value)}
+            {/* DESCRIZIONE */}
+            <div className={styles.section}>
+              <label className={styles.label}>Descrizione</label>
+              <textarea
+                className={styles.textarea}
+                rows={4}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
               />
-
-              <div className={styles.friendsList}>
-                {friends
-                  .filter(({ user: f }) =>
-                  `${f.nome} ${f.cognome} ${f.nickname}`
-                  .toLowerCase()
-                  .includes(friendSearch.toLowerCase())
-                )
-                .map(({ friendshipId, user: friend }) => {
-                  const isSelected = invitedUsers.includes(friend._id);
-                  return (
-                    <div
-                      key={friendshipId}
-                      onClick={() => toggleInvite(friend._id)}
-                      className={`${styles.friendItem} ${isSelected ? styles.friendItemSelected : ""}`}
-                    >
-                      {friend.avatarUrl ? (
-                        <img
-                          src={friend.avatarUrl}
-                          alt={friend.nickname}
-                          className={styles.friendAvatar}
-                        />
-                      ) : (
-                        <div className={styles.friendAvatarPlaceholder}>
-                          {friend.nome?.[0]?.toUpperCase() ?? "?"}
-                        </div>
-                      )}
-                      <div className={styles.friendInfo}>
-                        <p className={styles.friendName}>{friend.nome} {friend.cognome}</p>
-                        <p className={styles.friendNickname}>@{friend.nickname}</p>
-                      </div>
-                      <div className={styles.friendCheck}>
-                        {isSelected ? (
-                          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={2.5}>
-                            <circle cx={12} cy={12} r={10} />
-                            <path d="M8 12l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        ) : (
-                          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--border)" strokeWidth={2}>
-                            <circle cx={12} cy={12} r={10} />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              </>
-            )}
-          </div>
-
-          <button className={appStyles.primaryButton}>
-            Crea attività
-          </button>
-
-          {error && (
-            <div
-              role="alert"
-              style={{
-                marginTop: 12,
-                padding: 12,
-                borderRadius: 8,
-                border: "1px solid #f5c6cb",
-                background: "#fdecea",
-                color: "#7a1f1f",
-              }}
-            >
-              {error}
             </div>
-          )}
+
+            {/* Visibilità */}
+            <div className={styles.section}>
+              <label className={styles.label}>Visibilità</label>
+              <select
+                className={styles.input}
+                value={visibility}
+                onChange={(e) => {
+                  setVisibility(e.target.value as "public" | "private");
+                  setInvitedUsers([]);
+                }}
+              >
+                <option value="public">Pubblica</option>
+                <option value="private">Privata</option>
+              </select>
+            </div>
+
+            {/* SELEZIONA AMICI */}
+            <div className={styles.section}>
+              <label className={styles.label}>
+                Invita amici ({invitedUsers.length}/{maxParticipants - 1} posti disponibili)
+              </label>
+
+              {friends.length === 0 ? (
+                <p className={styles.emptyFriends}>
+                  Non hai ancora amici da invitare
+                </p>
+              ) : (
+                <>
+                <input 
+                  className={styles.input}
+                  placeholder="Cerca un amico..."
+                  value={friendSearch}
+                  onChange={(e) => setFriendSearch(e.target.value)}
+                />
+
+                <div className={styles.friendsList}>
+                  {friends
+                    .filter(({ user: f }) =>
+                    `${f.nome} ${f.cognome} ${f.nickname}`
+                    .toLowerCase()
+                    .includes(friendSearch.toLowerCase())
+                  )
+                  .map(({ friendshipId, user: friend }) => {
+                    const isSelected = invitedUsers.includes(friend._id);
+                    return (
+                      <div
+                        key={friendshipId}
+                        onClick={() => toggleInvite(friend._id)}
+                        className={`${styles.friendItem} ${isSelected ? styles.friendItemSelected : ""}`}
+                      >
+                        {friend.avatarUrl ? (
+                          <img
+                            src={friend.avatarUrl}
+                            alt={friend.nickname}
+                            className={styles.friendAvatar}
+                          />
+                        ) : (
+                          <div className={styles.friendAvatarPlaceholder}>
+                            {friend.nome?.[0]?.toUpperCase() ?? "?"}
+                          </div>
+                        )}
+                        <div className={styles.friendInfo}>
+                          <p className={styles.friendName}>{friend.nome} {friend.cognome}</p>
+                          <p className={styles.friendNickname}>@{friend.nickname}</p>
+                        </div>
+                        <div className={styles.friendCheck}>
+                          {isSelected ? (
+                            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={2.5}>
+                              <circle cx={12} cy={12} r={10} />
+                              <path d="M8 12l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          ) : (
+                            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--border)" strokeWidth={2}>
+                              <circle cx={12} cy={12} r={10} />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                </>
+              )}
+            </div>
+
+            <button className={appStyles.primaryButton}>
+              Crea attività
+            </button>
+
+            {error && (
+              <div
+                role="alert"
+                style={{
+                  marginTop: 12,
+                  padding: 12,
+                  borderRadius: 8,
+                  border: "1px solid #f5c6cb",
+                  background: "#fdecea",
+                  color: "#7a1f1f",
+                }}
+              >
+                {error}
+              </div>
+            )}
 
           </form>
         </div>

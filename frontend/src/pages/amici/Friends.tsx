@@ -1,20 +1,20 @@
 import { useEffect, useState } from "react";
 import { http } from "../../auth/api";
 import styles from "./Friends.module.css";
+import type { Friend } from "../../types/Friend";
 
-
-// Type amico dell'utente
-type Friend = {
-  friendshipId: string;
-  user: {
-    _id: string;
-    nome: string;
-    cognome: string;
-    nickname: string;
-    avatarUrl?: string;
-  };
-  since: string;
-};
+// // Type amico dell'utente
+// type Friend = {
+//   friendshipId: string;
+//   user: {
+//     _id: string;
+//     nome: string;
+//     cognome: string;
+//     nickname: string;
+//     avatarUrl?: string;
+//   };
+//   since: string;
+// };
 
 // Type richiesta di amicizia
 type FriendRequest = {

@@ -9,12 +9,15 @@ const requireAuth = require("../middleware/requireAuth");
 
 
 router.get("/", activityController.getActivities);
-
-router.get("/:id", activityController.getActivityById);
-
 router.get("/mine", requireAuth, activityController.getMyActivities);
 router.get("/joined", requireAuth, activityController.getJoinedActivities);
 router.get("/invited", requireAuth, activityController.getInvitedActivities);
+router.get("/:id/invites", requireAuth, activityController.getActivityInvites);
+router.get("/:id/invites/me", requireAuth, activityController.getMyActivityInvite);
+router.post("/:id/invite/:userId", requireAuth, activityController.sendActivityInvite);
+router.put("/:id/invites/:inviteId/accept", requireAuth, activityController.acceptActivityInvite);
+router.put("/:id/invites/:inviteId/decline", requireAuth, activityController.declineActivityInvite);
+router.put("/:id/invites/:inviteId/cancel", requireAuth, activityController.cancelActivityInvite);
 
 router.post("/", requireAuth, activityController.createActivity);
 router.post("/:id/join", requireAuth, activityController.joinActivity);
@@ -31,6 +34,7 @@ router.patch("/:id/close", requireAuth, activityController.closeActivity);
 router.patch("/:id/open", requireAuth, activityController.openActivity);
 
 router.delete("/:id", requireAuth, activityController.deleteActivity);
+router.get("/:id", activityController.getActivityById);
 
 // router.get("/:id", activityController.getActivityById);
 
