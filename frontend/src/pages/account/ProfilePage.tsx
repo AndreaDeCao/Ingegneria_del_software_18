@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
 import Modal from "../../components/Modal/Modal";
@@ -18,6 +18,7 @@ type UserNotification = {
   type: string;
   message: string;
   read: boolean;
+  status: "pending" | "accepted" | "rejected";
   ref: string | null;
   createdAt: string;
 };
@@ -45,6 +46,8 @@ function Banner({ msg, type, onClose }: {
  */
 export default function ProfilePage() {
   const { logout, refreshUser } = useAuth();
+
+  const navigate = useNavigate();
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -295,6 +298,75 @@ export default function ProfilePage() {
             setError(err.message);
           }
         }
+    }
+
+
+    /**
+     * Marca una singola notifica come letta.
+     * 
+     * @param id - ID della notifica da marcare come letta
+     * @returns {Promise<void>}
+     */
+    async function markOneRead(id: string) {
+      try {
+        await http(`/users/me/notifications/${id}/read`, { method: "PUT" });
+        setNotifications(prev => prev.map(
+          n => n._id === id ? { ...n, read: true } : n
+        ));
+
+      } catch {
+        //silenzioso
+      }
+    }
+
+
+    /**
+     * Accetta o rifiuta una notifica di tipo friend_request o activity_invite.
+     * Inoltre aggiorna status della notifica e chiama l'endpoint.
+     * 
+     * @param notif - Notifica su cui agire
+     * @param action - Azione da eseguire
+     * @returns {Promise<void>}
+     */
+    async function handleNotifAction(notif: UserNotification, action: "accept" | "reject") {
+      const endpoint =
+        notif.type === "friend_request"
+          ? `/api/friendships/${action === "accept" ? "accept" : "decline"}/${notif.ref}`
+          : `/activities/${notif.ref}/${action}-invite`;
+
+      try {
+        await http(endpoint, { method: "PUT" });
+        await http(`/users/me/notifications/${notif._id}/status`, {
+          method: "PUT",
+          body: JSON.stringify({ status: action === "accept" ? "accepted" : "rejected" }),
+        });
+        setNotifications(prev => prev.map(
+          n => n._id === notif._id
+            ? { ...n, read: true, status: action === "accept" ? "accepted" : "rejected" }
+            : n
+        ));
+
+      } catch(err: unknown) {
+        if(err instanceof Error) {
+          setError(err.message);
+        }
+      }
+    }
+
+
+    /**
+     * Elimina tutte le notifiche dell'utente.
+     * 
+     * @returns {Promise<void>}
+     */
+    async function clearNotifications() {
+      try {
+        await http("/users/me/notifications", { method: "DELETE" });
+        setNotifications([]);
+
+      } catch(err) {
+        if (err instanceof Error) setError(err.message);
+      }
     }
 
     if(loading) {
@@ -607,34 +679,94 @@ export default function ProfilePage() {
           <p className={styles.hint}>Nessuna notifica</p>
         ) : (
           <>
-            {unread > 0 && (
-              <button 
-                className={styles.markAllBtn}
-                onClick={markAllRead}
-              >
-                Contrassegna tutte come lette
-              </button>
-            )}
-            <div className={styles.notifList}>
-              {notifications.map(n => (
-                <div 
-                  key={n._id}
-                  className={`${styles.notifItem} ${!n.read ? styles.notifUnread : styles.notifRead}`}
+            <div className={styles.notifHeader}>
+              {unread > 0 && (
+                <button 
+                  className={styles.markAllBtn}
+                  onClick={markAllRead}
                 >
-                  <p className={styles.notifMsg}>{n.message}</p>
-                  <p className={styles.notifDate}>
-                    {new Date(n.createdAt).toLocaleDateString("it-IT", {
-                      day: "2-digit", month: "short", year: "numeric"
-                    })}
-                  </p>
-                </div>
-              ))}
+                  Contrassegna come tutte lette
+                </button>
+              )}
+              <button 
+                  className={styles.clearNotifications}
+                  onClick={clearNotifications}
+                >
+                  Elimina tutto
+                </button>
+            </div>
+            <div className={styles.notifList}>
+              {notifications.map(n => {
+                const isActivityInvite = n.type === "activity_invite" && n.ref;
+                const isFriendRequest  = n.type === "friend_request"  && n.ref;
+                const isPending        = n.status === "pending" && !n.read;
+
+                return (
+                  <div
+                    key={n._id}
+                    className={`
+                        ${styles.notifItem} 
+                        ${!n.read ? styles.notifUnread : styles.notifRead} 
+                        ${isActivityInvite || isFriendRequest ? styles.notifClickable : ""}
+                    `}
+                    onClick={async () => {
+                      if(!n.read) {
+                        await markOneRead(n._id);
+                      }
+                      if(isActivityInvite) {
+                        setNotificationsOpen(false);
+                        navigate(`/attivita/${n.ref}`);
+                      } else {
+                        setNotificationsOpen(false);
+                        navigate("/friends");
+                      }
+                    }}
+                  >
+                    <p className={styles.notifMsg}>{n.message}</p>
+                    <div className={styles.notifFooter}>
+                      <p className={styles.notifDate}>
+                        {new Date(n.createdAt).toLocaleDateString(
+                          "it-IT", { day: "2-digit", month: "short", year: "numeric", }
+                        )}
+                      </p>
+                      {n.status === "accepted" && (
+                        <span className={styles.notifTagAccepted}>Accettato</span>
+                      )}
+                      {n.status === "rejected" && (
+                        <span className={styles.notifTagRejected}>Rifiutato</span>
+                      )}
+                    </div>
+                    {isPending && (isFriendRequest || isActivityInvite) && (
+                      <div className={styles.notifActions}>
+                        <button
+                          className={styles.notifAcceptBtn}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await handleNotifAction(n, "accept");
+                          }}
+                        >
+                          Accetta
+                        </button>
+                        <button
+                          className={styles.notifRejectBtn}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await handleNotifAction(n, "reject");
+                          }}
+                        >
+                          Rifiuta
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </>
         )}
       </Modal>
 
-      </main>
-    )
+    </main>
+  );
 
 }
