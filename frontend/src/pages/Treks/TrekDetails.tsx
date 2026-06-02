@@ -67,6 +67,9 @@ export default function TrekDetails() {
   const [routeGeojson, setRouteGeojson] = useState<any>(null);
   const [routeInfo, setRouteInfo] = useState<{ distanceMeters: number; durationSeconds: number } | null>(null);
 
+  // segnalazioni accettate dall'admin (banner pubblico)
+  const [segnalazioniAccettate, setSegnalazioniAccettate] = useState<{ count: number; tipi: string[] } | null>(null);
+
   // partenza personalizzata (pin viola solo se attiva)
   const [customStart, setCustomStart] = useState<{ lat: number; lon: number } | null>(null);
   const [customStartLabel, setCustomStartLabel] = useState<string>("");
@@ -142,6 +145,17 @@ export default function TrekDetails() {
 
         const weatherData = await weatherResponse.json();
         setWeather(weatherData);
+
+        // SEGNALAZIONI ACCETTATE (banner pubblico)
+        try {
+          const segnRes = await fetch(`${API_BASE}/api/diary/segnalazioni-accettate?trekId=${id}`);
+          if (segnRes.ok) {
+            const segnData = await segnRes.json();
+            if (segnData.count > 0) setSegnalazioniAccettate(segnData);
+          }
+        } catch {
+          // silenzioso, il banner non è critico
+        }
 
       } catch (err: any) {
         setError(err.message);
@@ -726,6 +740,35 @@ export default function TrekDetails() {
               {trek.description || "Nessuna descrizione disponibile."}
             </p>
           </div>
+
+          {/* BANNER SEGNALAZIONI ACCETTATE */}
+          {segnalazioniAccettate && segnalazioniAccettate.count > 0 && (
+            <div style={{
+              backgroundColor: "#fef3c7",
+              border: "1px solid #f59e0b",
+              borderRadius: "8px",
+              padding: "0.75rem 1rem",
+              marginBottom: "1rem",
+              display: "flex",
+              gap: "0.6rem",
+              alignItems: "flex-start",
+            }}>
+              <span style={{ fontSize: "1.2rem", lineHeight: 1 }}>⚠️</span>
+              <div>
+                <strong style={{ fontSize: "0.95rem", color: "#92400e" }}>
+                  Attenzione: segnalazioni attive su questo percorso
+                </strong>
+                <ul style={{ margin: "0.3rem 0 0", paddingLeft: "1.1rem", fontSize: "0.85rem", color: "#78350f" }}>
+                  {segnalazioniAccettate.tipi.map((tipo) => (
+                    <li key={tipo}>{tipo}</li>
+                  ))}
+                </ul>
+                <p style={{ margin: "0.4rem 0 0", fontSize: "0.8rem", color: "#92400e" }}>
+                  Verifica le condizioni prima di partire.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* integrazione mappa google-Maps
           <div className={styles.mapContainer}>

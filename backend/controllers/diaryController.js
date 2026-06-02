@@ -430,4 +430,192 @@ async function addNotification(userId, type, message, ref = null) {
   }
 }
 
-module.exports = { getDiary, getEntryById, createEntry, updateEntry, deleteEntry, getDiaryStats};
+// ── ADMIN — SEGNALAZIONI SUI PERCORSI ────────────────────────────────────────
+
+/**
+ * GET /api/diary/segnalazioni?trekId=<numericId>
+ * Restituisce tutte le voci con segnalazione per il percorso. Solo admin.
+ * Ordine: pending prima, poi accepted, poi dismissed.
+ */
+const getSegnalazioniByTrek = async (req, res) => {
+  try {
+    const adminUser = await User.findById(req.userId).select("role");
+    if (!adminUser || adminUser.role !== "admin") {
+      return res.status(403).json({ error: "Accesso riservato agli amministratori" });
+    }
+
+    const { trekId } = req.query;
+    if (!trekId) return res.status(400).json({ error: "trekId obbligatorio" });
+
+    const trek = await Trek.findOne({ id: parseInt(trekId) });
+    if (!trek) return res.status(404).json({ error: "Percorso non trovato" });
+
+    // aggregate evita il casting di Mongoose su operatori query annidati
+    const entries = await DiaryEntry.aggregate([
+      {
+        $match: {
+          trekId: trek._id,
+          "segnalazione.tipo": { $exists: true },
+        },
+      },
+      {
+        // Esclude voci senza tipo valido (null, stringa vuota)
+        $match: {
+          $expr: {
+            $and: [
+              { $ne: ["$segnalazione.tipo", null] },
+              { $ne: ["$segnalazione.tipo", ""] },
+            ],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userId",
+          pipeline: [{ $project: { nickname: 1, email: 1, nome: 1, cognome: 1 } }],
+        },
+      },
+      { $addFields: { userId: { $arrayElemAt: ["$userId", 0] } } },
+      { $project: { userId: 1, titolo: 1, data: 1, segnalazione: 1, createdAt: 1 } },
+      {
+        // pending=0, accepted=1, dismissed=2 → ordine naturale per l'admin
+        $addFields: {
+          _statoOrdine: {
+            $switch: {
+              branches: [
+                { case: { $eq: ["$segnalazione.stato", "pending"]   }, then: 0 },
+                { case: { $eq: ["$segnalazione.stato", "accepted"]  }, then: 1 },
+                { case: { $eq: ["$segnalazione.stato", "dismissed"] }, then: 2 },
+              ],
+              default: 0,
+            },
+          },
+        },
+      },
+      { $sort: { _statoOrdine: 1, createdAt: -1 } },
+      { $project: { _statoOrdine: 0 } },
+    ]);
+
+    res.json(entries);
+  } catch (err) {
+    console.error("getSegnalazioniByTrek:", err);
+    res.status(500).json({ error: "Errore nel recupero delle segnalazioni" });
+  }
+};
+
+/**
+ * GET /api/diary/segnalazioni-accettate?trekId=<numericId>
+ * Endpoint pubblico: restituisce solo il conteggio e i tipi delle segnalazioni
+ * accepted per un percorso. Usato dal TrekDetails per mostrare il banner.
+ */
+const getSegnalazioniAccettate = async (req, res) => {
+  try {
+    const { trekId } = req.query;
+    if (!trekId) return res.status(400).json({ error: "trekId obbligatorio" });
+
+    const trek = await Trek.findOne({ id: parseInt(trekId) });
+    if (!trek) return res.status(404).json({ error: "Percorso non trovato" });
+
+    const entries = await DiaryEntry.aggregate([
+      {
+        $match: {
+          trekId: trek._id,
+          "segnalazione.tipo": { $exists: true },
+        },
+      },
+      {
+        $match: {
+          $expr: {
+            $and: [
+              { $ne: ["$segnalazione.tipo", null] },
+              { $ne: ["$segnalazione.tipo", ""] },
+              { $eq: ["$segnalazione.stato", "accepted"] },
+            ],
+          },
+        },
+      },
+      {
+        $project: { "segnalazione.tipo": 1, "segnalazione.descrizione": 1 },
+      },
+    ]);
+
+    res.json({
+      count: entries.length,
+      tipi: [...new Set(entries.map((e) => e.segnalazione.tipo))],
+    });
+  } catch (err) {
+    console.error("getSegnalazioniAccettate:", err);
+    res.status(500).json({ error: "Errore nel recupero delle segnalazioni" });
+  }
+};
+
+/**
+ * Helper: aggiorna lo stato di una segnalazione. Solo admin.
+ */
+const _aggiornaStatoSegnalazione = async (req, res, nuovoStato) => {
+  try {
+    const adminUser = await User.findById(req.userId).select("role");
+    if (!adminUser || adminUser.role !== "admin") {
+      return res.status(403).json({ error: "Accesso riservato agli amministratori" });
+    }
+
+    const entry = await DiaryEntry.findById(req.params.entryId);
+    if (!entry) return res.status(404).json({ error: "Voce non trovata" });
+    if (!entry.segnalazione?.tipo) {
+      return res.status(400).json({ error: "Questa voce non ha una segnalazione" });
+    }
+    if (entry.segnalazione.stato === nuovoStato) {
+      return res.status(400).json({ error: `Segnalazione già in stato "${nuovoStato}"` });
+    }
+
+    entry.segnalazione.stato     = nuovoStato;
+    entry.segnalazione.gestitaAt = new Date();
+    entry.segnalazione.gestitaDa = req.userId;
+    await entry.save();
+
+    res.json({ message: `Segnalazione aggiornata a "${nuovoStato}"`, entry });
+  } catch (err) {
+    console.error("_aggiornaStatoSegnalazione:", err);
+    res.status(500).json({ error: "Errore nell'aggiornamento della segnalazione" });
+  }
+};
+
+/**
+ * PATCH /api/diary/segnalazioni/:entryId/accept
+ * Admin accetta la segnalazione → diventa visibile a tutti nel TrekDetails.
+ */
+const acceptSegnalazione = (req, res) => _aggiornaStatoSegnalazione(req, res, "accepted");
+
+/**
+ * PATCH /api/diary/segnalazioni/:entryId/dismiss
+ * Admin rigetta la segnalazione → nascosta a tutti.
+ */
+const dismissSegnalazione = (req, res) => _aggiornaStatoSegnalazione(req, res, "dismissed");
+
+/**
+ * PATCH /api/diary/segnalazioni/:entryId/reopen
+ * Admin riporta la segnalazione in pending per rivalutarla.
+ */
+const reopenSegnalazione = (req, res) => _aggiornaStatoSegnalazione(req, res, "pending");
+
+
+// ── NOTIFICHE ────────────────────────────────────────────────────────────────
+
+/**
+ * Aggiunge una notifica all'utente.
+ */
+async function addNotification(userId, type, message, ref = null) {
+  try {
+    await User.findByIdAndUpdate(userId, {
+      $push: { notifications: { type, message, ref, createdAt: new Date() } }
+    });
+  } catch(err) {
+    console.error("addNotification error:", err.message);
+  }
+}
+
+// ── SOSTITUISCI il module.exports esistente con questo ────────────────────────
+module.exports = { getDiary, getEntryById, createEntry, updateEntry, deleteEntry, getDiaryStats, getSegnalazioniByTrek, acceptSegnalazione, dismissSegnalazione, reopenSegnalazione, getSegnalazioniAccettate, };

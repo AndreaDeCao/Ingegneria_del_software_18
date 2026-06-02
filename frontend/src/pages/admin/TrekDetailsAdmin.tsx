@@ -1,15 +1,41 @@
-import { useEffect, useState, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useParams, Link } from "react-router-dom";
 
 import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
 import type { Trek } from "../../types/Trek";
 import appStyles from "../../App.module.css";
 import styles from "../treks/TrekDetails.module.css";
+import adminStyles from "../admin/AdminattivitaPage.module.css";
 
 import StarRating from "../../components/StarRating";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
+// ── Tipi locali ──────────────────────────────────────────────────────────────
+
+interface SegnalazioneEntry {
+  _id: string;
+  titolo: string;
+  data: string;
+  createdAt: string;
+  userId: {
+    _id: string;
+    nickname?: string;
+    email?: string;
+    nome?: string;
+    cognome?: string;
+  } | null;
+  segnalazione: {
+    tipo: string;
+    descrizione?: string;
+    stato: "pending" | "accepted" | "dismissed";
+    gestitaDaAdmin: boolean;
+    gestitaAt?: string | null;
+  };
+}
+
+// ── Componente ───────────────────────────────────────────────────────────────
 
 export default function TrekDetailsAdmin() {
   const { id } = useParams();
@@ -19,12 +45,16 @@ export default function TrekDetailsAdmin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [segnalazioni, setSegnalazioni] = useState<any[]>([]);
+  const [segnalazioni, setSegnalazioni] = useState<SegnalazioneEntry[]>([]);
   const [segnalazioniLoading, setSegnalazioniLoading] = useState(false);
   const [segnalazioniError, setSegnalazioniError] = useState<string | null>(null);
   const [segnActionLoading, setSegnActionLoading] = useState(false);
 
-  // ── fetch trek ──────────────────────────────────────────────────────────────
+  const messageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  // ── Fetch trek ───────────────────────────────────────────────────────────
+
   useEffect(() => {
     if (!id) return;
     setLoading(true);
@@ -38,16 +68,17 @@ export default function TrekDetailsAdmin() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  // ── fetch segnalazioni ──────────────────────────────────────────────────────
+  // ── Fetch segnalazioni ───────────────────────────────────────────────────
+
   const fetchSegnalazioni = useCallback(async () => {
     if (!id) return;
     setSegnalazioniLoading(true);
     setSegnalazioniError(null);
     try {
-      const data = await http<any[]>(`/api/diary/segnalazioni?trekId=${id}`);
+      const data = await http<SegnalazioneEntry[]>(`/api/diary/segnalazioni?trekId=${id}`);
       setSegnalazioni(data);
     } catch (err: any) {
-      setSegnalazioniError(err.message);
+      setSegnalazioniError(err.message ?? "Errore nel caricamento delle segnalazioni");
     } finally {
       setSegnalazioniLoading(false);
     }
@@ -57,25 +88,56 @@ export default function TrekDetailsAdmin() {
     fetchSegnalazioni();
   }, [fetchSegnalazioni]);
 
-  // ── azioni segnalazioni ─────────────────────────────────────────────────────
-  const handleGestisci = useCallback(
-    async (entryId: string, action: "gestisci" | "riapri") => {
+  // ── Azioni segnalazioni ──────────────────────────────────────────────────
+
+  const showMessage = useCallback((msg: string) => {
+    setActionMessage(msg);
+    if (messageTimerRef.current) clearTimeout(messageTimerRef.current);
+    messageTimerRef.current = setTimeout(() => setActionMessage(null), 4000);
+  }, []);
+
+  const handleSegnalazioneAction = useCallback(
+    async (entryId: string, action: "accept" | "dismiss" | "reopen") => {
       setSegnActionLoading(true);
       try {
         await http(`/api/diary/segnalazioni/${entryId}/${action}`, {
           method: "PATCH",
         });
         await fetchSegnalazioni();
+        const messages = {
+          accept:  "Segnalazione accettata — il banner sarà visibile agli utenti.",
+          dismiss: "Segnalazione rigettata.",
+          reopen:  "Segnalazione riportata in attesa.",
+        };
+        //showMessage(messages[action]);
       } catch (err: any) {
-        setSegnalazioniError(err.message);
+        setSegnalazioniError(err.message ?? "Errore");
       } finally {
         setSegnActionLoading(false);
       }
     },
-    [fetchSegnalazioni]
+    [fetchSegnalazioni, showMessage]
   );
 
-  // ── loading / error ─────────────────────────────────────────────────────────
+  // ── Dati derivati ────────────────────────────────────────────────────────
+
+  const { pending, accepted, dismissed } = useMemo(() => ({
+    pending:   segnalazioni.filter((s) => s.segnalazione.stato === "pending"   || (!s.segnalazione.stato && !s.segnalazione.gestitaDaAdmin)),
+    accepted:  segnalazioni.filter((s) => s.segnalazione.stato === "accepted"),
+    dismissed: segnalazioni.filter((s) => s.segnalazione.stato === "dismissed"),
+  }), [segnalazioni]);
+
+  // retrocompat alias
+  const aperte  = pending;
+  const gestite = [...accepted, ...dismissed];
+
+  const formatDate = (d: string) =>
+    new Date(d).toLocaleDateString("it-IT", {
+      day: "2-digit", month: "long", year: "numeric",
+    });
+
+  // ── Loading / error ──────────────────────────────────────────────────────
+
   if (loading) {
     return (
       <main className={appStyles.main}>
@@ -94,23 +156,31 @@ export default function TrekDetailsAdmin() {
     );
   }
 
-  const aperte = segnalazioni.filter((s) => !s.segnalazione.gestitaDaAdmin);
-  const gestite = segnalazioni.filter((s) => s.segnalazione.gestitaDaAdmin);
+  // ── Render ───────────────────────────────────────────────────────────────
 
-  // ── render ──────────────────────────────────────────────────────────────────
   return (
     <main className={appStyles.main}>
       <div className={appStyles.contentLayout}>
 
-        {/* ── SINISTRA ── */}
+        {/* ══ SINISTRA ══════════════════════════════════════════════════════ */}
         <section className={appStyles.leftColumn}>
 
-          {/* TITOLO */}
-          <div className={appStyles.sectionHead}>
-            <h1 className={styles.pageTitle}>{trek.name}</h1>
+          {/* Badge admin */}
+          <div className={adminStyles.adminBadge}>
+            Stai visualizzando questo percorso come amministratore
           </div>
 
-          {/* DESCRIZIONE */}
+          {/* Titolo + badge segnalazioni aperte */}
+          <div className={appStyles.sectionHead} style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+            <h1 className={styles.pageTitle}>{trek.name}</h1>
+            {aperte.length > 0 && (
+              <span className={`${adminStyles.statusBadge} ${adminStyles.statusPendingReport}`}>
+                {aperte.length} segnalaz. aperte
+              </span>
+            )}
+          </div>
+
+          {/* Descrizione */}
           <div className={styles.section}>
             <h2 className={appStyles.sectionTitle}>Descrizione</h2>
             <p className={appStyles.message}>
@@ -118,173 +188,256 @@ export default function TrekDetailsAdmin() {
             </p>
           </div>
 
-          {/* INFO */}
+          {/* Info percorso */}
           <div className={styles.infoCard}>
             <h2 className={appStyles.sectionTitle}>
               Informazioni del percorso predefinito
             </h2>
             <div className={styles.infoContent}>
               <div>
+                <p><strong>Difficoltà:</strong> {trek.difficulty ?? "—"}</p>
                 <p><strong>Partenza:</strong> {trek.startPoint ?? "—"}</p>
                 <p><strong>Arrivo:</strong> {trek.endPoint ?? "—"}</p>
                 <p><strong>Durata:</strong> {trek.duration ?? "—"}</p>
               </div>
               <div>
-                <p><strong>Lunghezza:</strong> {trek.lengthKm ?? "—"} km</p>
-                <p><strong>Quota minima:</strong> {trek.minAltitude ?? "—"} m</p>
-                <p><strong>Quota massima:</strong> {trek.maxAltitude ?? "—"} m</p>
-                <p><strong>Dislivello:</strong> {trek.elevationGain ?? "—"} m</p>
+                <p><strong>Lunghezza:</strong> {trek.lengthKm != null ? `${trek.lengthKm} km` : "—"}</p>
+                <p><strong>Quota minima:</strong> {trek.minAltitude != null ? `${trek.minAltitude} m` : "—"}</p>
+                <p><strong>Quota massima:</strong> {trek.maxAltitude != null ? `${trek.maxAltitude} m` : "—"}</p>
+                <p><strong>Dislivello:</strong> {trek.elevationGain != null ? `${trek.elevationGain} m` : "—"}</p>
               </div>
             </div>
           </div>
 
-          {/* SEGNALAZIONI */}
-          <div className={styles.section}>
-            <h2 className={appStyles.sectionTitle}>
-              Segnalazioni dagli utenti
-              {aperte.length > 0 && ` (${aperte.length} aperte)`}
-            </h2>
+          {/* ── PANNELLO ADMIN ── */}
+          <div className={adminStyles.detailActions}>
+            <div className={adminStyles.adminPanel}>
+              <span className={adminStyles.adminPanelTitle}>Pannello amministratore — Segnalazioni percorso</span>
 
-            {segnalazioniLoading && (
-              <p className={appStyles.message}>Caricamento...</p>
-            )}
-            {segnalazioniError && (
-              <p className={appStyles.messageError}>{segnalazioniError}</p>
-            )}
-            {!segnalazioniLoading && segnalazioni.length === 0 && (
-              <p className={appStyles.message}>
-                Nessuna segnalazione per questo percorso.
-              </p>
-            )}
-
-            {/* aperte */}
-            {aperte.length > 0 && (
-              <>
-                <p style={{ fontWeight: 600, marginBottom: "0.5rem" }}>
-                  Aperte
+              {/* Feedback azione */}
+              {actionMessage && (
+                <p className={appStyles.message} style={{ marginTop: "0.5rem" }}>
+                  {actionMessage}
                 </p>
-                {aperte.map((entry: any) => (
-                  <div
-                    key={entry._id}
-                    style={{
-                      borderBottom: "1px solid var(--border)",
-                      paddingBottom: "0.75rem",
-                      marginBottom: "0.75rem",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: "0.85rem",
-                      }}
-                    >
-                      <span>
-                        {entry.userId?.nickname
-                          ? `@${entry.userId.nickname}`
-                          : entry.userId?.email ?? "Utente"}
-                      </span>
-                      <span>
-                        {new Date(entry.createdAt).toLocaleDateString("it-IT")}
-                      </span>
-                    </div>
+              )}
 
-                    {entry.userId?.email && (
-                      <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                        {entry.userId.email}
-                      </p>
-                    )}
+              {/* 
+              {segnalazioniLoading && (
+                <p className={appStyles.message}>Caricamento segnalazioni...</p>
+              )}
+              {segnalazioniError && (
+                <p className={appStyles.messageError}>{segnalazioniError}</p>
+              )} */}
 
-                    <p style={{ margin: "0.3rem 0", fontWeight: 600 }}>
-                      {entry.segnalazione.tipo}
-                    </p>
+              {!segnalazioniLoading && segnalazioni.length === 0 && (
+                <p className={appStyles.message}>
+                  Nessuna segnalazione per questo percorso.
+                </p>
+              )}
 
-                    {entry.segnalazione.descrizione && (
-                      <p style={{ fontSize: "0.9rem" }}>
-                        {entry.segnalazione.descrizione}
-                      </p>
-                    )}
+              {/* ── Segnalazioni in attesa ── */}
+              {pending.length > 0 && (
+                <div className={adminStyles.adminReportsSection}>
+                  <span className={adminStyles.adminReportsSectionTitle}>
+                    In attesa ({pending.length})
+                  </span>
 
-                    <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                      Voce: <em>{entry.titolo}</em> —{" "}
-                      {new Date(entry.data).toLocaleDateString("it-IT")}
-                    </p>
+                  {pending.map((entry) => {
+                    const utente = entry.userId;
+                    const label = utente?.nickname
+                      ? `@${utente.nickname}`
+                      : utente?.email ?? "Utente sconosciuto";
+                    const nomeCompleto = [utente?.nome, utente?.cognome].filter(Boolean).join(" ");
 
-                    <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
-                      <button
-                        onClick={() => handleGestisci(entry._id, "gestisci")}
-                        disabled={segnActionLoading}
+                    return (
+                      <div key={entry._id} className={adminStyles.adminReportItem}>
+                        <div className={adminStyles.adminReportMeta}>
+                          <span className={adminStyles.adminReportDate}>
+                            {formatDate(entry.createdAt)}
+                          </span>
+                        </div>
+
+                        {utente?.nickname && (
+                          <div className={adminStyles.adminReportContact}>
+                            <span className={adminStyles.adminReportUser}> Nickname: {label}</span>
+                            <span> - Email: {utente.email}</span>
+                            {nomeCompleto && (
+                              <span style={{ marginLeft: "12px" }}>Nome: {nomeCompleto}</span>
+                            )}
+
+                          </div>
+                        )}
+
+                        <p className={adminStyles.adminReportReason} style={{ fontWeight: 600, marginBottom: "0.2rem" }}>
+                            {entry.segnalazione.tipo}: {entry.segnalazione.descrizione}
+                        </p>
+
+                        <div className={adminStyles.adminReportActions}>
+                          <button
+                            className={adminStyles.acceptReportButton}
+                            onClick={() => handleSegnalazioneAction(entry._id, "accept")}
+                            disabled={segnActionLoading}
+                          >
+                            Accetta
+                          </button>
+                          <button
+                            className={adminStyles.dismissReportButton}
+                            onClick={() => handleSegnalazioneAction(entry._id, "dismiss")}
+                            disabled={segnActionLoading}
+                          >
+                            Rigetta
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* ── Segnalazioni accettate (banner attivo per utenti) ── */}
+              {accepted.length > 0 && (
+                <div className={adminStyles.adminReportsSection}>
+                  <span className={adminStyles.adminReportsSectionTitle}>
+                    Accettate — banner visibile agli utenti ({accepted.length})
+                  </span>
+
+                  {accepted.map((entry) => {
+                    const utente = entry.userId;
+                    const label = utente?.nickname
+                      ? `@${utente.nickname}`
+                      : utente?.email ?? "Utente sconosciuto";
+                    const nomeCompleto = [utente?.nome, utente?.cognome].filter(Boolean).join(" ");
+
+                    return (
+                      <div key={entry._id} className={adminStyles.adminReportItem}>
+                        <div className={adminStyles.adminReportMeta}>
+                          <span
+                            className={`${adminStyles.statusBadge} ${adminStyles.statusReported}`}
+                            style={{ fontSize: "11px", padding: "3px 8px", color: "#15803d" }}
+                          >
+                            Accettata
+                          </span>
+                        </div>
+
+                        {utente?.nickname && (
+                          <div className={adminStyles.adminReportContact}>
+                            <span className={adminStyles.adminReportUser}> Nickname: {label}</span>
+                            <span> - Email: {utente.email}</span>
+                            {nomeCompleto && (
+                              <span style={{ marginLeft: "12px" }}>Nome: {nomeCompleto}</span>
+                            )}
+
+                          </div>
+                        )}
+
+                        <p className={adminStyles.adminReportReason} style={{ fontWeight: 600, marginBottom: "0.2rem" }}>
+                          {entry.segnalazione.tipo}: {entry.segnalazione.descrizione}
+                        </p>
+
+                        <div className={adminStyles.adminReportActions}>
+                          <button
+                            className={adminStyles.dismissReportButton}
+                            onClick={() => handleSegnalazioneAction(entry._id, "dismiss")}
+                            disabled={segnActionLoading}
+                            style={{ fontSize: "0.8rem" }}
+                            title="Rimuove il banner dalle pagine degli utenti"
+                          >
+                            Rigetta (rimuovi banner)
+                          </button>
+                          <button
+                            className={adminStyles.dismissReportButton}
+                            onClick={() => handleSegnalazioneAction(entry._id, "reopen")}
+                            disabled={segnActionLoading}
+                            style={{ fontSize: "0.8rem" }}
+                          >
+                            Riporta in attesa
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* ── Segnalazioni rigettate ── */}
+              {dismissed.length > 0 && (
+                <div className={adminStyles.adminReportsSection}>
+                  <span className={adminStyles.adminReportsSectionTitle}>
+                    Rigettate ({dismissed.length})
+                  </span>
+
+                  {dismissed.map((entry) => {
+                    const utente = entry.userId;
+                    const label = utente?.nickname
+                      ? `@${utente.nickname}`
+                      : utente?.email ?? "Utente sconosciuto";
+                    const nomeCompleto = [utente?.nome, utente?.cognome].filter(Boolean).join(" ");
+
+                    return (
+                      <div
+                        key={entry._id}
+                        className={adminStyles.adminReportItem}
+                        style={{ opacity: 0.65 }}
                       >
-                        Segna come gestita
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
+                        <div className={adminStyles.adminReportMeta}>
+                          <span
+                            className={adminStyles.statusBadge}
+                            style={{ fontSize: "11px", padding: "3px 8px", color: "#6b7280" }}
+                          >
+                            Rigettata
+                          </span>
+                        </div>
 
-            {/* gestite */}
-            {gestite.length > 0 && (
-              <>
-                <p style={{ fontWeight: 600, margin: "1rem 0 0.5rem" }}>
-                  Gestite
-                </p>
-                {gestite.map((entry: any) => (
-                  <div
-                    key={entry._id}
-                    style={{
-                      borderBottom: "1px solid var(--border)",
-                      paddingBottom: "0.75rem",
-                      marginBottom: "0.75rem",
-                      opacity: 0.7,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: "0.85rem",
-                      }}
-                    >
-                      <span>
-                        {entry.userId?.nickname
-                          ? `@${entry.userId.nickname}`
-                          : entry.userId?.email ?? "Utente"}
-                      </span>
-                      <span style={{ color: "green" }}>✓ Gestita</span>
-                    </div>
+                        {utente?.nickname && (
+                          <div className={adminStyles.adminReportContact}>
+                            <span className={adminStyles.adminReportUser}> Nickname: {label}</span>
+                            <span> - Email: {utente.email}</span>
+                            {nomeCompleto && (
+                              <span style={{ marginLeft: "12px" }}>Nome: {nomeCompleto}</span>
+                            )}
 
-                    <p style={{ margin: "0.3rem 0", fontWeight: 600 }}>
-                      {entry.segnalazione.tipo}
-                    </p>
+                          </div>
+                        )}
 
-                    {entry.segnalazione.descrizione && (
-                      <p style={{ fontSize: "0.9rem" }}>
-                        {entry.segnalazione.descrizione}
-                      </p>
-                    )}
+                        <p className={adminStyles.adminReportReason} style={{ fontWeight: 600, marginBottom: "0.2rem" }}>
+                          {entry.segnalazione.tipo}: {entry.segnalazione.descrizione}
+                        </p>
 
-                    <button
-                      onClick={() => handleGestisci(entry._id, "riapri")}
-                      disabled={segnActionLoading}
-                      style={{ marginTop: "0.4rem", fontSize: "0.8rem" }}
-                    >
-                      Riapri
-                    </button>
-                  </div>
-                ))}
-              </>
-            )}
+                        <div className={adminStyles.adminReportActions}>
+                          <button
+                            className={adminStyles.dismissReportButton}
+                            onClick={() => handleSegnalazioneAction(entry._id, "reopen")}
+                            disabled={segnActionLoading}
+                            style={{ fontSize: "0.8rem" }}
+                          >
+                            Riporta in attesa
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+            </div>
           </div>
 
         </section>
 
-        {/* ── DESTRA ── */}
+        {/* ══ DESTRA ════════════════════════════════════════════════════════ */}
         <section className={appStyles.rightColumn}>
           <div className={styles.sidebar}>
 
+            {/* Link navigazione */}
+            <div className={appStyles.buttonBox}>
+              <Link to="/treks" className={appStyles.primaryButton}>
+                ← Lista percorsi
+              </Link>
+            </div>
+
+            {/* Valutazione */}
             <div className={styles.card}>
-              <h3 className={appStyles.sectionTitle}>Valutazione</h3>
+              <h3 className={appStyles.sectionTitle}>Valutazione media</h3>
               <div style={{ marginBottom: "0.75rem" }}>
                 <StarRating rating={trek.averageRating ?? 0} />
                 <p style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>
@@ -293,6 +446,29 @@ export default function TrekDetailsAdmin() {
                     : "Nessuna valutazione ancora"}
                 </p>
               </div>
+            </div>
+
+            {/* Riepilogo segnalazioni */}
+            <div className={styles.card}>
+              <h3 className={appStyles.sectionTitle}>Riepilogo segnalazioni</h3>
+              <p style={{ fontSize: "0.9rem", margin: "0.25rem 0" }}>
+                <strong>Totale:</strong> {segnalazioni.length}
+              </p>
+              <p style={{ fontSize: "0.9rem", margin: "0.25rem 0" }}>
+                <strong>In attesa:</strong>{" "}
+                <span style={{ color: pending.length > 0 ? "var(--color-warning, #d97706)" : "inherit" }}>
+                  {pending.length}
+                </span>
+              </p>
+              <p style={{ fontSize: "0.9rem", margin: "0.25rem 0" }}>
+                <strong>Accettate (banner attivo):</strong>{" "}
+                <span style={{ color: accepted.length > 0 ? "#15803d" : "inherit" }}>
+                  {accepted.length}
+                </span>
+              </p>
+              <p style={{ fontSize: "0.9rem", margin: "0.25rem 0" }}>
+                <strong>Rigettate:</strong> {dismissed.length}
+              </p>
             </div>
 
           </div>
