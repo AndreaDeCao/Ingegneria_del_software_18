@@ -34,9 +34,9 @@ import VisualizzaDiarioPage from "./pages/diario/VisualizzaDiarioPage";
 import CreaVoceDiarioPage from "./pages/diario/CreaVoceDiarioPage";
 import DettagliVoceDiarioPage from "./pages/diario/DettagliVoceDiarioPage";
 
-import VisualizzaAttivitaPage from "./pages/attivita/VisualizzaListaAttivitaPage";
+import VisualizzaListaAttivitaPage from "./pages/attivita/VisualizzaListaAttivitaPage";
 import DettagliAttivita from "./pages/attivita/dettagliAttivita";
-import AdminVisualizzaAttivitaPage from "./pages/attivita/AdminVisualizzaAttivitaPage";
+import AdminVisualizzaListaAttivitaPage from "./pages/attivita/AdminVisualizzaListaAttivitaPage";
 import AdminDettagliAttivita from "./pages/attivita/AdminDettagliAttivita";
 import CreaAttivitaPage from "./pages/attivita/CreaAttivitaPage";
 
@@ -115,7 +115,7 @@ export default function App() {
                   <Route path="/diario/crea" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><CreaVoceDiarioPage /></ProtectedRoute></AppLayout>} />
                   <Route path="/diario/:id" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><DettagliVoceDiarioPage /></ProtectedRoute></AppLayout>} />
 
-                  <Route path="/attivita/visualizza" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><VisualizzaAttivitaPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/attivita/visualizza" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><VisualizzaListaAttivitaPage /></ProtectedRoute></AppLayout>} />
                   <Route path="/attivita/crea" element={<AppLayout><ProtectedRoute><CreaAttivitaPage /></ProtectedRoute></AppLayout>} />
                   <Route path="/attivita/:id" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><DettagliAttivita /></ProtectedRoute></AppLayout>} />
                   
@@ -124,7 +124,7 @@ export default function App() {
 
                   <Route path="/my-treks" element={<AppLayout><ProtectedRoute><MyTreks /></ProtectedRoute></AppLayout>} />
 
-                  <Route path="/admin/attivita/visualizza" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><AdminVisualizzaAttivitaPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/admin/attivita/visualizza" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><AdminVisualizzaListaAttivitaPage /></ProtectedRoute></AppLayout>} />
                   <Route path="/admin/attivita/:id" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><AdminDettagliAttivita /></ProtectedRoute></AppLayout>} />
                   <Route path="/admin/segnalazioni" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><GestioneSegnalazioniPage /></ProtectedRoute></AppLayout>} />
 

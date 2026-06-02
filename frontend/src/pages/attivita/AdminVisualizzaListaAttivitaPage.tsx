@@ -16,7 +16,7 @@ type ActivityWithAdmin = Activity & {
   reports?: Array<{ reportStatus: string }>;
 };
 
-export default function AdminVisualizzaAttivitaPage() {
+export default function AdminVisualizzaListaAttivitaPage() {
   const { user } = useAuth();
 
   const [activities, setActivities] = useState<ActivityWithAdmin[]>([]);

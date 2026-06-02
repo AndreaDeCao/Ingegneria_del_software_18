@@ -27,6 +27,7 @@ exports.getActivityById = async (req, res) => {
     const activity = await Activity
       .findById(req.params.id)
       .populate("partecipantList", "nickname email nome cognome")
+      //.populate("organizerID", "nickname email nome cognome")
       .populate("suspendedBy", "nickname email")
       .populate("reports.reportedBy", "nickname email nome cognome")
       .populate("reports.reviewedBy", "nickname email");
@@ -464,6 +465,11 @@ exports.reportActivity = async (req, res) => {
     }
 
     const reason = req.body.reason?.trim() || "";
+    
+    // Validazione: motivo obbligatorio
+    if (!reason) {
+      return res.status(400).json({ error: "Il motivo della segnalazione è obbligatorio" });
+    }
 
     activity.reports.push({
       reportedBy: userID,
