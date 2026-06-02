@@ -19,9 +19,7 @@ export default function ProtectedRoute({
   // non autenticato
   if (!user) {
     return (
-      <Navigate
-        to="/login"
-        replace
+      <Navigate to="/login" replace
         state={{ from: location.pathname }}
       />
     );
