@@ -452,7 +452,7 @@ exports.updatePassword = async (req, res) => {
 
     const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
     if(!isMatch) {
-      return res.status(401).json({ error: "Password attuale non corretta" });
+      return res.status(400).json({ error: "Password attuale non corretta" }); //non uso il 401 perchè usato dal refresh token
     }
 
     const saltedRound = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) : 15;

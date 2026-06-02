@@ -112,7 +112,7 @@ export async function refreshAccessToken(): Promise<string | null> {
 
 
 // Funzione helper per fare richieste HTTP al backend, gestendo automaticamente i cookie e gli errori
-export async function http<T>(path: string, init?: RequestInit): Promise<T> {
+export async function http<T>(path: string, init?: RequestInit/*, _retried = false*/): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init, //Prima parto dai default del chiamante, poi impongo le regole obbligatorie personali
     credentials: "include",
@@ -122,6 +122,7 @@ export async function http<T>(path: string, init?: RequestInit): Promise<T> {
       ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
       ...(init?.headers ?? {}),// Includiamo eventuali header aggiuntivi passati tramite init
     },
+    // _retried = false
   });
 
   const isAuthEndpoint = path.includes("/auth/login") || path.includes("/auth/register") || path.includes("/auth/refresh");
@@ -132,7 +133,7 @@ export async function http<T>(path: string, init?: RequestInit): Promise<T> {
   if (res.status === 401 && !isAuthEndpoint && accessToken) { //no problemi con refresh, login e register
     const refreshedToken = await refreshAccessToken().catch(() => null);
     if (refreshedToken) {
-      return http<T>(path, init); // riprova con il nuovo token
+      return http<T>(path, init/*, true*/); // riprova con il nuovo token //aggiunto flag per evitare loop infiniti di refresh
     }
 
     throw new Error("Sessione scaduta");

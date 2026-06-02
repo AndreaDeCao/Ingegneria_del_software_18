@@ -86,6 +86,9 @@ export default function ProfilePage() {
     confirm: false,
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);       //per il cambio password passwrod
+  const [isSubmittingField, setIsSubmittingField] = useState(false);     //per il cambio mail
+
   // Notifiche
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -145,6 +148,15 @@ export default function ProfilePage() {
      */
     async function handleSave() {
       if(!activeModal || activeModal === "elimina") return;
+      if (isSubmittingField) return; // controllo come per pwd
+
+      if (activeModal === "email") {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(tempValue)) {
+          setError("Inserisci un indirizzo email valido");
+          return;
+        }
+      }
 
       const body: Record<string, string> = {
         nome,
@@ -153,6 +165,14 @@ export default function ProfilePage() {
         email,
         [activeModal]: tempValue,
       };
+
+      // Validazione campo vuoto
+      if (!tempValue.trim()) {
+        setError("Il campo non può essere vuoto");
+        return;
+      }
+
+      setIsSubmittingField(true); 
 
       try {
         await http<{ message: string }>("/users/me", {
@@ -173,6 +193,8 @@ export default function ProfilePage() {
         setActiveModal(null);
       } catch(err: unknown) {
         if(err instanceof Error) setError(err.message);
+      } finally {
+        setIsSubmittingField(false); // sblocca sempre
       }
     }
 
@@ -200,6 +222,8 @@ export default function ProfilePage() {
  * @returns {Promise<void>}
  */
     async function handlePasswordSave() {
+      if (isSubmitting) return; //controllo prima di ulteriori invii
+      
       const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,32}$/;
 
       if(passwordForm.next !== passwordForm.confirm) {
@@ -216,6 +240,8 @@ export default function ProfilePage() {
         return;
       }
 
+      setIsSubmitting(true);
+
       try {
         await http<{ message: string }>("/users/me/password", {
           method: "PUT",
@@ -230,6 +256,8 @@ export default function ProfilePage() {
 
       } catch(err: unknown) {
         if (err instanceof Error) setError(err.message);
+      } finally{
+        setIsSubmitting(false); //sblocco 
       }
     }
 
@@ -547,7 +575,7 @@ export default function ProfilePage() {
               onClick={() => setShowPasswords((p) => ({ ...p, current: !p.current }))}
               aria-label={showPasswords.current ? "Nascondi password" : "Mostra password"}
             >
-              <i className={showPasswords.current ? "ti ti-eye-off" : "ti ti-eye"} aria-hidden="true" />
+              <i className={showPasswords.current ? "ti ti-eye" : "ti ti-eye-off"} aria-hidden="true" />
             </button>
           </div>
 
@@ -566,19 +594,29 @@ export default function ProfilePage() {
               onClick={() => setShowPasswords((p) => ({ ...p, next: !p.next }))}
               aria-label={showPasswords.next ? "Nascondi password" : "Mostra password"}
             >
-              <i className={showPasswords.next ? "ti ti-eye-off" : "ti ti-eye"} aria-hidden="true" />
+              <i className={showPasswords.next ? "ti ti-eye" : "ti ti-eye-off"} aria-hidden="true" />
             </button>
           </div>
 
           <label className={styles.fieldLabel}>Conferma nuova password</label>
-          <input
-            className={styles.input}
-            type="password"
-            autoComplete="new-password"
-            value={passwordForm.confirm}
-            onChange={(e) => setPasswordForm((p) => ({ ...p, confirm: e.target.value }))}
-            onKeyDown={(e) => e.key === "Enter" && handlePasswordSave()}
-          />
+          <div className={styles.inputWrapper}>
+            <input
+              className={styles.input}
+              type={showPasswords.confirm ? "text" : "password"}
+              autoComplete="new-password"
+              value={passwordForm.confirm}
+              onChange={(e) => setPasswordForm((p) => ({ ...p, confirm: e.target.value }))}
+              onKeyDown={(e) => e.key === "Enter" && handlePasswordSave()}
+            />
+            <button
+              type="button"
+              className={styles.eyeBtn}
+              onClick={() => setShowPasswords((p) => ({ ...p, confirm: !p.confirm }))}
+              aria-label={showPasswords.confirm ? "Nascondi password" : "Mostra password"}
+            >
+              <i className={showPasswords.confirm ? "ti ti-eye" : "ti ti-eye-off"} aria-hidden="true" />
+            </button>
+          </div>
 
           {error && <p className={styles.errorBanner}>{error}</p>}
 
@@ -586,8 +624,12 @@ export default function ProfilePage() {
             <button className={styles.cancelBtn} onClick={() => setActiveModal(null)}>
               Annulla
             </button>
-            <button className={styles.saveBtn} onClick={handlePasswordSave}>
-              Salva
+            <button 
+              className={styles.saveBtn} 
+              onClick={handlePasswordSave}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Salvataggio..." : "Salva"}
             </button>
           </div>
         </Modal>
@@ -613,11 +655,12 @@ export default function ProfilePage() {
             >
               Annulla
             </button>
-            <button 
+           <button
               className={styles.saveBtn}
               onClick={handleSave}
+              disabled={isSubmittingField}
             >
-              Salva
+              {isSubmittingField ? "Salvataggio..." : "Salva"}
             </button>
           </div>
         </Modal>
