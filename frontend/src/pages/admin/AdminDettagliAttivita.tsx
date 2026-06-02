@@ -364,7 +364,7 @@ export default function AdminDettagliAttivita() {
             <Link to="/admin/attivita/visualizza" className={appStyles.primaryButton}>
               Lista attivita
             </Link>
-            <Link to="/attivita/crea" className={appStyles.primaryButton}>
+            <Link to="/admin/attivita/crea" className={appStyles.primaryButton}>
               + Crea attivita
             </Link>
           </div>

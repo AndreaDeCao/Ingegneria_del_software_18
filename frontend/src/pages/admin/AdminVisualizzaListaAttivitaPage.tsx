@@ -179,7 +179,7 @@ export default function AdminVisualizzaListaAttivitaPage() {
         />
 
         <Link
-          to="/attivita/crea"
+          to="/admin/attivita/crea"
           className={appStyles.primaryButton}
         >
           + Crea attività

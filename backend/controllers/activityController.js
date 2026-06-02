@@ -75,55 +75,52 @@ exports.createActivity = async (req, res) => {
       return res.status(400).json({ error: "Lista invitati non valida" });
     }
 
+    // Controlla se l'organizzatore è un admin
+    const organizerUser = await User.findById(organizerID).select("role");
+    const organizerIsAdmin = organizerUser?.role === "admin";
+
     if(invitedUsers.length > 0) {
-      const friendships = await Friendship.find({
-         $or: [
-          { sender: organizerID, status: "accepted" },
-          { receiver: organizerID, status: "accepted" },
-        ],
-      });
+      if (!organizerIsAdmin) {
+        // Gli utenti normali possono invitare solo i propri amici
+        const friendships = await Friendship.find({
+          $or: [
+            { sender: organizerID, status: "accepted" },
+            { receiver: organizerID, status: "accepted" },
+          ],
+        });
 
-      const friendIds = new Set(
-        friendships.map((f) => 
-          f.sender.toString() === organizerID
-            ? f.receiver.toString()
-            : f.sender.toString()
-        )
-      );
+        const friendIds = new Set(
+          friendships.map((f) =>
+            f.sender.toString() === organizerID
+              ? f.receiver.toString()
+              : f.sender.toString()
+          )
+        );
 
-      const allAreFriends = invitedUsers.every((id) => friendIds.has(id.toString()));
-      if(!allAreFriends) {
-        return res.status(400).json({ error: "Puoi invitare solo i tuoi amici" });
+        const allAreFriends = invitedUsers.every((id) => friendIds.has(id.toString()));
+        if (!allAreFriends) {
+          return res.status(400).json({ error: "Puoi invitare solo i tuoi amici" });
+        }
       }
 
-      if(invitedUsers.length > max - 1) {
+      if(invitedUsers.length > max) {
         return res.status(400).json({
-          error: `Puoi invitare al massimo ${max - 1} amici per questa attività`,
+          error: `Il numero di invitati supera il massimo di partecipanti consentito`,
         });
-      }     
+      }
     }
 
-    // const newActivity = new Activity({
-    //   title,
-    //   description,
-    //   activityDate,
-    //   maxParticipants: max,
-    //   visibility: visibility ?? "public",
-    //   organizerID: req.userId,
-    //   trekID: trekID ?? null,
-    //   partecipantList: [req.userId],
-    //   invitedUsers,
-    //   status: "Aperto",
-    // });
+    // L'admin non partecipa all'attività che crea; lo user normale è il primo partecipante
+    const initialParticipants = organizerIsAdmin ? [] : (organizerID ? [organizerID] : []);
 
     const newActivity = new Activity({
       ...req.body,
       maxParticipants: max,
       invitedUsers,
-      partecipantList: organizerID ? [organizerID] : [],
+      partecipantList: initialParticipants,
     });
 
-    if (newActivity.partecipantList.length == 1 && newActivity.maxParticipants == 1) {
+    if (!organizerIsAdmin && newActivity.partecipantList.length == 1 && newActivity.maxParticipants == 1) {
       newActivity.status = "Chiuso";
     }
 
@@ -262,7 +259,7 @@ exports.leaveActivity = async (req, res) => {
   }
 };
 
-// PATCH /activities/:id/cancel — solo organizzatore
+// PATCH /activities/:id/cancel — organizzatore o admin
 exports.cancelActivity = async (req, res) => {
   try {
     const userID = req.user?._id?.toString() || req.body.userID?.toString();
@@ -277,7 +274,10 @@ exports.cancelActivity = async (req, res) => {
       return res.status(400).json({ error: "Attività già passata" });
     }
 
-    if (activity.organizerID?.toString() !== userID) {
+    const requestingUser = await User.findById(userID).select("role");
+    const isAdmin = requestingUser?.role === "admin";
+
+    if (activity.organizerID?.toString() !== userID && !isAdmin) {
       return res.status(403).json({ error: "Solo l'organizzatore può annullare l'attività" });
     }
     if (activity.status === "Annullato") {
@@ -297,7 +297,7 @@ exports.cancelActivity = async (req, res) => {
   }
 };
 
-// PATCH /activities/:id/uncancel — solo organizzatore
+// PATCH /activities/:id/uncancel — organizzatore o admin
 exports.uncancelActivity = async (req, res) => {
   try {
     const userID = req.user?._id?.toString() || req.body.userID?.toString();
@@ -312,7 +312,10 @@ exports.uncancelActivity = async (req, res) => {
       return res.status(400).json({ error: "Attività già passata" });
     }
 
-    if (activity.organizerID?.toString() !== userID) {
+    const requestingUser = await User.findById(userID).select("role");
+    const isAdmin = requestingUser?.role === "admin";
+
+    if (activity.organizerID?.toString() !== userID && !isAdmin) {
       return res.status(403).json({ error: "Solo l'organizzatore può riattivare l'attività" });
     }
     if (activity.status === "Chiuso" || activity.status === "Aperto") {
@@ -350,7 +353,10 @@ exports.closeActivity = async (req, res) => {
       return res.status(400).json({ error: "Attività già passata" });
     }
 
-    if (activity.organizerID?.toString() !== userID) {
+    const requestingUser = await User.findById(userID).select("role");
+    const isAdmin = requestingUser?.role === "admin";
+
+    if (activity.organizerID?.toString() !== userID && !isAdmin) {
       return res.status(403).json({ error: "Solo l'organizzatore può chiudere l'attività" });
     }
     if (activity.status === "Chiuso") {
@@ -384,7 +390,10 @@ exports.openActivity = async (req, res) => {
       return res.status(400).json({ error: "Attività già passata" });
     }
 
-    if (activity.organizerID?.toString() !== userID) {
+    const requestingUser = await User.findById(userID).select("role");
+    const isAdmin = requestingUser?.role === "admin";
+
+    if (activity.organizerID?.toString() !== userID && !isAdmin) {
       return res.status(403).json({ error: "Solo l'organizzatore può aprire l'attività" });
     }
     if (activity.status === "Aperto") {
@@ -407,15 +416,19 @@ exports.openActivity = async (req, res) => {
   }
 };
 
-// DELETE /activities/:id — solo organizzatore, eliminazione definitiva
-exports.deleteActivity = async (req, res) => { //FIX ME: solo admin
+// DELETE /activities/:id — organizzatore o admin
+exports.deleteActivity = async (req, res) => {
   try {
     const userID = req.user?._id?.toString() || req.body.userID?.toString();
     if (!userID) return res.status(401).json({ error: "Non autenticato" });
 
     const activity = await Activity.findById(req.params.id);
     if (!activity) return res.status(404).json({ error: "Attività non trovata" });
-    if (activity.organizerID?.toString() !== userID) {
+
+    const requestingUser = await User.findById(userID).select("role");
+    const isAdmin = requestingUser?.role === "admin";
+
+    if (activity.organizerID?.toString() !== userID && !isAdmin) {
       return res.status(403).json({ error: "Solo l'organizzatore può eliminare l'attività" });
     }
 
