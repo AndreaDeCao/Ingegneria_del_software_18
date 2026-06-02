@@ -13,6 +13,8 @@ type ActivityWithAdmin = Activity & {
   reports?: Array<{ reportStatus: string }>;
 };
 
+const POLL_INTERVAL = 20_000; // ogni 20 secondi
+
 export default function AdminVisualizzaListaAttivitaPage() {
   const { user } = useAuth();
 
@@ -94,6 +96,14 @@ export default function AdminVisualizzaListaAttivitaPage() {
 
   useEffect(() => {
     fetchData();
+  }, [fetchData]);
+
+  // aggiungi questo subito sotto
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchData();
+    }, POLL_INTERVAL);
+    return () => clearInterval(interval);
   }, [fetchData]);
 
   const filteredActivities = useMemo(() => {

@@ -35,6 +35,7 @@ exports.getActivityById = async (req, res) => {
     const activity = await Activity
       .findById(req.params.id)
       //POPULATE
+      .populate("reports.reportedBy", "email nickname nome cognome")
       .populate("partecipantList", "nickname email nome cognome avatarUrl");
 
     if (!activity) {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 
 import styles from "./attivitaPage.module.css";
@@ -16,6 +16,8 @@ import type {ActivityPopulated} from "../../types/ActivityPopulated";
 type ModalType = "join" | "leave" | "cancel" | "uncancel" | "delete" | "report" | null;
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
+const POLL_INTERVAL = 20_000; // ogni 20 secondi
 
 function Banner({
   msg,
@@ -62,75 +64,87 @@ export default function DettagliAttivita() {
   const [reportSuccess, setReportSuccess] = useState(false);
   const [reportError, setReportError] = useState("");
 
-  async function loadPageData() {
-    try {
-      setError(null);
-      // const resActivity = await fetch(`http://localhost:3000/activities/${id}`);
-      const resActivity = await fetch(`${API_BASE}/activities/${id}`);
-      if (!resActivity.ok) {
-        const err = await resActivity.json().catch(() => ({}));
-        throw new Error(err.error || err.message || `Errore ${resActivity.status}`);
-      }
-
-      const activityData: ActivityPopulated = await resActivity.json();
-      activityData.partecipantList = activityData.partecipantList ?? [];
-      setActivity(activityData);
-
-      if (activityData.trekID) {
-        // 1. Recupera l'id numerico partendo dall'_id Mongo
-        const resId = await fetch(`${API_BASE}/treks/by-mongo-id/${activityData.trekID}`);
-        if (resId.ok) {
-          const { id: trekNumericId } = await resId.json();
-
-          // 2. Recupera il trek usando l'id numerico
-          const resTrek = await fetch(`${API_BASE}/treks/${trekNumericId}`);
-          if (resTrek.ok) setTrek(await resTrek.json());
+  const loadPageData = useCallback(async () => {
+      try {
+        setError(null);
+        // const resActivity = await fetch(`http://localhost:3000/activities/${id}`);
+        const resActivity = await fetch(`${API_BASE}/activities/${id}`);
+        if (!resActivity.ok) {
+          const err = await resActivity.json().catch(() => ({}));
+          throw new Error(err.error || err.message || `Errore ${resActivity.status}`);
         }
-      }
 
-      if (activityData.organizerID) {
-        const resOrg = await fetch(`${API_BASE}/users/${activityData.organizerID}`);
-        if (resOrg.ok) setOrganizer(await resOrg.json());
-      }
+        const activityData: ActivityPopulated = await resActivity.json();
+        activityData.partecipantList = activityData.partecipantList ?? [];
+        setActivity(activityData);
 
-      const currentUserId = user?._id;
-      const isOrganizerView =
-        !!currentUserId && activityData.organizerID?.toString() === currentUserId;
+        if (activityData.trekID) {
+          // 1. Recupera l'id numerico partendo dall'_id Mongo
+          const resId = await fetch(`${API_BASE}/treks/by-mongo-id/${activityData.trekID}`);
+          if (resId.ok) {
+            const { id: trekNumericId } = await resId.json();
 
-      if (isOrganizerView) {
-        const [friendsData, pendingData] = await Promise.all([
-          http<Friend[]>("/api/friendships"),
-          http<ActivityInvite[]>(`/activities/${id}/invites`),
-        ]);
-        setFriends(friendsData);
-        setPendingInvites(pendingData);
-        setMyInvite(null);
-        setInvitedUsers([]);
-        setFriendSearch("");
-      } else if (currentUserId) {
-        const myInvites = await http<ActivityInvite[]>(`/activities/${id}/invites/me`);        
-        setMyInvite(myInvites[0] ?? null);
-        setPendingInvites([]);
-        setFriends([]);
-        setInvitedUsers([]);
-        setFriendSearch("");
-      } else {
-        setFriends([]);
-        setPendingInvites([]);
-        setMyInvite(null);
-        setInvitedUsers([]);
-        setFriendSearch("");
+            // 2. Recupera il trek usando l'id numerico
+            const resTrek = await fetch(`${API_BASE}/treks/${trekNumericId}`);
+            if (resTrek.ok) setTrek(await resTrek.json());
+          }
+        }
+
+        if (activityData.organizerID) {
+          const resOrg = await fetch(`${API_BASE}/users/${activityData.organizerID}`);
+          if (resOrg.ok) setOrganizer(await resOrg.json());
+        }
+
+        const currentUserId = user?._id;
+        const isOrganizerView =
+          !!currentUserId && activityData.organizerID?.toString() === currentUserId;
+
+        if (isOrganizerView) {
+          const [friendsData, pendingData] = await Promise.all([
+            http<Friend[]>("/api/friendships"),
+            http<ActivityInvite[]>(`/activities/${id}/invites`),
+          ]);
+          setFriends(friendsData);
+          setPendingInvites(pendingData);
+          setMyInvite(null);
+          setInvitedUsers([]);
+          setFriendSearch("");
+        } else if (currentUserId) {
+          const myInvites = await http<ActivityInvite[]>(`/activities/${id}/invites/me`);        
+          setMyInvite(myInvites[0] ?? null);
+          setPendingInvites([]);
+          setFriends([]);
+          setInvitedUsers([]);
+          setFriendSearch("");
+        } else {
+          setFriends([]);
+          setPendingInvites([]);
+          setMyInvite(null);
+          setInvitedUsers([]);
+          setFriendSearch("");
+        }
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Errore nel caricamento dei dati");
+        }
+      } finally {
+        setLoading(false);
       }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Errore nel caricamento dei dati");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
+  }, [id, user?._id]);
+
+  useEffect(() => {
+    setLoading(true);
+    void loadPageData();
+  }, [loadPageData]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      void loadPageData();
+    }, POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [loadPageData]);
 
   useEffect(() => {
     setLoading(true);

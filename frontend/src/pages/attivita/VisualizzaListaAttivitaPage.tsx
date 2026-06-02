@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import styles from "./attivitaPage.module.css";
 import appStyles from "../../App.module.css";
 import { Link } from "react-router-dom";
@@ -16,6 +16,8 @@ type ActivityWithUser = Activity & {
   suspendedReason?: string;
   reports?: Array<{ reportStatus: string }>;
 };
+
+const POLL_INTERVAL = 20_000; // ogni 20 secondi
 
 export default function VisualizzaAttivitaPage() {
   const { user } = useAuth();
@@ -111,28 +113,36 @@ export default function VisualizzaAttivitaPage() {
 
   const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const resActivities = await fetch(`${API_BASE}/activities/`);
-        if (!resActivities.ok) throw new Error("Errore nel recupero attività");
-        const activitiesData: ActivityWithUser[] = await resActivities.json();
-        setActivities(activitiesData);
+  const fetchData = useCallback(async () => {
+    try {
+      const resActivities = await fetch(`${API_BASE}/activities/`);
+      if (!resActivities.ok) throw new Error("Errore nel recupero attività");
+      const activitiesData: ActivityWithUser[] = await resActivities.json();
+      setActivities(activitiesData);
 
-        const resTreks = await fetch(`${API_BASE}/treks/`);
-        if (!resTreks.ok) throw new Error("Errore nel recupero trek");
-        const treksData: Trek[] = await resTreks.json();
-        const map: Record<string, string> = {};
-        treksData.forEach((t) => { map[t._id] = t.name; });
-        setTreksMap(map);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+      const resTreks = await fetch(`${API_BASE}/treks/`);
+      if (!resTreks.ok) throw new Error("Errore nel recupero trek");
+      const treksData: Trek[] = await resTreks.json();
+      const map: Record<string, string> = {};
+      treksData.forEach((t) => { map[t._id] = t.name; });
+      setTreksMap(map);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }, [API_BASE]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchData();
+    }, POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
   async function confirmJoin(activity: Activity) {
     setJoinLoading(true);

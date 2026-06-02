@@ -258,3 +258,11 @@
   max-width: 150px;
   align-items: flex-start ;
 }
+
+.pendingReportList {
+    display: flex;
+    flexDirection: row;
+    overflowX: auto;
+    gap: 16px;
+    paddingBottom: 8px;
+}

@@ -27,6 +27,8 @@ const STATUS_BADGE_CLASS: Record<ReportStatus, string> = {
   dismissed: styles.statusClosed,
 };
 
+const POLL_INTERVAL = 20_000; // ogni 20 secondi
+
 // ── Helpers puri ──────────────────────────────────────────────────────────
 
 function getDisplayName(user: PopulatedUser | string | null | undefined, fallback: string): string {
@@ -284,6 +286,13 @@ export default function GestioneSegnalazioniPage() {
 
   useEffect(() => {
     fetchAll(false);
+  }, [fetchAll]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchAll(true); // silent=true: non mostra errori e non tocca il loading
+    }, POLL_INTERVAL);
+    return () => clearInterval(interval);
   }, [fetchAll]);
 
   // ── Azioni sulle segnalazioni ────────────────────────────────────────────
