@@ -92,7 +92,7 @@ export default function ProfilePage() {
   // Notifiche
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const unread = notifications.filter(n => !n.read).length;
+  const unread = notifications.filter(n => n?._id && !n.read).length;
 
   useEffect(() => {
   if (searchParams.get("email-verified")) {
@@ -119,10 +119,37 @@ export default function ProfilePage() {
     // Carica notifiche utente
     useEffect(() => {
       http<UserNotification[]>("/users/me/notifications")
-        .then(setNotifications)
+        .then(async (notifs) => {
+          try {
+            const incoming = await http<{ _id: string }[]>("/api/friendships/requests/incoming");
+            const incomingIds = new Set(incoming.map(r => r._id));
+
+            const updated = await Promise.all(notifs.map(async (n) => {
+              if (n.type === "friend_request" && n.status === "pending" && n.ref) {
+                if (!incomingIds.has(n.ref)) {
+                  return { ...n, status: "accepted" as const };
+                }
+              }
+              if (n.type === "activity_invite" && n.status === "pending" && n.ref) {
+                try {
+                  const invites = await http<{ _id: string }[]>(`/activities/${n.ref}/invites/me`);
+                  if (!invites || invites.length === 0) {
+                    return { ...n, status: "accepted" as const };
+                  }
+                } catch {
+                  // silenzioso
+                }
+              }
+              return n;
+            }));
+
+            setNotifications(updated);
+          } catch {
+            setNotifications(notifs);
+          }
+        })
         .catch(() => {});
     }, []);
-
 
     /**
      * Apre modal per modificare campo specifico.
@@ -357,27 +384,39 @@ export default function ProfilePage() {
      * @returns {Promise<void>}
      */
     async function handleNotifAction(notif: UserNotification, action: "accept" | "reject") {
-      const endpoint =
-        notif.type === "friend_request"
-          ? `/api/friendships/${action === "accept" ? "accept" : "decline"}/${notif.ref}`
-          : `/activities/${notif.ref}/${action}-invite`;
-
       try {
-        await http(endpoint, { method: "PUT" });
+        if (notif.type === "activity_invite") {
+          const invites = await http<{ _id: string }[]>(`/activities/${notif.ref}/invites/me`);
+          if (!invites || invites.length === 0) {
+            setError("Invito non trovato o già gestito");
+            return;
+          }
+          await http(`/activities/${notif.ref}/invites/${invites[0]._id}/${action === "accept" ? "accept" : "decline"}`, {
+            method: "PUT",
+          });
+        } else {
+          try {
+            await http(`/api/friendships/${action === "accept" ? "accept" : "decline"}/${notif.ref}`, {
+              method: "PUT",
+            });
+          } catch {
+            // richiesta già gestita — aggiorna solo la notifica
+          }
+        }
+
         await http(`/users/me/notifications/${notif._id}/status`, {
           method: "PUT",
           body: JSON.stringify({ status: action === "accept" ? "accepted" : "rejected" }),
         });
-        setNotifications(prev => prev.map(
-          n => n._id === notif._id
+
+        setNotifications(prev => prev.map(n =>
+          n._id === notif._id
             ? { ...n, read: true, status: action === "accept" ? "accepted" : "rejected" }
             : n
         ));
 
-      } catch(err: unknown) {
-        if(err instanceof Error) {
-          setError(err.message);
-        }
+      } catch (err: unknown) {
+        if (err instanceof Error) setError(err.message);
       }
     }
 
@@ -732,17 +771,17 @@ export default function ProfilePage() {
                 </button>
               )}
               <button 
-                  className={styles.clearNotifications}
+                  className={styles.clearAll}
                   onClick={clearNotifications}
                 >
                   Elimina tutto
                 </button>
             </div>
             <div className={styles.notifList}>
-              {notifications.map(n => {
+              {notifications.filter(n => n._id).map( n=> {
                 const isActivityInvite = n.type === "activity_invite" && n.ref;
                 const isFriendRequest  = n.type === "friend_request"  && n.ref;
-                const isPending        = n.status === "pending" && !n.read;
+                const isPending        = n.status === "pending";
 
                 return (
                   <div
@@ -759,7 +798,7 @@ export default function ProfilePage() {
                       if(isActivityInvite) {
                         setNotificationsOpen(false);
                         navigate(`/attivita/${n.ref}`);
-                      } else {
+                      } else if(isFriendRequest) {
                         setNotificationsOpen(false);
                         navigate("/friends");
                       }

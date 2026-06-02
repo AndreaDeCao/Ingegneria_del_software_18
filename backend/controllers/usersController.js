@@ -561,7 +561,7 @@ exports.markAllNotificationRead = async (req, res) => {
  */
 exports.markNotificationRead = async (req ,res) => {
   try {
-    const user = await UserfindById(req.userId);
+    const user = await User.findById(req.userId);
     if(!user) {
       return res.status(404).json({ error: "Utente non trovato" });
     }

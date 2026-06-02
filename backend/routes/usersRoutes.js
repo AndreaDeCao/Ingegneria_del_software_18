@@ -6,30 +6,29 @@ const requireAuth = require("../middleware/requireAuth");
 
 router.get("/me", requireAuth, userController.getMe);
 router.put("/me", requireAuth, userController.updateMe);
-router.delete("/me/avatar", requireAuth, userController.deleteAvatar);
 router.delete("/me", requireAuth, userController.deleteMe);
 
 router.put("/me/avatar", requireAuth, userController.updateAvatar);
+router.delete("/me/avatar", requireAuth, userController.deleteAvatar);
 
 router.put("/me/password", requireAuth, userController.updatePassword);
 
-router.get("/", userController.getUsers);
-router.get("/favorites", requireAuth, userController.getFavoriteTreks);
-router.get("/verify-email-change/:token", userController.verifyEmailChange);
-
-router.post("/", userController.createUser);
-router.post("/favorites/:trekId", requireAuth, userController.addTrekToFavorites);
-router.delete("/favorites/:trekId", requireAuth, userController.removeTrekFromFavorites);
-
-router.put("/me/notifications/:notifId/read", requireAuth, userController.markNotificationRead);
+router.get("/me/notifications", requireAuth, userController.getNotifications);
+router.put("/me/notifications/read-all", requireAuth, userController.markAllNotificationRead);
 router.put("/me/notifications/:notifId/read", requireAuth, userController.markNotificationRead);
 router.put("/me/notifications/:notifId/status", requireAuth, userController.updateNotificationStatus);
 router.delete("/me/notifications", requireAuth, userController.clearNotifications);
 
-router.get("/:id", userController.getUserById);
+router.get("/favorites", requireAuth, userController.getFavoriteTreks);
+router.post("/favorites/:trekId", requireAuth, userController.addTrekToFavorites);
+router.delete("/favorites/:trekId", requireAuth, userController.removeTrekFromFavorites);
 
-router.get("/me/notifications", requireAuth, userController.getNotifications);
-router.put("/me/notifications/read-all", requireAuth, userController.markAllNotificationRead);
+router.get("/verify-email-change/:token", userController.verifyEmailChange);
+
+router.get("/", userController.getUsers);
+router.post("/", userController.createUser);
+
+router.get("/:id", userController.getUserById);
 
 
 module.exports = router;
