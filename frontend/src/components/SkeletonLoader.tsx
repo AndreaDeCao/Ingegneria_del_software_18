@@ -204,6 +204,14 @@ const STYLES = `
     grid-template-columns: repeat(4, 1fr);
     gap: 16px;
   }
+
+  /* ── column layout ── */
+  .dlm-skeleton-card-column-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
 `;
 
 // Inject styles once
@@ -267,6 +275,19 @@ export function SkeletonCard() {
 export function SkeletonCardRow({ count = 5 }: { count?: number }) {
   return (
     <div className="dlm-skeleton-card-row-scroll">
+      {Array.from({ length: count }).map((_, i) => (
+        <SkeletonCard key={i} />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Colonna di N SkeletonCard (per la sezione "Di tendenza").
+ */
+export function SkeletonCardColumn({ count = 7 }: { count?: number }) {
+  return (
+    <div className="dlm-skeleton-card-column-scroll">
       {Array.from({ length: count }).map((_, i) => (
         <SkeletonCard key={i} />
       ))}

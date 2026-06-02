@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 
+import { PageLoader } from "../../components/SkeletonLoader";
 import styles from "./attivitaPage.module.css";
 import appStyles from "../../App.module.css";
 
@@ -236,7 +237,7 @@ export default function DettagliAttivita() {
       hour: "2-digit", minute: "2-digit",
     });
 
-  if (loading) return <main className={styles.page}><p className={styles.message}>Caricamento attività...</p></main>;
+  if (loading) return <PageLoader />;
   if (error || !activity) return <main className={styles.page}><p className={styles.messageError}>{error || "Attività non trovata"}</p></main>;
 
   const currentUserID = user?._id;
@@ -392,7 +393,7 @@ export default function DettagliAttivita() {
           )}
 
           {/* Banner segnalazioni accettate */}
-          {hasAcceptedReport && (
+          {(!isSuspended && hasAcceptedReport) && (
             <div className={styles.reportedBanner}>
               <span className={styles.reportedBannerTitle}>
                 {isOrganizer ? "La tua attività è stata segnalata" : "Questa attività è stata segnalata"}

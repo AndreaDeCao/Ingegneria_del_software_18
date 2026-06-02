@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
+
 import TrekCardFavorite from "../../components/TrekCardFavorite";
+
 import type { Trek } from "../../types/Trek";
+
 import styles from "./Treks.module.css";
+import { SkeletonCardColumn } from "../../components/SkeletonLoader";
 
 /**
  * Converte stringa durata nel formato "X ore Y min" in minuti totali.
@@ -28,7 +32,9 @@ export default function FavoriteTreks() {
   /** Trek preferiti */
   const [treks, setTreks] = useState<Trek[]>([]);
 
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
+  const [loadingTreks, setLoadingTreks] = useState(true);
+  const [loadingPage, setLoadingPage] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   /** Ricerca */
@@ -62,7 +68,7 @@ export default function FavoriteTreks() {
 
   useEffect(() => {
     if (!user) {
-      setLoading(false);
+      setLoadingPage(false);
       return;
     }
 
@@ -74,7 +80,7 @@ export default function FavoriteTreks() {
         setError(err.message);
       })
       .finally(() => {
-        setLoading(false);
+        setLoadingTreks(false);
       });
     }, [user]);
 
@@ -473,49 +479,34 @@ export default function FavoriteTreks() {
 
       {/* RISULTATI */}
       <div className={styles.results}>
-        {loading && (
-          <p className={styles.message}>
-            Caricamento percorsi...
-          </p>
+        {loadingTreks ? (
+          <SkeletonCardColumn count={7} />
+        ) : error ? (
+          <p className={styles.messageError}>Impossibile caricare i percorsi: {error}</p>
+        ) : (
+          <>
+            <p className={styles.count}>{filtered.length} Percorsi trovati</p>
+            {filtered.length === 0 ? (
+              <p className={styles.message}>Nessun percorso trovato</p>
+            ) : (
+              paginated.map((trek) => (
+              <TrekCardFavorite
+                key={trek.id}
+                trek={trek}
+                onRemove={(trekId) => {
+                  setTreks((prev) =>
+                    prev.filter((t) => t.id !== trekId)
+                  );
+                }}
+              />
+              ))
+            )}
+          </>
         )}
-
-        {error && (
-          <p className={styles.messageError}>
-            {error}
-          </p>
-        )}
-
-        {!loading && !error && (
-          <p className={styles.count}>
-            {filtered.length} Percorsi salvati
-          </p>
-        )}
-
-        {!loading &&
-          !error &&
-          filtered.length === 0 && (
-            <p className={styles.message}>
-              Nessun percorso salvato
-            </p>
-          )}
-
-        {!loading &&
-          !error &&
-          paginated.map((trek) => (
-            <TrekCardFavorite
-              key={trek.id}
-              trek={trek}
-              onRemove={(trekId) => {
-                setTreks((prev) =>
-                  prev.filter((t) => t.id !== trekId)
-                );
-              }}
-            />
-          ))}
       </div>
 
       {/* PAGINAZIONE */}
-      {!loading &&
+      {!loadingTreks &&
         !error &&
         totalPages > 1 && (
           <div className={styles.pagination}>

@@ -2,6 +2,8 @@ import { Navigate, useLocation } from "react-router-dom";
 import type { ReactElement } from "react";
 import { useAuth } from "./AuthProvider";
 
+import { PageLoader } from "../components/SkeletonLoader";
+
 type ProtectedRouteProps = {
   children: ReactElement;
   allowedRoles?: ("user" | "admin")[];
@@ -14,7 +16,7 @@ export default function ProtectedRoute({
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) return <p>Caricamento...</p>;
+  if (loading) return <PageLoader />;
 
   // non autenticato
   if (!user) {

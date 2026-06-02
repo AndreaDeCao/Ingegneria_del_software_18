@@ -2,14 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { http } from "../../auth/api";
 import type { DiaryEntry } from "../../types/Diary";
+
 import appStyles from "../../App.module.css";
 import styles from "./Diario.module.css";
+import { PageLoader } from "../../components/SkeletonLoader";
 
 type ModalType = "delete" | null;
 
 function parseGpxDistanceDuration(gpxText: string): { distanceMeters: number; durationSeconds: number } | null {
   try {
-    const parser = new DOMParser();
+    const parser = new DOMParser(); 
     const doc = parser.parseFromString(gpxText, "application/xml");
     const trkpts = Array.from(doc.querySelectorAll("trkpt"));
     if (!trkpts.length) return null;
@@ -135,11 +137,7 @@ export default function VisualizzaDiarioPage() {
     }
   }
 
-  if (loading) return (
-    <main className={appStyles.main}>
-      <p className={appStyles.message}>Caricamento diario...</p>
-    </main>
-  );
+  if (loading) return <PageLoader />;
 
   if (error) return (
     <main className={appStyles.main}>

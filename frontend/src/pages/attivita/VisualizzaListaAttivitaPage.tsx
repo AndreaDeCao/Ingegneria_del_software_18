@@ -8,6 +8,8 @@ import { http } from "../../auth/api";
 import type {Activity} from "../../types/Activity";
 import type {Trek} from "../../types/Trek";
 
+import { PageLoader } from "../../components/SkeletonLoader";
+
 // modale inline per conferma partecipazione dalla lista
 type JoinModal = { activity: Activity } | null;
 
@@ -159,7 +161,7 @@ export default function VisualizzaAttivitaPage() {
       setJoinModal(null);
     }
   }
-  if (loading) return <main className={styles.page}><p className={styles.message}>Caricamento attività...</p></main>;
+  if (loading) return <PageLoader />;
   if (error) return <main className={styles.page}><p className={styles.messageError}>{error}</p></main>;
 
   return (

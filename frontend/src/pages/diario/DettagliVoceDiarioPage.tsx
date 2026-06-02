@@ -6,6 +6,8 @@ import appStyles from "../../App.module.css";
 import styles from "./DettagliDiario.module.css";
 import TrekMap from "../../components/TrekMap";
 
+import { PageLoader } from "../../components/SkeletonLoader";
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 function areCoordsClose(
@@ -246,11 +248,7 @@ export default function DettagliVoceDiarioPage() {
     fetchData();
   }, [id]);
 
-  if (loading) return (
-    <main className={appStyles.main}>
-      <p className={appStyles.message}>Caricamento voce...</p>
-    </main>
-  );
+  if (loading) return <PageLoader />
 
   if (error || !entry) return (
     <main className={appStyles.main}>

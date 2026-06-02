@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+
 import TrekCardEsplora from "../../components/TrekCardEsplora";
+
 import type { Trek } from "../../types/Trek";
+
 import styles from "./Treks.module.css";
+import { SkeletonCardColumn } from "../../components/SkeletonLoader";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -327,16 +331,25 @@ return (
       </div>
 
     </div>
-  
+    
     {/* Risultati */}
     <div className={styles.results}>
-      {loading && <p className={styles.message}>Caricamento percorsi...</p>}
-      {error && <p className={styles.messageError}>Impossibile caricare i percorsi: {error}</p>}
-      {!loading && !error && <p className={styles.count}>{filtered.length} Percorsi trovati</p>}
-      {!loading && !error && filtered.length === 0 && <p className={styles.message}>Nessun percorso trovato</p>}
-      {!loading && !error && paginated.map((trek) => (
-        <TrekCardEsplora key={trek.id} trek={trek} />
-      ))}
+      {loading ? (
+        <SkeletonCardColumn count={7} />
+      ) : error ? (
+        <p className={styles.messageError}>Impossibile caricare i percorsi: {error}</p>
+      ) : (
+        <>
+          <p className={styles.count}>{filtered.length} Percorsi trovati</p>
+          {filtered.length === 0 ? (
+            <p className={styles.message}>Nessun percorso trovato</p>
+          ) : (
+            paginated.map((trek) => (
+              <TrekCardEsplora key={trek.id} trek={trek} />
+            ))
+          )}
+        </>
+      )}
     </div>
 
     {/* Paginazione */}
