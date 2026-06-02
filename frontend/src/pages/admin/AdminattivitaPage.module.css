@@ -22,9 +22,9 @@
 }
 
 .messageError {
-  marginTop: 12;
-  padding: 12;
-  borderRadius: 8;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 8px;
   border: "1px solid #f5c6cb";
   background: "#fdecea";
   color: "#7a1f1f";

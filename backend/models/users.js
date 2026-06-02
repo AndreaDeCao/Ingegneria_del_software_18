@@ -25,6 +25,8 @@ const UserSchema = new mongoose.Schema({
 
   avatarUrl: { type: String, default: null },
 
+  privacyAcceptedAt: { type: Date, default: null },
+
   notifications: [ {
     type: {
       type: String,
@@ -59,8 +61,8 @@ const UserSchema = new mongoose.Schema({
       type: Date,
       default: Date.now
     },
-  }
-],
+  }],
+  
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", UserSchema);
