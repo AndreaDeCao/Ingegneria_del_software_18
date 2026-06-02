@@ -284,6 +284,25 @@ select:focus {
   color: #e74c3c;
 }
 
+.statusSuspended {
+  background: rgba(255, 152, 0, 0.12);
+  color: #e67e22;
+}
+
+.statusReported {
+  background: rgba(231, 76, 60, 0.12);
+  color: #c0392b;
+}
+
+.activityCardSuspended {
+  opacity: 0.7;
+  border-left: 4px solid #e67e22;
+}
+
+.activityCardReported {
+  border-left: 4px solid #c0392b;
+}
+
 .activityTitle {
   font-size: 22px;
   font-weight: 700;

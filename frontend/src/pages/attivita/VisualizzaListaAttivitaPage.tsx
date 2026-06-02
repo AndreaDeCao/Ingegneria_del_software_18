@@ -11,6 +11,12 @@ import type {Trek} from "../../types/Trek";
 // modale inline per conferma partecipazione dalla lista
 type JoinModal = { activity: Activity } | null;
 
+type ActivityWithUser = Activity & {
+  suspended?: boolean;
+  suspendedReason?: string;
+  reports?: Array<{ reportStatus: string }>;
+};
+
 export default function VisualizzaAttivitaPage() {
   const { user } = useAuth();
 
@@ -23,6 +29,8 @@ export default function VisualizzaAttivitaPage() {
   const [travelModeFilter, setTravelModeFilter] = useState("Tutti");
   const [participationFilter, setParticipationFilter] = useState("Tutte");
   const [visibilityFilter, setVisibilityFilter] = useState("Tutte");
+  const [suspendedFilter, setSuspendedFilter] = useState("Tutte");
+  const [organizerFilter, setOrganizerFilter] = useState("Tutti");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,13 +52,19 @@ export default function VisualizzaAttivitaPage() {
     return "join";
   }
 
+  function hasAcceptedReport(a: ActivityWithUser) {
+    return (a.reports ?? []).some((r) => r.reportStatus === "accepted");
+  }
+
   const hasActiveFilters =
     search !== "" ||
     statusFilter !== "Tutti" ||
     travelModeFilter !== "Tutti" ||
     selectedDate !== "" ||
     participationFilter !== "Tutte" ||
-    visibilityFilter !== "Tutte";
+    visibilityFilter !== "Tutte" ||
+    suspendedFilter !== "Tutte" ||
+    organizerFilter !== "Tutti";
 
   function resetFilters() {
     setSearch("");
@@ -59,6 +73,8 @@ export default function VisualizzaAttivitaPage() {
     setSelectedDate("");
     setParticipationFilter("Tutte");
     setVisibilityFilter("Tutte");
+    setSuspendedFilter("Tutte");
+    setOrganizerFilter("Tutti");
   }
 
   const getStatusClass = (status: string) => {
@@ -87,7 +103,10 @@ export default function VisualizzaAttivitaPage() {
           ? a.visibility === "public"
           : a.visibility === "private";
 
-    return matchesSearch && matchesStatus && matchesDate && matchesTravelMode && matchesParticipation && matchesVisibility;
+    const matchesSuspended = suspendedFilter === "Tutte" || (suspendedFilter === "Sospese" && a.suspended) || (suspendedFilter === "Non sospese" && !a.suspended);
+    const matchesOrganizer = organizerFilter === "Tutti" || (organizerFilter === "Le mie" && a.organizerID === currentUserID);
+
+    return matchesSearch && matchesStatus && matchesDate && matchesTravelMode && matchesParticipation && matchesVisibility && matchesSuspended && matchesOrganizer;
   });
 
   const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
@@ -95,13 +114,11 @@ export default function VisualizzaAttivitaPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // const resActivities = await fetch("http://localhost:3000/activities");
         const resActivities = await fetch(`${API_BASE}/activities/`);
         if (!resActivities.ok) throw new Error("Errore nel recupero attività");
-        const activitiesData: Activity[] = await resActivities.json();
+        const activitiesData: ActivityWithUser[] = await resActivities.json();
         setActivities(activitiesData);
 
-        // const resTreks = await fetch("http://localhost:3000/treks");
         const resTreks = await fetch(`${API_BASE}/treks/`);
         if (!resTreks.ok) throw new Error("Errore nel recupero trek");
         const treksData: Trek[] = await resTreks.json();
@@ -115,7 +132,7 @@ export default function VisualizzaAttivitaPage() {
       }
     };
     fetchData();
-  }, []);
+  }, [API_BASE]);
 
   async function confirmJoin(activity: Activity) {
     setJoinLoading(true);
@@ -212,6 +229,24 @@ export default function VisualizzaAttivitaPage() {
           </select>
         </div>
 
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Organizzazione</label>
+          <select value={organizerFilter} onChange={(e) => setOrganizerFilter(e.target.value)} className={styles.select}>
+            <option value="Tutti">Tutti</option>
+            <option value="Organizzo">Solo che organizzo</option>
+            <option value="Non organizzo">Non organizzo</option>
+          </select>
+        </div>
+
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Sospensione</label>
+          <select value={suspendedFilter} onChange={(e) => setSuspendedFilter(e.target.value)} className={styles.select}>
+            <option value="Tutte">Tutte</option>
+            <option value="Sospese">Solo sospese</option>
+            <option value="Non sospese">Non sospese</option>
+          </select>
+        </div>
+
         {hasActiveFilters && (
           <div className={styles.filterGroup}>
             <label className={styles.filterLabel}>&nbsp;</label>
@@ -242,9 +277,19 @@ export default function VisualizzaAttivitaPage() {
             <article key={activity._id} className={styles.activityCard}>
               <Link to={`/attivita/${activity._id}`} className={styles.activityLink}>
                 <div className={styles.cardTop}>
-                  <span className={`${styles.statusBadge} ${getStatusClass(effectiveStatus)}`}>{effectiveStatus}</span>
+                  <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+                    {(activity as ActivityWithUser).suspended ? (
+                      <span className={`${styles.statusBadge} ${styles.statusSuspended}`}>Sospesa</span>
+                    ) : (
+                      <span className={`${styles.statusBadge} ${getStatusClass(effectiveStatus)}`}>{effectiveStatus}</span>
+                    )}
+                    {hasAcceptedReport(activity as ActivityWithUser) && (
+                      <span className={`${styles.statusBadge} ${styles.statusReported}`}>Segnalata</span>
+                    )}
+                  </div>
                   <span className={styles.activityId}>#{activity._id}</span>
                 </div>
+
 
                 <h3 className={styles.activityTitle}>{activity.title}</h3>
 
@@ -271,10 +316,11 @@ export default function VisualizzaAttivitaPage() {
                   <button
                     type="button"
                     className={appStyles.primaryButtonSmall}
+                    disabled={joinState !== "join" || (activity as ActivityWithUser).suspended}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      setJoinModal({ activity });
+                      if (joinState === "join") setJoinModal({ activity });
                     }}
                   >
                     {buttonLabel}

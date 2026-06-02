@@ -33,6 +33,15 @@ router.patch("/:id/uncancel", requireAuth, activityController.uncancelActivity);
 router.patch("/:id/close", requireAuth, activityController.closeActivity);
 router.patch("/:id/open", requireAuth, activityController.openActivity);
 
+// Segnalazioni
+router.post("/:id/report", requireAuth, activityController.reportActivity);
+router.patch("/:id/reports/:reportId/accept", requireAuth, activityController.acceptReport);
+router.patch("/:id/reports/:reportId/dismiss", requireAuth, activityController.dismissReport);
+
+// Moderazione admin
+router.patch("/:id/suspend", requireAuth, activityController.suspendActivity);
+router.patch("/:id/unsuspend", requireAuth, activityController.unsuspendActivity);
+
 router.delete("/:id", requireAuth, activityController.deleteActivity);
 router.get("/:id", activityController.getActivityById);
 

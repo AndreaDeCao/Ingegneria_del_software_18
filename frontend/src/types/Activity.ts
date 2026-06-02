@@ -22,6 +22,8 @@ export type Activity = {
 
   invitedUsers: string[];
 
+  suspended: boolean;
+
   createdAt?: Date;
   updatedAt?: Date;
 };
