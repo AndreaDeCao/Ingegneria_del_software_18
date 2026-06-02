@@ -3,6 +3,8 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import type { ActivityPopulated } from "../../types/ActivityPopulated";
 
+import type {Organizer} from "../../types/Organizer";
+
 import styles from "./attivitaPage.module.css";
 import appStyles from "../../App.module.css";
 
@@ -19,6 +21,8 @@ export default function AdminDettagliAttivita() {
   const navigate = useNavigate();
 
   const [activity, setActivity] = useState<ActivityPopulated | null>(null);
+  const [organizer, setOrganizer] = useState<Organizer | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,6 +56,11 @@ export default function AdminDettagliAttivita() {
         const data: ActivityPopulated = await res.json();
         data.partecipantList = data.partecipantList ?? [];
         setActivity(data);
+
+        if (data.organizerID) {
+        const resOrg = await fetch(`${API_BASE}/users/${data.organizerID}`);
+        if (resOrg.ok) setOrganizer(await resOrg.json());
+      }
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -170,10 +179,15 @@ export default function AdminDettagliAttivita() {
   if (loading) return <main className={styles.page}><p className={styles.message}>Caricamento attivita...</p></main>;
   if (error || !activity) return <main className={styles.page}><p className={styles.messageError}>{error || "Attivita non trovata"}</p></main>;
 
+  const currentUserID = user?._id;
+  const isOrganizer = !!currentUserID && activity.organizerID?.toString() === currentUserID;
+  const isParticipant = !isOrganizer && activity.partecipantList.some((p) => p._id === currentUserID);
   const participantCount = activity.partecipantList.length;
   const spotsLeft = activity.maxParticipants - participantCount;
   const isExpired = new Date(activity.activityDate).getTime() < Date.now();
   const isSuspended = activity.suspended === true;
+  const organizerName = organizer?.nickname || `${organizer?.nome ?? ""} ${organizer?.cognome ?? ""}`.trim() || organizer?.email || "—";
+
 
   const reports = (activity as any).reports ?? [];
   const pendingReports = reports.filter((r: any) => r.reportStatus === "pending");
@@ -181,6 +195,9 @@ export default function AdminDettagliAttivita() {
   const hasAcceptedReport = acceptedReports.length > 0;
 
   const effectiveStatus = (activity.status === "Aperto" && isExpired) ? "Chiuso" : activity.status;
+
+
+
 
   return (
     <main className={styles.page}>
@@ -258,12 +275,8 @@ export default function AdminDettagliAttivita() {
               <div className={styles.detailCard}>
                 <div>
                   <span className={styles.detailCardLabel}>Organizzatore</span>
-                  <span className={styles.detailCardValue}>
-                    {(activity as any).organizerID?.nickname ||
-                      `${(activity as any).organizerID?.nome ?? ""} ${(activity as any).organizerID?.cognome ?? ""}`.trim() ||
-                      (activity as any).organizerID?.email ||
-                      "—"}
-                  </span>
+                  <span className={styles.detailCardValue}>{organizerName}</span>
+                  {isOrganizer && <span className={styles.detailCardSub}>Sei tu l'organizzatore</span>}
                 </div>
               </div>
             </div>
@@ -303,28 +316,18 @@ export default function AdminDettagliAttivita() {
                             {new Date(r.reportedAt).toLocaleDateString("it-IT")}
                           </span>
                         </div>
-                        <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginBottom: "4px" }}>
-                          {r.reportedBy?.email && <span>{r.reportedBy.email}</span>}
+                        <div className={styles.adminReportContact}>
+                          {r.reportedBy?.email && <span>Email: {r.reportedBy.email}</span>}
                           {(r.reportedBy?.nome || r.reportedBy?.cognome) && (
-                            <span style={{ marginLeft: "8px" }}>
-                              {[r.reportedBy.nome, r.reportedBy.cognome].filter(Boolean).join(" ")}
-                            </span>
+                            <span style={{ marginLeft: "12px" }}>Nome: {[r.reportedBy.nome, r.reportedBy.cognome].filter(Boolean).join(" ")}</span>
                           )}
                         </div>
                         {r.reason && <p className={styles.adminReportReason}>{r.reason}</p>}
                         <div className={styles.adminReportActions}>
-                          <button
-                            className={styles.acceptReportButton}
-                            onClick={() => handleReportAction(r._id, "accept")}
-                            disabled={actionLoading}
-                          >
+                          <button className={styles.acceptReportButton} onClick={() => handleReportAction(r._id, "accept")} disabled={actionLoading}>
                             Accetta
                           </button>
-                          <button
-                            className={styles.dismissReportButton}
-                            onClick={() => handleReportAction(r._id, "dismiss")}
-                            disabled={actionLoading}
-                          >
+                          <button className={styles.dismissReportButton} onClick={() => handleReportAction(r._id, "dismiss")} disabled={actionLoading}>
                             Rigetta
                           </button>
                         </div>

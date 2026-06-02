@@ -10,9 +10,6 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 // Numero massimo di attività con segnalazioni in attesa mostrate in homepage
 const MAX_PENDING_REPORTS = 5;
 
-// Intervallo di polling in ms — aggiorna automaticamente senza ricaricare la pagina
-const POLL_INTERVAL_MS = 20_000;
-
 // Tipo per l'organizerID popolato
 type PopulatedUser = {
   _id: string;
@@ -87,14 +84,6 @@ export default function AdminHomepage() {
     fetchActivities(false);
   }, [fetchActivities]);
 
-  // Polling automatico — aggiorna in background senza mostrare spinner
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchActivities(true);
-    }, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [fetchActivities]);
-
   // Helper per ottenere il nickname dell'organizzatore
   const getOrganizerName = (activity: ActivityWithReports): string => {
     const organizer = activity.organizerID;
@@ -126,26 +115,26 @@ export default function AdminHomepage() {
     return "";
   };
 
-  // Prepara i report da mostrare (una card per ogni segnalazione pending)
-  // FIXME: Quando verranno implementate le segnalazioni per gli utenti,
-  // questa sezione dovrà includere anche i report sugli utenti.
-  // Si potrà fare un array unico che combina activityReports e userReports
-  const pendingReports = pendingActivities.flatMap((activity) => {
-    const pendingReportsList = (activity.reports ?? []).filter(
-      (r) => r.reportStatus === "pending"
-    );
-    return pendingReportsList.map((report) => ({
-      type: "activity" as const,
-      id: activity._id,
-      title: activity.title,
-      reason: report.reason || "Nessun motivo specificato",
-      organizerName: getOrganizerName(activity),
-      reportedBy: getReporterId(report),
-      reportedByName: getReporterName(report),
-      reportCount: (activity.reports ?? []).filter((r) => r.reportStatus === "pending").length,
-      targetLink: `/admin/segnalazioni?activity=${activity._id}`,
-    }));
-  });
+// Prepara i report da mostrare (una card per ogni segnalazione pending)
+// FIXME: Quando verranno implementate le segnalazioni per gli utenti,
+// questa sezione dovra includere anche i report sugli utenti.
+// Si potra fare un array unico che combina activityReports e userReports
+const pendingReports = pendingActivities.flatMap((activity) => {
+  const pendingReportsList = (activity.reports ?? []).filter(
+    (r) => r.reportStatus === "pending"
+  );
+  return pendingReportsList.map((report) => ({
+    type: "activity" as const,
+    id: activity._id,
+    title: activity.title,
+    reason: report.reason || "Nessun motivo specificato",
+    organizerName: getOrganizerName(activity),
+    reportedBy: getReporterId(report),
+    reportedByName: getReporterName(report),
+    reportCount: (activity.reports ?? []).filter((r) => r.reportStatus === "pending").length,
+    targetLink: `/admin/attivita/${activity._id}`, // Link al dettaglio dell'attivita
+  }));
+});
 
   // Limita il numero di report mostrati
   const limitedReports = pendingReports.slice(0, MAX_PENDING_REPORTS);

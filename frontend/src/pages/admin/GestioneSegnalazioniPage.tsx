@@ -5,9 +5,6 @@ import reportStyles from "./GestioneSegnalazioni.module.css";
 import appStyles from "../../App.module.css";
 import { useAuth } from "../../auth/AuthProvider";
 
-// Intervallo di polling in ms — aggiorna in background senza ricaricare la pagina
-const POLL_INTERVAL_MS = 20_000;
-
 type ReportStatus = "pending" | "accepted" | "dismissed";
 
 type PopulatedUser = {
@@ -85,15 +82,9 @@ export default function GestioneSegnalazioniPage() {
     fetchAll(false);
   }, [fetchAll]);
 
-  // Polling automatico
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchAll(true);
-    }, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [fetchAll]);
-
-  async function handleReportAction(activityId: string, reportId: string, action: "accept" | "dismiss") {
+  async function handleReportAction(activityId: string, reportId: string, action: "accept" | "dismiss", e: React.MouseEvent) {
+    e.stopPropagation();
+    e.preventDefault();
     setActionLoading(reportId);
     try {
       const res = await fetch(`${API_BASE}/activities/${activityId}/reports/${reportId}/${action}`, {
@@ -255,13 +246,19 @@ export default function GestioneSegnalazioniPage() {
           const reporterName = getReporterName(report);
           const organizerName = getOrganizerName(activity);
           
-          const reporterEmail = typeof report.reportedBy === "object" ? report.reportedBy.email : null;
-          const reporterFullName = typeof report.reportedBy === "object" 
+          // Controllo sicuro per reportedBy
+          const reporterEmail = (report.reportedBy && typeof report.reportedBy === "object" && report.reportedBy !== null) 
+            ? report.reportedBy.email 
+            : null;
+          const reporterFullName = (report.reportedBy && typeof report.reportedBy === "object" && report.reportedBy !== null)
             ? [report.reportedBy.nome, report.reportedBy.cognome].filter(Boolean).join(" ")
             : null;
 
-          const organizerEmail = typeof activity.organizerID === "object" ? activity.organizerID.email : null;
-          const organizerFullName = typeof activity.organizerID === "object"
+          // Controllo sicuro per organizerID
+          const organizerEmail = (activity.organizerID && typeof activity.organizerID === "object" && activity.organizerID !== null)
+            ? activity.organizerID.email
+            : null;
+          const organizerFullName = (activity.organizerID && typeof activity.organizerID === "object" && activity.organizerID !== null)
             ? [activity.organizerID.nome, activity.organizerID.cognome]
                 .filter(Boolean)
                 .join(" ")
@@ -271,137 +268,127 @@ export default function GestioneSegnalazioniPage() {
           const isAccepted = report.reportStatus === "accepted";
 
           return (
-            <div
+            <Link
               key={report._id}
-              className={`${reportStyles.reportCard} ${isPending ? reportStyles.reportCardPending : ""}`}
+              to={`/admin/attivita/${activity._id}`}
+              className={reportStyles.reportCardLink}
             >
-              {/* Header card */}
-              <div className={reportStyles.reportCardHeader}>
-                <div className={reportStyles.reportCardLeft}>
-                  <span className={reportStyles.reportCategory}>Attivita</span>
-                  <Link to={`/attivita/${activity._id}`} className={reportStyles.reportActivityTitle}>
-                    {activity.title}
-                  </Link>
+              <div
+                className={`${reportStyles.reportCard} ${isPending ? reportStyles.reportCardPending : ""}`}
+              >
+                {/* Header card */}
+                <div className={reportStyles.reportCardHeader}>
+                  <div className={reportStyles.reportCardLeft}>
+                    <span className={reportStyles.reportCategory}>Attivita</span>
+                    <span className={reportStyles.reportActivityTitle}>
+                      {activity.title}
+                    </span>
+                  </div>
+                  <span className={`${styles.statusBadge} ${statusBadgeClass[report.reportStatus]}`}>
+                    {statusLabel[report.reportStatus]}
+                  </span>
                 </div>
-                <span className={`${styles.statusBadge} ${statusBadgeClass[report.reportStatus]}`}>
-                  {statusLabel[report.reportStatus]}
-                </span>
+
+                {/* Meta */}
+                {/* Segnalatore */}
+                <div className={reportStyles.reportMeta}>
+                  <span>
+                    Segnalata da <strong>{reporterName}</strong>
+
+                    {reporterEmail && reporterName !== reporterEmail && (
+                      <>
+                        <span style={{ opacity: 0.5, margin: "0 6px" }}>·</span>
+                        <span style={{ opacity: 0.7 }}>{reporterEmail}</span>
+                      </>
+                    )}
+
+                    {reporterFullName && (
+                      <>
+                        <span style={{ opacity: 0.5, margin: "0 6px" }}>·</span>
+                        <span style={{ opacity: 0.7 }}>{reporterFullName}</span>
+                      </>
+                    )}
+                  </span>
+
+                  <span className={reportStyles.reportDate}>
+                    {new Date(report.reportedAt).toLocaleDateString("it-IT", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+
+                {/* Organizzatore */}
+                <div className={reportStyles.reportMeta}>
+                  <span>
+                    Organizzatore <strong>{organizerName}</strong>
+
+                    {organizerEmail && organizerName !== organizerEmail && (
+                      <>
+                        <span style={{ opacity: 0.5, margin: "0 6px" }}>·</span>
+                        <span style={{ opacity: 0.7 }}>{organizerEmail}</span>
+                      </>
+                    )}
+
+                    {organizerFullName && (
+                      <>
+                        <span style={{ opacity: 0.5, margin: "0 6px" }}>·</span>
+                        <span style={{ opacity: 0.7 }}>{organizerFullName}</span>
+                      </>
+                    )}
+                  </span>
+                </div>
+
+                {/* Motivo */}
+                {report.reason ? (
+                  <p className={reportStyles.reportReason}>{report.reason}</p>
+                ) : (
+                  <p className={reportStyles.reportReasonEmpty}>Nessun motivo specificato</p>
+                )}
+
+                {/* Nota di revisione se gia esaminata */}
+                {!isPending && report.reviewNote && (
+                  <p className={reportStyles.reportReviewNote}>
+                    Nota admin: {report.reviewNote}
+                  </p>
+                )}
+
+                {/* Azioni — solo se in attesa */}
+                {isPending && (
+                  <div className={reportStyles.reportActions}>
+                    <button
+                      className={styles.acceptReportButton}
+                      onClick={(e) => handleReportAction(activity._id, report._id, "accept", e)}
+                      disabled={actionLoading === report._id}
+                    >
+                      {actionLoading === report._id ? "Attendere..." : "Accetta"}
+                    </button>
+                    <button
+                      className={styles.dismissReportButton}
+                      onClick={(e) => handleReportAction(activity._id, report._id, "dismiss", e)}
+                      disabled={actionLoading === report._id}
+                    >
+                      {actionLoading === report._id ? "Attendere..." : "Rigetta"}
+                    </button>
+                  </div>
+                )}
+
+                {/* Segnalazione accettata — admin puo rimuovere il banner */}
+                {isAccepted && (
+                  <div className={reportStyles.reportActions}>
+                    <button
+                      className={styles.dismissReportButton}
+                      onClick={(e) => handleReportAction(activity._id, report._id, "dismiss", e)}
+                      disabled={actionLoading === report._id}
+                      title="Rimuove il banner 'Segnalata' dall'attivita"
+                    >
+                      {actionLoading === report._id ? "Attendere..." : "Rimuovi segnalazione"}
+                    </button>
+                  </div>
+                )}
               </div>
-
-              {/* Meta */}
-              {/* Segnalatore */}
-              <div className={reportStyles.reportMeta}>
-                <span>
-                  Segnalata da <strong>{reporterName}</strong>
-
-                  {reporterEmail && reporterName !== reporterEmail && (
-                    <>
-                      <span style={{ opacity: 0.5, margin: "0 6px" }}>·</span>
-                      <span style={{ opacity: 0.7 }}>{reporterEmail}</span>
-                    </>
-                  )}
-
-                  {reporterFullName && (
-                    <>
-                      <span style={{ opacity: 0.5, margin: "0 6px" }}>·</span>
-                      <span style={{ opacity: 0.7 }}>{reporterFullName}</span>
-                    </>
-                  )}
-                </span>
-
-                <span className={reportStyles.reportDate}>
-                  {new Date(report.reportedAt).toLocaleDateString("it-IT", {
-                    day: "2-digit",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
-
-              {/* Organizzatore */}
-              <div className={reportStyles.reportMeta}>
-                <span>
-                  Organizzatore <strong>{organizerName}</strong>
-
-                  {organizerEmail && organizerName !== organizerEmail && (
-                    <>
-                      <span style={{ opacity: 0.5, margin: "0 6px" }}>·</span>
-                      <span style={{ opacity: 0.7 }}>{organizerEmail}</span>
-                    </>
-                  )}
-
-                  {organizerFullName && (
-                    <>
-                      <span style={{ opacity: 0.5, margin: "0 6px" }}>·</span>
-                      <span style={{ opacity: 0.7 }}>{organizerFullName}</span>
-                    </>
-                  )}
-                </span>
-              </div>
-
-              {/* Motivo */}
-              {report.reason ? (
-                <p className={reportStyles.reportReason}>{report.reason}</p>
-              ) : (
-                <p className={reportStyles.reportReasonEmpty}>Nessun motivo specificato</p>
-              )}
-
-              {/* Nota di revisione se gia esaminata */}
-              {!isPending && report.reviewNote && (
-                <p className={reportStyles.reportReviewNote}>
-                  Nota admin: {report.reviewNote}
-                </p>
-              )}
-
-              {/* Azioni — solo se in attesa */}
-              {isPending && (
-                <div className={reportStyles.reportActions}>
-                  <button
-                    className={styles.acceptReportButton}
-                    onClick={() => handleReportAction(activity._id, report._id, "accept")}
-                    disabled={actionLoading === report._id}
-                  >
-                    {actionLoading === report._id ? "Attendere..." : "Accetta"}
-                  </button>
-                  <button
-                    className={styles.dismissReportButton}
-                    onClick={() => handleReportAction(activity._id, report._id, "dismiss")}
-                    disabled={actionLoading === report._id}
-                  >
-                    {actionLoading === report._id ? "Attendere..." : "Rigetta"}
-                  </button>
-                  <Link to={`/attivita/${activity._id}`} className={appStyles.secondaryButton}>
-                    Apri attivita
-                  </Link>
-                </div>
-              )}
-
-              {/* Segnalazione accettata — admin puo rimuovere il banner */}
-              {isAccepted && (
-                <div className={reportStyles.reportActions}>
-                  <button
-                    className={styles.dismissReportButton}
-                    onClick={() => handleReportAction(activity._id, report._id, "dismiss")}
-                    disabled={actionLoading === report._id}
-                    title="Rimuove il banner 'Segnalata' dall'attivita"
-                  >
-                    {actionLoading === report._id ? "Attendere..." : "Rimuovi segnalazione"}
-                  </button>
-                  <Link to={`/attivita/${activity._id}`} className={appStyles.secondaryButton}>
-                    Apri attivita
-                  </Link>
-                </div>
-              )}
-
-              {/* Segnalazione rigettata — solo link all'attivita */}
-              {!isPending && !isAccepted && (
-                <div className={reportStyles.reportActions}>
-                  <Link to={`/attivita/${activity._id}`} className={appStyles.secondaryButton}>
-                    Apri attivita
-                  </Link>
-                </div>
-              )}
-            </div>
+            </Link>
           );
         })}
       </div>

@@ -428,7 +428,7 @@ export default function DettagliAttivita() {
             )}
 
             {/* Già partecipante - con controllo sospensione */}
-            {isParticipant && (
+            {isParticipant && !isSuspended && (
               <>
                 <div className={styles.buttonActions}>
                   <button 
@@ -442,8 +442,8 @@ export default function DettagliAttivita() {
               </>
             )}
 
-            {/* Bottone segnalazione (nuovo) */}
-            {!isOrganizer && currentUserID && (
+            {/* Bottone segnalazione - solo per partecipanti (non organizzatori) */}
+            {!isOrganizer && isParticipant && currentUserID && (
               <div style={{ marginTop: "8px" }}>
                 {reportSuccess && !hasAlreadyReported && (
                   <div className={styles.reportedConfirmBadge}>

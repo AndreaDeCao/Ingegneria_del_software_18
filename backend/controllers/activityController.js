@@ -80,6 +80,7 @@ exports.joinActivity = async (req, res) => {
 
     const activity = await Activity.findById(req.params.id);
     if (!activity) return res.status(404).json({ error: "Attività non trovata" });
+    if (activity.suspended) return res.status(403).json({ error: "Attività sospesa dall'amministrazione" });
 
     const now = new Date();
     if (activity.activityDate <= now) {
@@ -134,6 +135,7 @@ exports.leaveActivity = async (req, res) => {
 
     const activity = await Activity.findById(req.params.id);
     if (!activity) return res.status(404).json({ error: "Attività non trovata" });
+    if (activity.suspended) return res.status(403).json({ error: "Attività sospesa dall'amministrazione" });
 
     const now = new Date();
     if (activity.activityDate <= now) {
@@ -322,31 +324,6 @@ exports.openActivity = async (req, res) => {
   }
 };
 
-// DELETE /activities/:id — admin
-exports.deleteActivity = async (req, res) => {
-  try {
-    const userID = req.user?._id?.toString() || req.body.userID?.toString();
-    const userRole = req.user?.role || req.body.userRole;
-    if (!userID) return res.status(401).json({ error: "Non autenticato" });
-
-    const activity = await Activity.findById(req.params.id);
-    if (!activity) return res.status(404).json({ error: "Attività non trovata" });
-
-    const isAdmin = userRole === "admin";
-    //const isOrganizer = activity.organizerID?.toString() === userID;
-
-    if (!isAdmin /*&& !isOrganizer*/) {
-      return res.status(403).json({ error: "Solo l'organizzatore o un amministratore può eliminare l'attività" });
-    }
-
-    await Activity.findByIdAndDelete(req.params.id);
-    res.json({ message: "Attività eliminata definitivamente" });
-  } catch (err) {
-    if (err.name === "CastError") return res.status(400).json({ error: "ID non valido" });
-    res.status(500).json({ error: err.message });
-  }
-};
-
 // ── ADMIN ────────────────────────────────────────────────────────────────────
 
 // PATCH /activities/:id/suspend — solo admin
@@ -455,6 +432,13 @@ exports.reportActivity = async (req, res) => {
 
     if (activity.organizerID?.toString() === userID) {
       return res.status(400).json({ error: "Non puoi segnalare la tua attività" });
+    }
+
+    const isParticipant = activity.partecipantList.some(
+      (p) => p.toString() === userID
+    );
+    if (!isParticipant) {
+      return res.status(400).json({ error: "Solo i partecipanti possono segnalare l'attività" });
     }
 
     const alreadyReported = activity.reports.some(
