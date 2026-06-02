@@ -122,3 +122,31 @@ exports.getMyRating = async (req, res) => {
     res.status(500).json({ message: 'Errore', error: err.message });
   }
 };
+
+// PATCH /treks/:id/description  — solo admin
+exports.updateTrekDescription = async (req, res) => {
+  try {
+    const { description } = req.body;
+
+    // req.user dev'essere popolato dal tuo middleware auth (es. verifyToken)
+    if (!req.user || req.user.role !== "admin") {
+      return res.status(403).json({ error: "Accesso negato: solo gli admin possono modificare la descrizione." });
+    }
+
+    if (typeof description !== "string") {
+      return res.status(400).json({ error: "Campo 'description' mancante o non valido." });
+    }
+
+    const trek = await Trek.findOneAndUpdate(
+      { id: req.params.id },          // usa _id se preferisci
+      { description: description.trim() },
+      { new: true }
+    );
+
+    if (!trek) return res.status(404).json({ error: "Trek non trovato." });
+
+    res.json(trek);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

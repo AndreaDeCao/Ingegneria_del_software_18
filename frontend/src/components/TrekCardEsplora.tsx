@@ -1,3 +1,5 @@
+import { useAuth } from "../auth/AuthProvider";
+
 import styles from "./TrekCardEsplora.module.css";
 import type { Trek } from "../types/Trek";
 import { Link } from "react-router-dom";
@@ -93,10 +95,17 @@ interface TrekCardEsploraProps {
   trek: Trek;
 }
 
-function TrekCardEsplora({ trek }: TrekCardEsploraProps) {
-  return (
-    <Link to={`/treks/${trek.id}`} className={styles.cardLink}>
 
+
+function TrekCardEsplora({ trek }: TrekCardEsploraProps) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
+  return (
+    <Link
+      to={isAdmin ? `/admin/treks/${trek.id}` : `/treks/${trek.id}`}
+      className={styles.cardLink}
+    >
       <article className={styles.card}>
 
         {/*Immagine*/}

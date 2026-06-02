@@ -61,7 +61,7 @@ const eventRoutes = require("./routes/eventRoutes");
 const routeRoutes = require("./routes/routeRoutes");
 const friendshipRoutes = require("./routes/friendshipRoutes");
 
-const adminRoutes = require("./routes/adminRoutes");
+const adminRoutes = require("./routes/adminRoutesAdmin");
 
 app.use("/treks", trekRoutes);
 app.use("/users", userRoutes);

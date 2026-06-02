@@ -22,4 +22,7 @@ router.post("/", authenticate, requireAdmin, trekController.createTrek);
 router.put('/:id/rate', requireAuth, rateTrek);
 router.get('/:id/rate', requireAuth, getMyRating);
 
+//per admin update description
+router.patch("/:id/description", requireAuth, trekController.updateTrekDescription);
+
 module.exports = router;
