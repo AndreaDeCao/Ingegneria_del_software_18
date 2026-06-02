@@ -1,8 +1,32 @@
 const User = require("../models/users");
 const Trek = require("../models/treks");
+const mongoose = require("mongoose");
 
 const crypto = require("crypto");
 const { sendEmailChangeVerification } = require("../services/emailService");
+
+const bcrypt = require("bcryptjs");
+
+async function findTrekByIdParam(trekId) {
+  const conditions = [];
+  const numericId = Number(trekId);
+
+  if (Number.isInteger(numericId)) {
+    conditions.push({ id: numericId });
+  }
+
+  if (mongoose.Types.ObjectId.isValid(trekId)) {
+    conditions.push({ _id: trekId });
+  }
+
+  if (conditions.length === 0) return null;
+  return Trek.findOne({ $or: conditions });
+}
+
+async function getPopulatedFavoriteTreks(userId) {
+  const user = await User.findById(userId).populate("favoriteTreks");
+  return user?.favoriteTreks ?? null;
+}
 
 // GET tutti gli utenti
 exports.getUsers = async (req, res) => {
@@ -382,7 +406,7 @@ exports.updateAvatar = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       req.userId,
       { avatarUrl: avatarBase64 },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     if (!user) {
@@ -391,6 +415,232 @@ exports.updateAvatar = async (req, res) => {
 
     res.json({ message: "Avatar aggiornato" });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/**
+ * Aggiorna password dell'utente autenticato.
+ *
+ * @route PUT /api/users/me/password
+ * @param {import("express").Request} req - Body: { currentPassword, newPassword }
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con messaggio di conferma
+ */
+exports.updatePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if(!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "Campi obbligatori mancanti" });
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,32}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({ error: "La password deve essere tra 6 e 32 caratteri e contenere almeno un numero, una lettera maiuscola e una minuscola" });
+    }
+
+    const user = await User.findById(req.userId).select("+passwordHash +tempPasswordExpires");
+    if(!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+
+    if(!user.passwordHash) {
+      return res.status(400).json({ error: "Questo account non ha ancora una password impostata, bisogna richiederne una temporanea" });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if(!isMatch) {
+      return res.status(400).json({ error: "Password attuale non corretta" }); //non uso il 401 perchè usato dal refresh token
+    }
+
+    const saltedRound = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) : 15;
+    user.passwordHash = await bcrypt.hash(newPassword, saltedRound);
+    user.tempPasswordExpires = undefined;
+
+    await user.save({ validateModifiedOnly: true});
+
+    res.json({ message: "Password aggiornata con successo" });
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/**
+ * Elimina avatar dell'utente
+ * 
+ * @route DELETE /api/users/me/avatar
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con messaggio di conferma
+ */
+exports.deleteAvatar = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { avatarUrl: null },
+      { returnDocument: "after" }
+    );
+
+    if(!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+
+    res.json({ message: "Avatar eliminato" });
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/* NOTIFHCE */
+
+/**
+ * Restituisce le notifiche dell'utente, dalla più recente.
+ *
+ * @route GET /users/me/notifications
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con array di notifiche
+ */
+exports.getNotifications = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if(!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+
+    const sorted = [...user.notifications]. sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    res.json(sorted);
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/**
+ * Marca tutte le notifiche come lette.
+ *
+ * @route PUT /users/me/notifications/read-all
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con messaggio di conferma
+ */
+exports.markAllNotificationRead = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if(!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+
+    user.notifications.forEach(n => { n.read = true; });
+    await user.save({ validateModifiedOnly: true });
+
+    res.json({ message: "Tutte le notifiche sono segnate come lette" });
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/**
+ * Marca una singola notifica come letta.
+ * 
+ * @route PUT /users/me/notifications/:notifId/read
+ * @param {import("express").Request} req - Params: { notifId }
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con messaggio di conferma
+ */
+exports.markNotificationRead = async (req ,res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if(!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+
+    const notif = user.notifications.id(req.params.notifId);
+    if(!notif) {
+      return res.status(404).json({ error: "Notifica non trovata" });
+    }
+
+    notif.read = true;
+    await user.save({ validateModifiedOnly: true });
+
+    res.json({ message: "Notifica segnata come letta" });
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/**
+ * Elimina tutte le notifiche dell'utente.
+ *
+ * @route DELETE /users/me/notifications
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con messaggio di conferma
+ */
+exports.clearNotifications = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if(!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+
+    user.notifications = [];
+    await user.save({ validateModifiedOnly: true });
+
+    res.json({ message: "Notifiche eliminate" });
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/**
+ * Aggiorna status di una notifica (accetta/rifiuta).
+ * Marca anche la notifica come letta.
+ * 
+ * @route PUT /users/me/notifications/:notifId/status
+ * @param {import("express").Request} req - Body: { status }
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con messaggio di conferma
+ */
+exports.updateNotificationStatus = async (req,res) => {
+  try {
+    const { status } = req.body;
+    if(!["accepted", "rejected"].includes(status)) {
+      return res.status(400).json({ error: "Status non valido" });
+    }
+
+    const user = await User.findById(req.userId);
+    if(!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+
+    const notif = user.notifications.id(req.params.notifId);
+    if(!notif) {
+      return res.status(404).json({ error: "Notifica non trovata" });
+    }
+
+    notif.status = status;
+    notif.read = true;
+    await user.save({ validateModifiedOnly: true });
+
+    res.json({ message: "Notifica aggiornata" });
+
+  } catch(err) {
     res.status(500).json({ error: err.message });
   }
 };

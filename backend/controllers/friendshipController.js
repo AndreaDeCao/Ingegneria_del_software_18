@@ -49,6 +49,15 @@ exports.sendRequest = async (req, res) => {
         existing.sender = senderId;
         existing.receiver = receiverId;
         await existing.save();
+
+        const sender = await User.findById(senderId);
+        await addNotification(
+          receiverId,
+          "friend_request",
+          `${sender.nickname} ti ha inviato una richiesta di amicizia`,
+          existing._id
+        );
+        
         return res.status(200).json({ message: "Richiesta di amicizia inviata nuovamente", friendship: existing });
       }
     }
@@ -59,6 +68,15 @@ exports.sendRequest = async (req, res) => {
     });
 
     await newFriendship.save();
+
+    const sender = await User.findById(senderId);
+    await addNotification(
+      receiverId,
+      "friend_request",
+      `${sender.nickname} ti ha inviato una richiesta di amicizia`,
+      newFriendship._id
+    );
+    
     res.status(201).json({ message: "Richiesta di amicizia inviata", friendship: newFriendship });
 
   } catch(err) {
@@ -96,6 +114,14 @@ exports.acceptRequest = async (req, res) => {
     friendship.status ="accepted";
     await friendship.save();
 
+    const sender = await User.findById(req.userId);
+    await addNotification(
+      friendship.sender.toString(),
+      "friend_accepted",
+      `${sender.nickname} ha accettato la tua richiesta di amicizia`,
+      friendship._id
+    );
+
     res.json({ message: "Richiesta di amicizia accettata.", friendship });
 
   } catch(err) {
@@ -131,6 +157,14 @@ exports.declineRequest = async (req, res) => {
 
     friendship.status = "declined";
     await friendship.save();
+
+    const receiver = await User.findById(req.userId);
+    await addNotification(
+      friendship.sender.toString(),
+      "friend_declined",
+      `${receiver.nickname} ha rifiutato la tua richiesta di amicizia`,
+      friendship._id
+    );
 
     res.json({ message: "Richiesta di amicizia rifiutata.", friendship });
 
@@ -279,6 +313,7 @@ exports.searchUsers = async (req, res) => {
         { sender: new mongoose.Types.ObjectId(req.userId) },
         { receiver: new mongoose.Types.ObjectId(req.userId) }
       ],
+      status: { $in: ["accepted", "pending"] }
     }).toArray();
 
     const excludedIds = new Set([req.userId]);
@@ -306,3 +341,19 @@ exports.searchUsers = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+async function addNotification(userId, type, message, ref = null) {
+  try {
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        notifications: {
+          type, message, ref, createdAt: new Date() 
+        }
+      }
+    });
+
+  } catch(err) {
+    console.error("addNotification error:", err.message);
+  }
+}

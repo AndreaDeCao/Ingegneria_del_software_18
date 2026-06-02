@@ -24,6 +24,43 @@ const UserSchema = new mongoose.Schema({
   tempPasswordExpires: { type: Date, select: false }, // password temporanea valida per un periodo limitato
 
   avatarUrl: { type: String, default: null },
+
+  notifications: [ {
+    type: {
+      type: String,
+      enum: [
+        "friend_request",
+        "friend_accepted",
+        "friend_declined",
+        "diary_tag",
+        "activity_invite",
+        "activity_join",
+      ],
+      required: true,
+    },
+    message: {
+      type: String,
+      required: true
+    },
+    read: {
+      type: Boolean,
+      default: false
+    },
+    status: {
+      type: String,
+      enum: ["pending", "accepted", "rejected"],
+      default: "pending",
+    },
+    ref: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+  }
+],
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", UserSchema);

@@ -125,8 +125,37 @@ exports.createActivity = async (req, res) => {
     }
 
     await newActivity.save();
+    ///dai due branch
+    // const invitedUsers = req.body.invitedUsers || [];
+    // if(invitedUsers.length > 0) {
+    //   const organizer = await User.findById(organizerID);
+    //   for(const invitedId of invitedUsers) {
+    //     await addNotification(
+    //       invitedId,
+    //       "activity_invite",
+    //       `${organizer.nickname} ti ha invitato all'attività "${newActivity.title}"`,
+    //       newActivity._id
+    //     );
+    //   }
+    // }
 
+
+    // if (invitedUsers.length > 0) {
+    //   await ActivityInvitation.insertMany(
+    //     invitedUsers.map((receiverId) => ({
+    //       activity: newActivity._id,
+    //       sender: organizerID,
+    //       receiver: receiverId,
+    //       status: "pending",
+    //     }))
+    //   );
+    // }
+    
+    //combinazione
+
+    // const invitedUsers = req.body.invitedUsers || []; //già dichiarata in const newActivity
     if (invitedUsers.length > 0) {
+      // Crea i record di invito
       await ActivityInvitation.insertMany(
         invitedUsers.map((receiverId) => ({
           activity: newActivity._id,
@@ -135,6 +164,17 @@ exports.createActivity = async (req, res) => {
           status: "pending",
         }))
       );
+
+      // Invia notifica a ciascun invitato
+      const organizer = await User.findById(organizerID);
+      for (const invitedId of invitedUsers) {
+        await addNotification(
+          invitedId,
+          "activity_invite",
+          `${organizer.nickname} ti ha invitato all'attività "${newActivity.title}"`,
+          newActivity._id
+        );
+      }
     }
 
     res.status(201).json(newActivity);
@@ -190,6 +230,33 @@ exports.joinActivity = async (req, res) => {
     }
 
     await activity.save();
+
+    await ActivityInvitation.updateOne(
+      { activity: activity._id, receiver: userID, status: "pending" },
+      { $set: { status: "accepted", acceptedAt: new Date() } }
+    );
+
+    await User.updateOne(
+      {
+        _id: userID,
+        "notifications.ref": activity._id,
+        "notifications.type": "activity_invite"
+      },
+      {
+        $set: {
+          "notifications.$.status": "accepted",
+          "notifications.$.read": true
+        }
+      }
+    );
+
+    const joiner = await User.findById(userID);
+    await addNotification(
+      activity.organizerID.toString(),
+       "activity_join",
+        `${joiner.nickname} si è iscritto alla tua attività "${activity.title}"`,
+        activity._id
+    );
 
     const updated = await Activity
       .findById(activity._id)
@@ -660,6 +727,20 @@ exports.acceptActivityInvite = async (req, res) => {
     }
     await activity.save();
 
+    await User.updateOne(
+        {
+          _id: req.userId,
+          "notifications.ref": invitation.activity,
+          "notifications.type": "activity_invite"
+        },
+        {
+          $set: {
+            "notifications.$.status": "accepted",
+            "notifications.$.read": true
+          }
+        }
+      );
+
     invitation.status = "accepted";
     invitation.acceptedAt = new Date();
     invitation.declinedAt = undefined;
@@ -714,6 +795,20 @@ exports.declineActivityInvite = async (req, res) => {
     invitation.declinedAt = new Date();
     invitation.acceptedAt = undefined;
     await invitation.save();
+
+    await User.updateOne(
+      {
+        _id: req.userId,
+        "notifications.ref": invitation.activity,
+        "notifications.type": "activity_invite"
+      },
+      {
+        $set: {
+          "notifications.$.status": "rejected",
+          "notifications.$.read": true
+        }
+      }
+    );
 
     const populatedInvitation = await ActivityInvitation.findById(invitation._id)
       .populate("sender", "nome cognome nickname avatarUrl")
@@ -1089,3 +1184,256 @@ exports.dismissReport = (req, res) => reviewReport(req, res, "dismissed", "repor
 
 
 
+
+
+// ── ADMIN ────────────────────────────────────────────────────────────────────
+
+const requireAdmin = (req, res) => {
+  const userID = req.user?._id?.toString() || req.body.userID?.toString();
+  const role = req.user?.role || req.body.userRole;
+
+  if (!userID) {
+    res.status(401).json({ error: "Non autenticato" });
+    return null;
+  }
+
+  if (role !== "admin") {
+    res.status(403).json({ error: "Accesso riservato agli amministratori" });
+    return null;
+  }
+
+  return userID;
+};
+
+const getActivity = async (id) => { return Activity.findById(id); };
+
+const populateActivity = (query) => query
+    .populate("partecipantList", "nickname email nome cognome")
+    .populate("reports.reportedBy", "nickname email")
+    .populate("reports.reviewedBy", "nickname email")
+    .populate("suspendedBy", "nickname email");
+
+// PATCH /activities/:id/suspend — solo admin, sospende l'attività e ne annulla tutte le iscrizioni
+exports.suspendActivity = async (req, res) => {
+  try {
+    const adminID = requireAdmin(req, res);
+    if (!adminID) return;
+
+    const activity = await getActivity(req.params.id);
+
+    if (!activity)
+      return res.status(404).json({ error: "Attività non trovata" });
+
+    if (activity.suspended)
+      return res.status(400).json({ error: "Attività già sospesa" });
+
+    const reason = req.body.reason?.trim() || "";
+
+    const updated = await populateActivity(
+      Activity.findByIdAndUpdate(
+        req.params.id,
+        {
+          $set: {
+            suspended: true,
+            statusBeforeSuspend: activity.status,
+            status: "Annullato",
+            suspendedReason: reason,
+            suspendedBy: adminID,
+            suspendedAt: new Date(),
+          },
+          $push: {
+            adminLog: {
+              adminID,
+              action: "suspend",
+              reason,
+              date: new Date(),
+            },
+          },
+        },
+        { returnDocument: "after" }
+      )
+    );
+
+    res.json(updated);
+  } catch (err) {
+    if (err.name === "CastError")
+      return res.status(400).json({ error: "ID non valido" });
+
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// PATCH /activities/:id/unsuspend — solo admin, riattiva l'attività mantenendo le iscrizioni
+exports.unsuspendActivity = async (req, res) => {
+  try {
+    const adminID = requireAdmin(req, res);
+    if (!adminID) return;
+
+    const activity = await getActivity(req.params.id);
+
+    if (!activity)
+      return res.status(404).json({ error: "Attività non trovata" });
+
+    if (!activity.suspended)
+      return res.status(400).json({ error: "Attività non è sospesa" });
+
+    const reason = req.body.reason?.trim() || "";
+
+    const updated = await populateActivity(
+      Activity.findByIdAndUpdate(
+        req.params.id,
+        {
+          $set: {
+            suspended: false,
+            status: activity.statusBeforeSuspend || "Aperto",
+            statusBeforeSuspend: null,
+            suspendedReason: "",
+            suspendedBy: null,
+            suspendedAt: null,
+          },
+          $push: {
+            adminLog: {
+              adminID,
+              action: "unsuspend",
+              reason,
+              date: new Date(),
+            },
+          },
+        },
+        { returnDocument: "after" }
+      )
+    );
+
+    res.json(updated);
+  } catch (err) {
+    if (err.name === "CastError")
+      return res.status(400).json({ error: "ID non valido" });
+
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/* SEGNALAZIONI */
+// POST /activities/:id/report — segnala un'attività, solo partecipanti non organizzatori, un report per utente
+exports.reportActivity = async (req, res) => {
+  try {
+    const userID = req.user?._id?.toString() || req.body.userID?.toString();
+    if (!userID) return res.status(401).json({ error: "Non autenticato" });
+
+    const activity = await Activity.findById(req.params.id);
+    if (!activity) return res.status(404).json({ error: "Attività non trovata" });
+
+    if (activity.organizerID?.toString() === userID)
+      return res.status(400).json({ error: "Non puoi segnalare la tua attività" });
+
+    if (!activity.partecipantList.some(p => p.toString() === userID))
+      return res.status(400).json({ error: "Solo i partecipanti possono segnalare l'attività" });
+
+    if (activity.reports.some(r => r.reportedBy?.toString() === userID))
+      return res.status(400).json({ error: "Hai già segnalato questa attività" });
+
+    const reason = req.body.reason?.trim();
+    if (!reason)
+      return res.status(400).json({ error: "Il motivo della segnalazione è obbligatorio" });
+
+    activity.reports.push({
+      reportedBy: userID,
+      reason,
+      reportedAt: new Date(),
+      reportStatus: "pending"
+    });
+
+    await activity.save();
+
+    res.status(201).json({
+      message: "Segnalazione inviata. Verrà esaminata dall'amministrazione."
+    });
+  } catch (err) {
+    if (err.name === "CastError")
+      return res.status(400).json({ error: "ID non valido" });
+
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// PATCH /activities/:id/reports/:reportId/accept — solo admin, accetta la segnalazione e sospende l'attività
+// PATCH /activities/:id/reports/:reportId/dismiss — solo admin, rifiuta la segnalazione
+const reviewReport = async (req, res, status, action) => {
+  try {
+    const adminID = requireAdmin(req, res);
+    if (!adminID) return;
+
+    const activity = await getActivity(req.params.id);
+
+    if (!activity)
+      return res.status(404).json({ error: "Attività non trovata" });
+
+    const report = activity.reports.id(req.params.reportId);
+
+    if (!report)
+      return res.status(404).json({ error: "Segnalazione non trovata" });
+
+    report.reportStatus = status;
+    report.reviewedBy = adminID;
+    report.reviewedAt = new Date();
+    report.reviewNote = req.body.reviewNote?.trim() || "";
+
+    activity.adminLog.push({
+      adminID,
+      action,
+      reason: report.reason,
+      date: new Date(),
+    });
+
+    await activity.save();
+
+    const updated = await populateActivity(
+      Activity.findById(req.params.id)
+    );
+
+    res.json(updated);
+  } catch (err) {
+    if (err.name === "CastError")
+      return res.status(400).json({ error: "ID non valido" });
+
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.acceptReport = (req, res) => reviewReport(req, res, "accepted", "report_accept");
+
+exports.dismissReport = (req, res) => reviewReport(req, res, "dismissed", "report_dismiss");
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Aggiunge una notifica all'utente.
+ * 
+ * @param {string} userId - ID utente destinatario
+ * @param {string} type - Tipo di notifica
+ * @param {string} message - Testo della notifica
+ * @param {string|null} ref - ID risorsa correlata
+ */
+async function addNotification(userId, type, message, ref = null) {
+  try {
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        notifications: {
+          type, message, ref, createdAt: new Date()
+        }
+      }
+    });
+
+  } catch(err) {
+    console.error("addNotification error:", err.message);
+  }
+}

@@ -39,7 +39,7 @@ interface TrekCardFavoriteProps {
   trek: Trek;
 
   // callback per aggiornare UI
-  onRemove?: (trekId: string) => void;
+  onRemove?: (trekId: number) => void;
 }
 
 function TrekCardFavorite({

@@ -95,4 +95,6 @@ async function sendTemporaryPasswordEmail(toEmail, tempPassword) {
   });
 }
 
+// module.exports = { sendVerificationEmail, sendTemporaryPasswordEmail };
+
 module.exports = { sendVerificationEmail, sendEmailChangeVerification, sendTemporaryPasswordEmail };
