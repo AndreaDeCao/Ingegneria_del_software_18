@@ -15,7 +15,7 @@ import AuthCallback from "./pages/auth/AuthCallback";
 import RequestTemporaryPassword from "./pages/auth/RequestTemporaryPassword";
 
 import Treks from "./pages/Treks/Treks";
-import MyTreks from "./pages/Treks/FavoriteTreks";
+import FavoriteTreks from "./pages/Treks/FavoriteTreks";
 import TrekDetails from "./pages/Treks/TrekDetails";
 
 import Friends from "./pages/amici/Friends";
@@ -42,6 +42,8 @@ import AdminVisualizzaListaAttivitaPage from "./pages/admin/AdminVisualizzaLista
 import AdminDettagliAttivita from "./pages/admin/AdminDettagliAttivita";
 import AdminCreaAttivita from "./pages/admin/AdminCreaAttivita";
 import GestioneSegnalazioniPage from "./pages/admin/GestioneSegnalazioniPage";
+
+import TrekDetailsAdmin from "./pages/admin/TrekDetailsAdmin";
 
 import VersioneCorrentePage from "./pages/versione/VersioneCorrentePage";
 
@@ -101,10 +103,7 @@ export default function App() {
                   <Route path="/treks" element={<AppLayout><Treks /></AppLayout>} />
         
                   {/* Route protette — navigazione principale */}
-                  <Route path="/my-treks" element={<AppLayout><ProtectedRoute>
-                    <MyTreks />
-                  </ProtectedRoute></AppLayout>} />
-                  <Route path="/friends"  element={<AppLayout><ProtectedRoute><Friends /></ProtectedRoute></AppLayout>} />
+                  <Route path="/my-treks" element={ <AppLayout><ProtectedRoute allowedRoles={["user"]}><FavoriteTreks /></ProtectedRoute></AppLayout>}/>                  <Route path="/friends"  element={<AppLayout><ProtectedRoute><Friends /></ProtectedRoute></AppLayout>} />
         
                   {/* Route protette — menu a tendina con sezione dinamica */}
                   
@@ -128,6 +127,7 @@ export default function App() {
                   <Route path="/admin/segnalazioni" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><GestioneSegnalazioniPage /></ProtectedRoute></AppLayout>} />
                   <Route path="/attivita/crea" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><CreaAttivitaPage /></ProtectedRoute></AppLayout>} />
                   <Route path="/admin/attivita/crea" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><AdminCreaAttivita /></ProtectedRoute></AppLayout>} />
+                  <Route path="/admin/treks/:id" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><TrekDetailsAdmin /></ProtectedRoute></AppLayout>} />
  
                   {/* Route protette — admin 
                 */}

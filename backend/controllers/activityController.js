@@ -35,6 +35,7 @@ exports.getActivityById = async (req, res) => {
     const activity = await Activity
       .findById(req.params.id)
       //POPULATE
+      .populate("reports.reportedBy", "email nickname nome cognome")
       .populate("partecipantList", "nickname email nome cognome avatarUrl");
 
     if (!activity) {
@@ -118,6 +119,7 @@ exports.createActivity = async (req, res) => {
       maxParticipants: max,
       invitedUsers,
       partecipantList: initialParticipants,
+      visibility: organizerIsAdmin ? "public" : req.body.visibility,
     });
 
     if (!organizerIsAdmin && newActivity.partecipantList.length == 1 && newActivity.maxParticipants == 1) {

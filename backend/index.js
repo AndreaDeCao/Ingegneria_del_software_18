@@ -61,6 +61,8 @@ const eventRoutes = require("./routes/eventRoutes");
 const routeRoutes = require("./routes/routeRoutes");
 const friendshipRoutes = require("./routes/friendshipRoutes");
 
+const adminRoutes = require("./routes/adminRoutesAdmin");
+
 app.use("/treks", trekRoutes);
 app.use("/users", userRoutes);
 app.use("/api/auth", authRoutes);
@@ -70,6 +72,8 @@ app.use("/api/diary", diaryRoutes);
 app.use("/api/trento-events", eventRoutes);
 app.use("/api/route", routeRoutes);
 app.use("/api/friendships", friendshipRoutes);
+
+app.use("/api/admin", adminRoutes);
 
 // Connessione a MongoDB
 mongoose.connect(process.env.MONGODB_URI, { family: 4 })  // Imposta family: 4 per forzare l'uso di IPv4

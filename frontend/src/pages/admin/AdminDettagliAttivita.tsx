@@ -11,6 +11,7 @@ import appStyles from "../../App.module.css";
 type ModalType = "delete" | "suspend" | "unsuspend" | null;
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+const POLL_INTERVAL = 20_000; // ogni 20 secondi
 
 export default function AdminDettagliAttivita() {
   const { id } = useParams();
@@ -32,33 +33,40 @@ export default function AdminDettagliAttivita() {
   const messageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Fetch attività e organizzatore in parallelo
-  useEffect(() => {
+  const fetchActivity = useCallback(async () => {
     if (!id) return;
-
-    const fetchAll = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/activities/${id}`);
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || err.message || `Errore ${res.status}`);
-        }
-        const data: ActivityPopulated = await res.json();
-        data.partecipantList = data.partecipantList ?? [];
-        setActivity(data);
-
-        if (data.organizerID) {
-          const resOrg = await fetch(`${API_BASE}/users/${data.organizerID}`);
-          if (resOrg.ok) setOrganizer(await resOrg.json());
-        }
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+    try {
+      const res = await fetch(`${API_BASE}/activities/${id}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || err.message || `Errore ${res.status}`);
       }
-    };
+      const data: ActivityPopulated = await res.json();
+      data.partecipantList = data.partecipantList ?? [];
+      setActivity(data);
 
-    fetchAll();
+      if (data.organizerID) {
+        const resOrg = await fetch(`${API_BASE}/users/${data.organizerID}`);
+        if (resOrg.ok) setOrganizer(await resOrg.json());
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => {
+    fetchActivity();
+  }, [fetchActivity]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchActivity();
+    }, POLL_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [fetchActivity]);
 
   const showMessage = useCallback((msg: string) => {
     setActionMessage(msg);
@@ -383,7 +391,9 @@ export default function AdminDettagliAttivita() {
                     <div className={styles.participantInfo}>
                       <span className={styles.participantNickname}>
                         {p.nickname}
-                        {i === 0 && <span className={styles.organizerTag}> (organizzatore) </span>}
+                        {p._id === activity.organizerID && (
+                          <span className={styles.organizerTag}> (organizzatore) </span>
+                        )}
                       </span>
                       <span className={styles.participantEmail}>{p.email}</span>
                     </div>

@@ -6,6 +6,7 @@ import styles from "../../App.module.css";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 const MAX_PENDING_REPORTS = 5;
+const POLL_INTERVAL = 20_000; // ogni 20 secondi
 
 type PopulatedUser = {
   _id: string;
@@ -113,6 +114,13 @@ export default function AdminHomepage() {
 
   useEffect(() => {
     fetchActivities();
+  }, [fetchActivities]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchActivities();
+    }, POLL_INTERVAL);
+    return () => clearInterval(interval);
   }, [fetchActivities]);
 
   const visibleReports = pendingReports.slice(0, MAX_PENDING_REPORTS);

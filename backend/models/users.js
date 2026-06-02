@@ -61,8 +61,36 @@ const UserSchema = new mongoose.Schema({
       type: Date,
       default: Date.now
     },
-  }],
-  
+  }
+],
+
+isSuspended: { type: Boolean, default: false },
+suspendedUntil: {type: Date, default: null },
+isBanned: { type: Boolean, default: false },
+
+reports: [
+  {
+    reportedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    },
+    reason: {type: String, default: "" },
+    reportedAy: { type: Date, default: Date.now},
+    reportStatus: {
+      type: String,
+      enum: ["pending", "accepted", "dismissed"],
+      default: "pending",
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    reviewedAt: {type: Date, default: null },
+    reviewNote: { type: String, default: "" },
+  },
+],
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", UserSchema);

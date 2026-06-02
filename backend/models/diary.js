@@ -33,7 +33,14 @@ const DiaryEntrySchema = new mongoose.Schema({
     },
     descrizione: { type: String, maxlength: 1000 },
 
-    gestitaDaAdmin: { type: Boolean, default: false }
+    stato: {
+      type: String,
+      enum: ["pending", "accepted", "dismissed"],
+      default: "pending",
+    },
+    gestitaDaAdmin: { type: Boolean, default: false },
+    gestitaAt:      { type: Date,    default: null },
+    gestitaDa:      { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   }
 
 }, { timestamps: true });
