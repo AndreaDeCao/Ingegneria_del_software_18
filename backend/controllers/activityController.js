@@ -118,6 +118,7 @@ exports.createActivity = async (req, res) => {
       maxParticipants: max,
       invitedUsers,
       partecipantList: initialParticipants,
+      visibility: organizerIsAdmin ? "public" : req.body.visibility,
     });
 
     if (!organizerIsAdmin && newActivity.partecipantList.length == 1 && newActivity.maxParticipants == 1) {

@@ -677,7 +677,9 @@ export default function DettagliAttivita() {
                     <div className={styles.participantInfo}>
                       <span className={styles.participantNickname}>
                         {p.nickname}
-                        {i === 0 && <span className={styles.organizerTag}> (organizzatore) </span>}
+                        {p._id === activity.organizerID && (
+                          <span className={styles.organizerTag}> (organizzatore) </span>
+                        )}
                       </span>
                       {isOrganizer && <span className={styles.participantEmail}>{p.email}</span>}
                     </div>

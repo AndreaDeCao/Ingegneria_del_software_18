@@ -15,7 +15,7 @@ import AuthCallback from "./pages/auth/AuthCallback";
 import RequestTemporaryPassword from "./pages/auth/RequestTemporaryPassword";
 
 import Treks from "./pages/Treks/Treks";
-import MyTreks from "./pages/Treks/FavoriteTreks";
+import FavoriteTreks from "./pages/Treks/FavoriteTreks";
 import TrekDetails from "./pages/Treks/TrekDetails";
 
 import Friends from "./pages/amici/Friends";
@@ -101,10 +101,7 @@ export default function App() {
                   <Route path="/treks" element={<AppLayout><Treks /></AppLayout>} />
         
                   {/* Route protette — navigazione principale */}
-                  <Route path="/my-treks" element={<AppLayout><ProtectedRoute>
-                    <MyTreks />
-                  </ProtectedRoute></AppLayout>} />
-                  <Route path="/friends"  element={<AppLayout><ProtectedRoute><Friends /></ProtectedRoute></AppLayout>} />
+                  <Route path="/my-treks" element={ <AppLayout><ProtectedRoute allowedRoles={["user"]}><FavoriteTreks /></ProtectedRoute></AppLayout>}/>                  <Route path="/friends"  element={<AppLayout><ProtectedRoute><Friends /></ProtectedRoute></AppLayout>} />
         
                   {/* Route protette — menu a tendina con sezione dinamica */}
                   
