@@ -545,3 +545,28 @@ exports.dismissReport = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// DELETE /activities/:id — admin
+exports.deleteActivity = async (req, res) => {
+  try {
+    const userID = req.user?._id?.toString() || req.body.userID?.toString();
+    const userRole = req.user?.role || req.body.userRole;
+    if (!userID) return res.status(401).json({ error: "Non autenticato" });
+
+    const activity = await Activity.findById(req.params.id);
+    if (!activity) return res.status(404).json({ error: "Attività non trovata" });
+
+    const isAdmin = userRole === "admin";
+    //const isOrganizer = activity.organizerID?.toString() === userID;
+
+    if (!isAdmin /*&& !isOrganizer*/) {
+      return res.status(403).json({ error: "Solo l'organizzatore o un amministratore può eliminare l'attività" });
+    }
+
+    await Activity.findByIdAndDelete(req.params.id);
+    res.json({ message: "Attività eliminata definitivamente" });
+  } catch (err) {
+    if (err.name === "CastError") return res.status(400).json({ error: "ID non valido" });
+    res.status(500).json({ error: err.message });
+  }
+};
