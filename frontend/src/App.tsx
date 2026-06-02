@@ -111,21 +111,22 @@ export default function App() {
                   <Route path="/account/policy" element={<AppLayout><ProtectedRoute><PolicyPage /></ProtectedRoute></AppLayout>} />
                   {/*<Route path="informativa/termini"  element={<AppLayout><Termini /></AppLayout>} />*/} {/* FIX ME: policy e termini stessa cosa? (fix anche in navbar.tsx) */}
 
-                  <Route path="/diario/visualizza" element={<AppLayout><ProtectedRoute><VisualizzaDiarioPage /></ProtectedRoute></AppLayout>} />
-                  <Route path="/diario/crea" element={<AppLayout><ProtectedRoute><CreaVoceDiarioPage /></ProtectedRoute></AppLayout>} />
-                  <Route path="/diario/:id" element={<AppLayout><ProtectedRoute><DettagliVoceDiarioPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/diario/visualizza" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><VisualizzaDiarioPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/diario/crea" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><CreaVoceDiarioPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/diario/:id" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><DettagliVoceDiarioPage /></ProtectedRoute></AppLayout>} />
 
-                  <Route path="/attivita/visualizza" element={<AppLayout><ProtectedRoute><VisualizzaAttivitaPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/attivita/visualizza" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><VisualizzaAttivitaPage /></ProtectedRoute></AppLayout>} />
                   <Route path="/attivita/crea" element={<AppLayout><ProtectedRoute><CreaAttivitaPage /></ProtectedRoute></AppLayout>} />
-                  <Route path="/attivita/:id" element={<AppLayout><ProtectedRoute><DettagliAttivita /></ProtectedRoute></AppLayout>} />
+                  <Route path="/attivita/:id" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><DettagliAttivita /></ProtectedRoute></AppLayout>} />
                   
 
                   <Route path="/versione/corrente" element={<AppLayout><VersioneCorrentePage /></AppLayout>} />
 
-                  <Route path="/admin/attivita/visualizza" element={<AppLayout><ProtectedRoute><AdminVisualizzaAttivitaPage /></ProtectedRoute></AppLayout>} />
-                  <Route path="/admin/attivita/:id" element={<AppLayout><ProtectedRoute><AdminDettagliAttivita /></ProtectedRoute></AppLayout>} />
-                  <Route path="/admin/segnalazioni" element={<AppLayout><GestioneSegnalazioniPage /></AppLayout>} />
+                  <Route path="/my-treks" element={<AppLayout><ProtectedRoute><MyTreks /></ProtectedRoute></AppLayout>} />
 
+                  <Route path="/admin/attivita/visualizza" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><AdminVisualizzaAttivitaPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/admin/attivita/:id" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><AdminDettagliAttivita /></ProtectedRoute></AppLayout>} />
+                  <Route path="/admin/segnalazioni" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><GestioneSegnalazioniPage /></ProtectedRoute></AppLayout>} />
 
                 {/*
                   <Route path="/profile/profilo"  element={<AppLayout><ProtectedRoute> 
