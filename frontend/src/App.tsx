@@ -39,7 +39,7 @@ import CreaAttivitaPage from "./pages/attivita/CreaAttivitaPage";
 import DettagliAttivita from "./pages/attivita/dettagliAttivita";
 
 import AdminVisualizzaListaAttivitaPage from "./pages/admin/AdminVisualizzaListaAttivitaPage";
-//import AdminDettagliAttivita from "./pages/admin/AdminDettagliAttivita";
+import AdminDettagliAttivita from "./pages/admin/AdminDettagliAttivita";
 //import GestioneSegnalazioniPage from "./pages/admin/GestioneSegnalazioniPage";
 
 import VersioneCorrentePage from "./pages/versione/VersioneCorrentePage";
@@ -123,8 +123,9 @@ export default function App() {
                   <Route path="/versione/corrente" element={<AppLayout><VersioneCorrentePage /></AppLayout>} />
                   
                   <Route path="/admin/attivita/visualizza" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><AdminVisualizzaListaAttivitaPage /></ProtectedRoute></AppLayout>} />
-                  {/* Route protette — admin 
                   <Route path="/admin/attivita/:id" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><AdminDettagliAttivita /></ProtectedRoute></AppLayout>} />
+ 
+                  {/* Route protette — admin 
                   <Route path="/admin/segnalazioni" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><GestioneSegnalazioniPage /></ProtectedRoute></AppLayout>} />
                 */}
                 

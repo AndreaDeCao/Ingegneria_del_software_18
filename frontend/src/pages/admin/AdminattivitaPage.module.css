@@ -22,9 +22,9 @@
 }
 
 .messageError {
-  margin-top: 12;
+  marginTop: 12;
   padding: 12;
-  border-radius: 8;
+  borderRadius: 8;
   border: "1px solid #f5c6cb";
   background: "#fdecea";
   color: "#7a1f1f";
@@ -237,18 +237,15 @@ select:focus {
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-.activityLink {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  color: inherit;
-  text-decoration: none;
-}
-
 .activityCard:hover {
   transform: translateY(-4px);
   border-color: var(--accent);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Card sospesa — bordo arancione per distinguerla visivamente nella lista */
+.activityCardSuspended {
+  border-color: rgba(230, 126, 34, 0.5) !important;
 }
 
 .cardTop {
@@ -284,16 +281,11 @@ select:focus {
   color: #e74c3c;
 }
 
+/* Badge "Sospesa" da affiancare allo status badge nella card */
 .statusSuspended {
-  background: rgba(255, 152, 0, 0.12);
+  background: rgba(230, 126, 34, 0.15);
   color: #e67e22;
 }
-
-.statusReported {
-  background: rgba(231, 76, 60, 0.12);
-  color: #c0392b;
-}
-
 
 .activityTitle {
   font-size: 22px;
@@ -313,6 +305,12 @@ select:focus {
   color: var(--text-secondary);
   line-height: 1.6;
   flex: 1;
+}
+
+.activityDescription {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
 }
 
 .activityInfo {
@@ -344,16 +342,6 @@ select:focus {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-}
-
-.activityStateBadge {
-  padding: 10px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--bg-secondary);
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 700;
 }
 
 
@@ -460,12 +448,6 @@ select:focus {
   color: var(--text-secondary);
 }
 
-.detailCardIcon {
-  font-size: 22px;
-  line-height: 1;
-  margin-top: 2px;
-}
-
 .detailSectionTitle {
   font-size: 18px;
   font-weight: 700;
@@ -532,14 +514,6 @@ select:focus {
   flex-shrink: 0;
 }
 
-.participantAvatarImage {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
 .participantInfo {
   display: flex;
   flex-direction: column;
@@ -567,18 +541,20 @@ select:focus {
 /* ── BADGE STATO UTENTE ──────────────────────────────────────────────────── */
 
 .organizerBadge,
-.alreadyJoinedBadge, .errorBox, .visibilityBadge {
+.alreadyJoinedBadge,
+.adminBadge,
+.errorBox {
   padding: 12px 16px;
   border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
   width: 100%;
   box-sizing: border-box;
+  margin-top: 8px;
+  margin-bottom: 8px;
 }
 
 .errorBox {
-  margin-top: 16px;
-  
   border: 1px solid rgba(248, 113, 113, 0.45);
   background: rgba(248, 113, 113, 0.14);
   color: #991b1b;
@@ -590,52 +566,134 @@ select:focus {
   border: 1px solid rgba(46, 204, 113, 0.3);
 }
 
-.visibilityBadge {
-  margin-top: 16px;
-  background: color-mix(in srgb, #7c3aed 12%, var(--bg-secondary));
-  border: 1px solid color-mix(in srgb, #7c3aed 30%, var(--border));
-  color: var(--text-primary);
-}
-
 .alreadyJoinedBadge {
   background: rgba(52, 152, 219, 0.1);
   color: #2980b9;
   border: 1px solid rgba(52, 152, 219, 0.3);
 }
 
-.banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 16px;
-  margin-bottom: 14px;
+/* Badge identità admin nella pagina dettagli */
+.adminBadge {
+  background: rgba(155, 89, 182, 0.1);
+  color: #8e44ad;
+  border: 1px solid rgba(155, 89, 182, 0.3);
+}
+
+/* ── BANNER SOSPENSIONE ──────────────────────────────────────────────────── */
+
+/* Banner arancione visibile sia all'organizzatore che all'admin */
+.suspendedBanner {
+  padding: 14px 16px;
   border-radius: 12px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(230, 126, 34, 0.45);
+  background: rgba(230, 126, 34, 0.1);
+  color: #a04000;
   font-size: 14px;
   font-weight: 600;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  margin-bottom: 8px;
 }
 
-.bannerSuccess {
-  background: rgba(46, 204, 113, 0.1);
-  color: #27ae60;
-  border-color: rgba(46, 204, 113, 0.3);
-}
-
-.bannerError {
-  background: rgba(231, 76, 60, 0.12);
-  color: #e74c3c;
-  border-color: rgba(231, 76, 60, 0.3);
-}
-
-.bannerClose {
-  border: none;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
+.suspendedBannerTitle {
   font-size: 14px;
   font-weight: 700;
-  line-height: 1;
+}
+
+.suspendedBannerReason {
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+/* ── PANNELLO ADMIN (DettagliAttivita) ───────────────────────────────────── */
+
+/* Contenitore azioni riservate all'admin */
+.adminPanel {
+  background: rgba(155, 89, 182, 0.06);
+  border: 1px solid rgba(155, 89, 182, 0.25);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adminPanelTitle {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #8e44ad;
+}
+
+/* Bottone sospendi — tono arancione */
+.suspendButton {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(230, 126, 34, 0.12);
+  color: #c0530a;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.suspendButton:hover {
+  background: rgba(230, 126, 34, 0.22);
+  transform: translateY(-1px);
+}
+
+.suspendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Bottone sospendi — tono verde */
+.unsuspendButton {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(46, 204, 113, 0.12);
+  color: #27ae60;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.unsuspendButton:hover {
+  background: rgba(46, 204, 113, 0.22);
+  transform: translateY(-1px);
+}
+
+.unsuspendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Textarea per il motivo della sospensione nella modale */
+.suspendReasonInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+  transition: border 0.2s ease;
+}
+
+.suspendReasonInput:focus {
+  border-color: #e67e22;
 }
 
 
@@ -691,122 +749,180 @@ select:focus {
   margin-top: 0;
 }
 
+/* Badge "Segnalata" nella lista e nel dettaglio */
+.statusReported {
+  background: rgba(230, 180, 34, 0.15);
+  color: #a07800;
+}
 
-/* INVITA AMICI */
-.friendList {
+/* Badge segnalazione in attesa — visibile solo admin */
+.statusPendingReport {
+  background: rgba(230, 140, 34, 0.15);
+  color: #8a4a00;
+}
+
+/* Card con segnalazione accettata — bordo giallo-ambra */
+.activityCardReported {
+  border-color: rgba(230, 180, 34, 0.5) !important;
+}
+
+/* Banner segnalazione accettata — visibile a tutti */
+.reportedBanner {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(230, 180, 34, 0.45);
+  background: rgba(230, 180, 34, 0.1);
+  color: #6b4e00;
+  font-size: 14px;
+  font-weight: 600;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.reportedBannerTitle {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.reportedBannerReason {
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+/* Bottone "Segnala attività" — tono neutro discreto */
+.reportButton {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.reportButton:hover {
+  background: rgba(230, 180, 34, 0.08);
+  color: #a07800;
+  border-color: rgba(230, 180, 34, 0.4);
+}
+
+.reportButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Badge conferma segnalazione già inviata */
+.reportedConfirmBadge {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(230, 180, 34, 0.35);
+  background: rgba(230, 180, 34, 0.08);
+  color: #7a5500;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ── PANNELLO ADMIN — SEZIONE SEGNALAZIONI ───────────────────────────────── */
+.adminReportItem {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 8px
 }
 
-.friendItem {
+.adminReportMeta {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--card-bg);
-  cursor: pointer;
-  transition: all 0.15s;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.friendItemSelected {
-  border: 1.5px solid var(--accent);
-  background: var(--accent-light);
-}
-
-.friendAvatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.friendAvatarPlaceholder {
-   width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color:white;
-  font-weight: 600;
-  font-size: 14px;
-  flex-shrink: 0;
-}
-
-.friendInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-}
-
-.friendName {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 500;
+.adminReportUser {
+  font-size: 13px;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
-.friendNickname {
-  margin: 0;
+.adminReportDate {
   font-size: 12px;
   color: var(--text-secondary);
 }
 
-.friendCheck {
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
-.emptyFriends {
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-.inviteList {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.inviteCard {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--card-bg);
-}
-
-.inviteInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
-}
-
-.inviteActions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  margin-left: auto;
-}
-
-.pendingBadge {
-  padding: 6px 10px;
-  border-radius: 999px;
+.adminReportContact {
   font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+
+.adminReportReason {
+  font-size: 13px;
+  color: var(--text-primary);
+  background: rgba(230, 180, 34, 0.12);
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin: 6px 0 0 0;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.adminReportActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* Bottone accetta segnalazione — verde */
+.acceptReportButton {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(46, 204, 113, 0.12);
+  color: #1a7a40;
+  font-size: 13px;
   font-weight: 700;
-  background: rgba(241, 196, 15, 0.15);
-  color: #d4a017;
-  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.acceptReportButton:hover {
+  background: rgba(46, 204, 113, 0.22);
+}
+
+.acceptReportButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Bottone rigetta segnalazione — grigio neutro */
+.dismissReportButton {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.dismissReportButton:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.dismissReportButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

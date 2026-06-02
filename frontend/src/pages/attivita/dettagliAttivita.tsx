@@ -7,18 +7,13 @@ import appStyles from "../../App.module.css";
 import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
 
-import type { Activity } from "../../types/Activity";
 import type {Trek} from "../../types/Trek";
 import type {Organizer} from "../../types/Organizer";
-import type {Participant} from "../../types/Participant";
 import type {Friend} from "../../types/Friend"
 import type {ActivityInvite} from "../../types/ActivityInvite";
+import type {ActivityPopulated} from "../../types/ActivityPopulated";
 
-type ActivityPopulated = Omit<Activity, "partecipantList"> & {
-  partecipantList: Participant[];
-};
-
-type ModalType = "join" | "leave" | "cancel" | "uncancel" | "delete" | null;
+type ModalType = "join" | "leave" | "cancel" | "uncancel" | "delete" | "report" | null;
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -62,6 +57,10 @@ export default function DettagliAttivita() {
   const [myInvite, setMyInvite] = useState<ActivityInvite | null>(null);
 
   const [banner, setBanner] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+
+  const [reportReason, setReportReason] = useState("");
+  const [reportSuccess, setReportSuccess] = useState(false);
+  const [reportError, setReportError] = useState("");
 
   async function loadPageData() {
     try {
@@ -185,6 +184,31 @@ export default function DettagliAttivita() {
     }
   }
 
+  async function handleReport() {
+    if (!reportReason.trim()) {
+      setReportError("Il motivo della segnalazione è obbligatorio");
+      return;
+    }
+    setReportError("");
+    setActionLoading(true);
+    try {
+      await http<{ message: string }>(`/activities/${id}/report`, {
+        method: "POST",
+        body: JSON.stringify({ userID: user?._id, reason: reportReason }),
+      });
+      const updatedActivity = await http<ActivityPopulated>(`/activities/${id}`, { method: "GET" });
+      updatedActivity.partecipantList = updatedActivity.partecipantList ?? [];
+      setActivity(updatedActivity);
+      setReportSuccess(true);
+      setReportReason("");
+      setActiveModal(null);
+    } catch (err: any) {
+      setReportError(err.message || "Errore nell'invio della segnalazione");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   const getStatusClass = (status: string) => {
     switch (status) {
       case "Annullato": return styles.statusCancelled;
@@ -225,8 +249,17 @@ export default function DettagliAttivita() {
   const canInviteFriends = isOrganizer && activity.status === "Aperto" && !isExpired && spotsLeft > 0;
 
   const organizerName = organizer?.nickname || `${organizer?.nome ?? ""} ${organizer?.cognome ?? ""}`.trim() || organizer?.email || "—";
-  const inviteableFriends = friends.filter((friend) =>
-    !pendingInvites.some((invite) => invite.receiver._id === friend.user._id) &&
+
+  const reports = (activity as any).reports ?? [];
+  const myReport = currentUserID
+    ? reports.find((r: any) => (r.reportedBy?._id ?? r.reportedBy)?.toString() === currentUserID)
+    : undefined;
+  const hasAlreadyReported = !!myReport;
+  const acceptedReports = reports.filter((r: any) => r.reportStatus === "accepted");
+  const hasAcceptedReport = acceptedReports.length > 0;
+  const isSuspended = (activity as any).suspended === true;
+
+  const inviteableFriends = friends.filter((friend) =>    !pendingInvites.some((invite) => invite.receiver._id === friend.user._id) &&
     !activity.partecipantList.some((participant) => participant._id === friend.user._id)
   );
   const displayedInviteableFriends = inviteableFriends
@@ -345,11 +378,43 @@ export default function DettagliAttivita() {
 
         {/* ── SINISTRA ── */}
         <div className={appStyles.leftColumn}>
+
+          {/* Banner sospensione */}
+          {isSuspended && (
+            <div className={styles.suspendedBanner}>
+              <span className={styles.suspendedBannerTitle}>Attività sospesa dall'amministrazione</span>
+              {(activity as any).suspendedReason ? (
+                <span className={styles.suspendedBannerReason}>Motivo: {(activity as any).suspendedReason}</span>
+              ) : (
+                <span className={styles.suspendedBannerReason}>Nessun motivo specificato. Contatta l'amministrazione per maggiori informazioni.</span>
+              )}
+            </div>
+          )}
+
+          {/* Banner segnalazioni accettate */}
+          {hasAcceptedReport && (
+            <div className={styles.reportedBanner}>
+              <span className={styles.reportedBannerTitle}>
+                {isOrganizer ? "La tua attività è stata segnalata" : "Questa attività è stata segnalata"}
+              </span>
+              <span className={styles.reportedBannerReason}>
+                {isOrganizer
+                  ? `${acceptedReports.length} segnalazion${acceptedReports.length === 1 ? "e" : "i"} accettat${acceptedReports.length === 1 ? "a" : "e"} dall'amministrazione. Controlla il contenuto dell'attività e contatta l'amministrazione se ritieni sia un errore.`
+                  : `${acceptedReports.length} segnalazion${acceptedReports.length === 1 ? "e" : "i"} accettat${acceptedReports.length === 1 ? "a" : "e"} dall'amministrazione. Procedi con cautela.`}
+              </span>
+            </div>
+          )}
+
           <div style={{ paddingBottom: "20px" }}>
-            {isOrganizer && (
+            {isOrganizer && !isSuspended && (
               <>
                 <div className={styles.organizerBadge}>Sei l'organizzatore di questa attività</div>
               </>
+            )}
+            {isOrganizer && isSuspended && (
+              <div className={styles.organizerBadge}>
+                Sei l'organizzatore — la gestione è temporaneamente bloccata dall'amministrazione
+              </div>
             )}
             {isParticipant && (
               <>
@@ -373,6 +438,12 @@ export default function DettagliAttivita() {
             <div className={styles.detailHeroTop}>
               <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
                 {(() => { const effectiveStatus = (activity.status === "Aperto" && isExpired) ? "Chiuso" : activity.status; return <span className={`${styles.statusBadge} ${getStatusClass(effectiveStatus ?? "")}`}>{effectiveStatus ?? "—"}</span>; })()}
+                {isSuspended && (
+                  <span className={`${styles.statusBadge} ${styles.statusSuspended}`}>Sospesa</span>
+                )}
+                {hasAcceptedReport && (
+                  <span className={`${styles.statusBadge} ${styles.statusReported}`}>Segnalata</span>
+                )}
               </div>
               <span className={styles.activityId}>#{activity._id}</span>
             </div>
@@ -438,31 +509,59 @@ export default function DettagliAttivita() {
               <>
                 <div className={styles.buttonActions}>
                   {activity.status !== "Annullato" && (
-                    <button className={styles.dangerButton} disabled={isExpired} onClick={() => setActiveModal("cancel")}>
+                    <button
+                      className={styles.dangerButton}
+                      disabled={isExpired || isSuspended}
+                      title={isSuspended ? "Attività sospesa — azione non disponibile" : undefined}
+                      onClick={() => setActiveModal("cancel")}
+                    >
                       Annulla attività
                     </button>
                   )}
                   {activity.status === "Annullato" && (
-                    <button className={styles.dangerButton} disabled={isExpired} onClick={() => setActiveModal("uncancel")}>
+                    <button
+                      className={styles.dangerButton}
+                      disabled={isExpired || isSuspended}
+                      title={isSuspended ? "Attività sospesa — azione non disponibile" : undefined}
+                      onClick={() => setActiveModal("uncancel")}
+                    >
                       Riattiva attività
                     </button>
                   )}
                   {activity.status !== "Annullato" && activity.status === "Chiuso" && participantCount < activity.maxParticipants && (
-                    <button className={styles.dangerButton} disabled={isExpired} onClick={() => handleAction("open", "PATCH")}>
+                    <button
+                      className={styles.dangerButton}
+                      disabled={isExpired || isSuspended}
+                      title={isSuspended ? "Attività sospesa — azione non disponibile" : undefined}
+                      onClick={() => handleAction("open", "PATCH")}
+                    >
                       Apri attività
                     </button>
                   )}
                   {activity.status !== "Annullato" && activity.status === "Aperto" && (
-                    <button className={styles.dangerButton} disabled={isExpired} onClick={() => handleAction("close", "PATCH")}>
+                    <button
+                      className={styles.dangerButton}
+                      disabled={isExpired || isSuspended}
+                      title={isSuspended ? "Attività sospesa — azione non disponibile" : undefined}
+                      onClick={() => handleAction("close", "PATCH")}
+                    >
                       Chiudi attività
                     </button>
                   )}
+                  <button
+                    className={styles.dangerButton}
+                    disabled={isSuspended}
+                    title={isSuspended ? "Attività sospesa — azione non disponibile" : undefined}
+                    onClick={() => setActiveModal("delete")}
+                  >
+                    Elimina attività
+                  </button>
                 </div>
               </>
             )}
 
             {/* Può partecipare */}
-            {canJoin && (
+            {canJoin && !isSuspended && (
               <button className={appStyles.primaryButton} onClick={() => setActiveModal("join")}>
                 Partecipa all'attività
               </button>
@@ -473,12 +572,16 @@ export default function DettagliAttivita() {
               <button className={appStyles.primaryButton} disabled>
                 {activity.status !== "Aperto"
                   ? `Iscrizione non disponibile (${activity.status ?? ""})`
-                  : "Attività al completo"}
+                  : isExpired
+                    ? "Attività scaduta"
+                    : isSuspended
+                      ? "Attività sospesa"
+                      : "Attività al completo"}
               </button>
             )}
 
             {/* Già partecipante */}
-            {isParticipant && (
+            {isParticipant && !isSuspended && (
               <>
                 <div className={styles.buttonActions}>
                   <button className={styles.leaveButton} disabled={isExpired} onClick={() => setActiveModal("leave")}>
@@ -486,6 +589,51 @@ export default function DettagliAttivita() {
                   </button>
                 </div>
               </>
+            )}
+
+            {/* Segnalazione - solo per partecipanti non organizzatori */}
+            {!isOrganizer && isParticipant && currentUserID && (
+              <div style={{ marginTop: "8px" }}>
+                {reportSuccess && !hasAlreadyReported && (
+                  <div className={styles.reportedConfirmBadge}>
+                    Segnalazione inviata. L'amministrazione esaminerà la segnalazione.
+                  </div>
+                )}
+                {hasAlreadyReported && (
+                  <div className={styles.reportedConfirmBadge}>
+                    {myReport.reportStatus === "pending" && (
+                      <>
+                        <strong>Hai segnalato questa attività.</strong>
+                        <br />La segnalazione è in attesa di revisione da parte dell'amministrazione.
+                        {myReport.reason && (<><br /><span style={{ opacity: 0.8 }}>Motivo: {myReport.reason}</span></>)}
+                        <br />
+                        <span style={{ opacity: 0.7, fontSize: "12px" }}>
+                          Segnalata il {new Date(myReport.reportedAt).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" })}
+                        </span>
+                      </>
+                    )}
+                    {myReport.reportStatus === "accepted" && (
+                      <>
+                        <strong>La tua segnalazione è stata accettata dall'amministrazione.</strong>
+                        <br />Grazie per la segnalazione. L'attività è ora contrassegnata come segnalata.
+                        {myReport.reason && (<><br /><span style={{ opacity: 0.8 }}>Motivo: {myReport.reason}</span></>)}
+                      </>
+                    )}
+                    {myReport.reportStatus === "dismissed" && (
+                      <>
+                        <strong>La tua segnalazione è stata esaminata e rigettata dall'amministrazione.</strong>
+                        {myReport.reason && (<><br /><span style={{ opacity: 0.8 }}>Motivo inviato: {myReport.reason}</span></>)}
+                        {myReport.reviewNote && (<><br /><span style={{ opacity: 0.8 }}>Nota admin: {myReport.reviewNote}</span></>)}
+                      </>
+                    )}
+                  </div>
+                )}
+                {!hasAlreadyReported && !reportSuccess && (
+                  <button className={styles.reportButton} onClick={() => setActiveModal("report")}>
+                    Segnala attività
+                  </button>
+                )}
+              </div>
             )}
 
           </div>
@@ -782,6 +930,49 @@ export default function DettagliAttivita() {
               <button className={appStyles.secondaryButton} onClick={() => setActiveModal(null)} disabled={actionLoading}>Annulla</button>
               <button className={styles.dangerButton} onClick={handleDelete} disabled={actionLoading}>
                 {actionLoading ? "Eliminazione in corso..." : "Elimina definitivamente"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report */}
+      {activeModal === "report" && (
+        <div className={styles.modalOverlay} onClick={() => { setActiveModal(null); setReportError(""); }}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>Segnala attività</h2>
+            <p className={styles.modalBody}>
+              La tua segnalazione sarà esaminata dall'amministrazione. Puoi specificare il motivo qui sotto.
+            </p>
+            <div>
+              <label className={styles.label} style={{ marginBottom: "6px", display: "block" }}>
+                Motivo <span style={{ color: "red" }}>*</span> (obbligatorio)
+              </label>
+              <textarea
+                className={`${styles.suspendReasonInput} ${reportError ? styles.inputError : ""}`}
+                rows={3}
+                placeholder="Es: contenuto inappropriato, informazioni false..."
+                value={reportReason}
+                onChange={(e) => { setReportReason(e.target.value); if (reportError) setReportError(""); }}
+              />
+            </div>
+            {reportError && (
+              <div className={styles.errorMessage}>{reportError}</div>
+            )}
+            <div className={styles.modalActions}>
+              <button
+                className={appStyles.secondaryButton}
+                onClick={() => { setActiveModal(null); setReportReason(""); setReportError(""); }}
+                disabled={actionLoading}
+              >
+                Annulla
+              </button>
+              <button
+                className={styles.reportButton}
+                onClick={handleReport}
+                disabled={actionLoading}
+              >
+                {actionLoading ? "Invio in corso..." : "Invia segnalazione"}
               </button>
             </div>
           </div>
