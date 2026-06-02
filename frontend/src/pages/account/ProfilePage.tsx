@@ -687,6 +687,9 @@ export default function ProfilePage() {
             type={activeModal === "email" ? "email" : "text"}
             autoFocus
           />
+
+          {error && <p className={styles.errorBanner}>{error}</p>}
+          
           <div className={styles.modalActions}>
             <button 
               className={styles.cancelBtn} 
