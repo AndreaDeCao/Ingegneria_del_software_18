@@ -230,6 +230,25 @@ exports.joinActivity = async (req, res) => {
 
     await activity.save();
 
+    await ActivityInvitation.updateOne(
+      { activity: activity._id, receiver: userID, status: "pending" },
+      { $set: { status: "accepted", acceptedAt: new Date() } }
+    );
+
+    await User.updateOne(
+      {
+        _id: userID,
+        "notifications.ref": activity._id,
+        "notifications.type": "activity_invite"
+      },
+      {
+        $set: {
+          "notifications.$.status": "accepted",
+          "notifications.$.read": true
+        }
+      }
+    );
+
     const joiner = await User.findById(userID);
     await addNotification(
       activity.organizerID.toString(),
@@ -686,6 +705,20 @@ exports.acceptActivityInvite = async (req, res) => {
     }
     await activity.save();
 
+    await User.updateOne(
+        {
+          _id: req.userId,
+          "notifications.ref": invitation.activity,
+          "notifications.type": "activity_invite"
+        },
+        {
+          $set: {
+            "notifications.$.status": "accepted",
+            "notifications.$.read": true
+          }
+        }
+      );
+
     invitation.status = "accepted";
     invitation.acceptedAt = new Date();
     invitation.declinedAt = undefined;
@@ -740,6 +773,20 @@ exports.declineActivityInvite = async (req, res) => {
     invitation.declinedAt = new Date();
     invitation.acceptedAt = undefined;
     await invitation.save();
+
+    await User.updateOne(
+      {
+        _id: req.userId,
+        "notifications.ref": invitation.activity,
+        "notifications.type": "activity_invite"
+      },
+      {
+        $set: {
+          "notifications.$.status": "rejected",
+          "notifications.$.read": true
+        }
+      }
+    );
 
     const populatedInvitation = await ActivityInvitation.findById(invitation._id)
       .populate("sender", "nome cognome nickname avatarUrl")

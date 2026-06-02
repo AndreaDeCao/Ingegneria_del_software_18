@@ -348,10 +348,10 @@
 }
 
 .notifBadge {
-  postion: absolute;
+  position: absolute;
   top: -6px;
   right: -6px;
-  background: #c0392b;
+  background: #27ae60;
   color: white;
   font-size: 11px;
   font-weight: 700;
@@ -417,4 +417,108 @@
 .markAllBtn:hover {
   background: var(--accent-light);
   color: var(--accent-text);
+}
+
+.notifHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+  gap: 8px;
+}
+
+.clearAll {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 0.5px solid #c0392b;
+  background: var(--card-bg);
+  color: #c0392b;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: background 0.2s, color 0.2s;
+}
+
+.clearAll:hover {
+  background: #c0392b;
+  color: white;
+}
+
+.notifFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.notifTagAccepted {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eafaf1;
+  color: #1e8449;
+  border: 1px solid #1e8449;
+}
+
+.notifTagRejected {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fde2e4;
+  color: #ae1d29;
+  border: 1px solid #ae1d29;
+}
+
+.notifClickable {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.notifClickable:hover {
+  background: color-mix(in srgb, var(--accent) 12%, var(--card-bg));
+}
+
+.notifActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.notifAcceptBtn {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid #27ae60;
+  background: var(--card-bg);
+  color: #27ae60;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+
+.notifAcceptBtn:hover {
+  background: #27ae60;
+  color: white;
+}
+
+.notifRejectBtn {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid #c0392b;
+  background: var(--card-bg);
+  color: #c0392b;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+
+.notifRejectBtn:hover {
+  background: #c0392b;
+  color: white;
 }

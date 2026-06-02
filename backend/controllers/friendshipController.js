@@ -313,6 +313,7 @@ exports.searchUsers = async (req, res) => {
         { sender: new mongoose.Types.ObjectId(req.userId) },
         { receiver: new mongoose.Types.ObjectId(req.userId) }
       ],
+      status: { $in: ["accepted", "pending"] }
     }).toArray();
 
     const excludedIds = new Set([req.userId]);
