@@ -62,11 +62,14 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openItem, setOpenItem] = useState<string | null>(null);
   const navigate = useNavigate();
+  const isAdmin = user?.role === "admin";
+
   const handleNavigate = (path: string) => {
     navigate(path);
     setMenuOpen(false);
     setOpenItem(null);
   }
+
   return(
   <div style={{ position: "relative" }}>
     <header className={`${styles.header} ${menuOpen ? styles.menuOpenHeader : ""}`}>
@@ -84,24 +87,56 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
       </div>
 
       <nav className={styles.nav}>
-        <NavLink
-          to="/treks"
-          className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-        >
-          Esplora
-        </NavLink>
-        <NavLink
-          to="/my-treks"
-          className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-        >
-          I miei Percorsi
-        </NavLink>
-        <NavLink
-          to="/friends"
-          className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-        >
-          Amici
-        </NavLink>
+        {/* Nav links diversi per admin e utente normale */}
+        {isAdmin ? (
+          <>
+            <NavLink
+              to="/treks"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Esplora
+            </NavLink>
+            <NavLink
+              to="/admin/attivita/visualizza"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Attivita
+            </NavLink>
+            {/*<NavLink FIX ME
+              to="/admin/utenti"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Utenti
+            </NavLink> */}
+            <NavLink
+              to="/admin/segnalazioni"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Segnalazioni
+            </NavLink>
+          </>
+        ) : (
+          <>
+            <NavLink
+              to="/treks"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Esplora
+            </NavLink>
+            <NavLink
+              to="/my-treks"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              I miei Percorsi
+            </NavLink>
+            <NavLink
+              to="/friends"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Amici
+            </NavLink>
+          </>
+        )}
 
         {!user ? (
           <NavLink to="/login" className={styles.navLink}>
@@ -124,24 +159,10 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
           {theme === "dark" ? <SunIcon /> : <MoonIcon />}
         </button>
         <button className={styles.avatar} onClick={() => handleNavigate("/account/profile")}> 
-          {user?.avatarUrl ? (
-            <img
-              src={user.avatarUrl}
-              alt="avatar"
-              style={{ 
-                width: "40px", 
-                height: "40px", 
-                borderRadius: "50%", 
-                objectFit: "cover",
-                display: "block"
-              }}
-            />
-          ) : (
-            <svg width={20} height={20} viewBox="0 0 24 24" fill="white">
-              <circle cx={12} cy={8} r={4}/>
-              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-            </svg>
-          )}
+          <svg width={20} height={20} viewBox="0 0 24 24" fill="white">
+            <circle cx={12} cy={8} r={4}/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
         </button>
       </nav>
     </header>
@@ -160,25 +181,51 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
         onToggle={() => setOpenItem(openItem === "Account" ? null : "Account")}
         onNavigate={handleNavigate}/>
 
-        <DropdownItem
-        label="Diario"
-        items={[
-          { label: "Visualizza Diario", path: "/diario/visualizza" },
-          { label: "Crea Nuova Voce Diario", path: "/diario/crea" },
-        ]}
-        isOpen={openItem === "Diario"}
-        onToggle={() => setOpenItem(openItem === "Diario" ? null : "Diario")}
-        onNavigate={handleNavigate}/>
+        {/* Menu hamburger personalizzato per admin */}
+        {isAdmin ? (
+          <>
+            <DropdownItem
+              label="Attivita"
+              items={[
+                { label: "Visualizza Lista Attivita", path: "/attivita/visualizza" },
+                { label: "Crea Nuova Attivita", path: "/attivita/crea" },
+              ]}
+              isOpen={openItem === "AttivitaAdmin"}
+              onToggle={() => setOpenItem(openItem === "AttivitaAdmin" ? null : "AttivitaAdmin")}
+              onNavigate={handleNavigate}/>
 
-        <DropdownItem
-        label="Attività"
-        items={[
-          { label: "Visualizza Lista Attività", path: "/attivita/visualizza" },
-          { label: "Crea Nuova Attività", path: "/attivita/crea" },
-        ]}
-        isOpen={openItem === "Attività"}
-        onToggle={() => setOpenItem(openItem === "Attività" ? null : "Attività")}
-        onNavigate={handleNavigate}/>
+            <DropdownItem
+              label="Segnalazioni"
+              items={[
+                { label: "Gestione Segnalazioni", path: "/admin/segnalazioni" },
+              ]}
+              isOpen={openItem === "Segnalazioni"}
+              onToggle={() => setOpenItem(openItem === "Segnalazioni" ? null : "Segnalazioni")}
+              onNavigate={handleNavigate}/>
+          </>
+        ) : (
+          <>
+            <DropdownItem
+              label="Diario"
+              items={[
+                { label: "Visualizza Diario", path: "/diario/visualizza" },
+                { label: "Crea Nuova Voce Diario", path: "/diario/crea" },
+              ]}
+              isOpen={openItem === "Diario"}
+              onToggle={() => setOpenItem(openItem === "Diario" ? null : "Diario")}
+              onNavigate={handleNavigate}/>
+
+            <DropdownItem
+              label="Attivita"
+              items={[
+                { label: "Visualizza Lista Attivita", path: "/attivita/visualizza" },
+                { label: "Crea Nuova Attivita", path: "/attivita/crea" },
+              ]}
+              isOpen={openItem === "Attivita"}
+              onToggle={() => setOpenItem(openItem === "Attivita" ? null : "Attivita")}
+              onNavigate={handleNavigate}/>
+          </>
+        )}
 
         <DropdownItem
         label="Versione"
