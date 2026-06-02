@@ -46,6 +46,11 @@ const UserSchema = new mongoose.Schema({
       type: Boolean,
       default: false
     },
+    status: {
+      type: String,
+      enum: ["pending", "accepted", "rejected"],
+      default: "pending",
+    },
     ref: {
       type: mongoose.Schema.Types.ObjectId,
       default: null

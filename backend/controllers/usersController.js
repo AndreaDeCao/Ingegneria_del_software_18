@@ -549,3 +549,98 @@ exports.markAllNotificationRead = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+/**
+ * Marca una singola notifica come letta.
+ * 
+ * @route PUT /users/me/notifications/:notifId/read
+ * @param {import("express").Request} req - Params: { notifId }
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con messaggio di conferma
+ */
+exports.markNotificationRead = async (req ,res) => {
+  try {
+    const user = await UserfindById(req.userId);
+    if(!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+
+    const notif = user.notifications.id(req.params.notifId);
+    if(!notif) {
+      return res.status(404).json({ error: "Notifica non trovata" });
+    }
+
+    notif.read = true;
+    await user.save({ validateModifiedOnly: true });
+
+    res.json({ message: "Notifica segnata come letta" });
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/**
+ * Elimina tutte le notifiche dell'utente.
+ *
+ * @route DELETE /users/me/notifications
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con messaggio di conferma
+ */
+exports.clearNotifications = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if(!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+
+    user.notifications = [];
+    await user.save({ validateModifiedOnly: true });
+
+    res.json({ message: "Notifiche eliminate" });
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/**
+ * Aggiorna status di una notifica (accetta/rifiuta).
+ * Marca anche la notifica come letta.
+ * 
+ * @route PUT /users/me/notifications/:notifId/status
+ * @param {import("express").Request} req - Body: { status }
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con messaggio di conferma
+ */
+exports.updateNotificationStatus = async (req,res) => {
+  try {
+    const { status } = req.body;
+    if(!["accepted", "rejected"].includes(status)) {
+      return res.status(400).json({ error: "Status non valido" });
+    }
+
+    const user = await User.findById(req.userId);
+    if(!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+
+    const notif = user.notifications.id(req.params.notifId);
+    if(!notif) {
+      return res.status(404).json({ error: "Notifica non trovata" });
+    }
+
+    notif.status = status;
+    notif.read = true;
+    await user.save({ validateModifiedOnly: true });
+
+    res.json({ message: "Notifica aggiornata" });
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};

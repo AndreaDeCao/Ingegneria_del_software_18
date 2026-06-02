@@ -21,6 +21,11 @@ router.post("/", userController.createUser);
 router.post("/favorites/:trekId", requireAuth, userController.addTrekToFavorites);
 router.delete("/favorites/:trekId", requireAuth, userController.removeTrekFromFavorites);
 
+router.put("/me/notifications/:notifId/read", requireAuth, userController.markNotificationRead);
+router.put("/me/notifications/:notifId/read", requireAuth, userController.markNotificationRead);
+router.put("/me/notifications/:notifId/status", requireAuth, userController.updateNotificationStatus);
+router.delete("/me/notifications", requireAuth, userController.clearNotifications);
+
 router.get("/:id", userController.getUserById);
 
 router.get("/me/notifications", requireAuth, userController.getNotifications);

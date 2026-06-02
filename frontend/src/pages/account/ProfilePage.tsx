@@ -45,6 +45,7 @@ function Banner({ msg, type, onClose }: {
  */
 export default function ProfilePage() {
   const { logout, refreshUser } = useAuth();
+
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [nome, setNome] = useState("");
@@ -290,11 +291,11 @@ export default function ProfilePage() {
         ));
 
       } catch(err: unknown) {
-         if(err instanceof Error) {
-          setError(err.message);
-      }
+          if(err instanceof Error) {
+            setError(err.message);
+          }
+        }
     }
-  }
 
     if(loading) {
       return <p className={styles.message}>Caricamento profilo...</p>
