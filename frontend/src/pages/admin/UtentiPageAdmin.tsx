@@ -153,6 +153,8 @@ export default function AdminUtentiPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [suspendDays, setSuspendDays] = useState(7);
 
+  const [searchTrigger, setSearchTrigger] = useState(0);
+
   const isAdmin = adminUser?.role === "admin";
 
 
@@ -207,7 +209,7 @@ export default function AdminUtentiPage() {
 
   load();
   return () => { cancelled = true; };
-}, [search, statusFilter, isAdmin]);
+}, [search, statusFilter, isAdmin, searchTrigger]);
 
 
   /**
@@ -285,8 +287,11 @@ export default function AdminUtentiPage() {
             className={styles.input}
             placeholder="Nickname, nome, email..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && fetchUsers(false)}
+             onChange={(e) => {
+              setSearch(e.target.value);
+              if (e.target.value.trim().length === 0) setSearchTrigger(t => t + 1);
+            }}
+            onKeyDown={(e) => e.key === "Enter" && setSearchTrigger(t => t + 1)}
           />
         </div>
         <div className={styles.filterGroup}>
