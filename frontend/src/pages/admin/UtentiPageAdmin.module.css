@@ -161,3 +161,168 @@
   gap: 6px;
   flex-shrink: 0;
 }
+
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badgeActive {
+  background: rgba(39, 174, 96, 0.12);
+  color: #1a7a40;
+  border: 1px solid rgba(39, 174, 96, 0.3);
+}
+
+.badgeSuspended {
+  background: rgba(230, 126, 34, 0.12);
+  color: #a85c00;
+  border: 1px solid rgba(230, 126, 34, 0.3);
+}
+
+.badgeBanned {
+  background: rgba(192, 57, 43, 0.12);
+  color: #c0392b;
+  border: 1px solid rgba(192, 57, 43, 0.3);
+}
+
+.badgePending {
+  background: rgba(230, 180, 34, 0.15);
+  color: #8a6800;
+  border: 1px solid rgba(230, 180, 34, 0.4);
+}
+
+.badgeAccepted {
+  background: rgba(39, 174, 96, 0.12);
+  color: #1a7a40;
+  border: 1px solid rgba(39, 174, 96, 0.3);
+}
+
+.badgeDismissed {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+
+/* Modal */
+.modalContent {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.modalUserInfo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.modalUserMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.modalUserName {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.modalUserEmail {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.modalUserDate {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  opacity: 0.75;
+}
+
+.suspendedUntil {
+  margin: 0;
+  font-size: 13px;
+  color: #a85c00;
+  background: rgba(230, 126, 34, 0.1);
+  border: 1px solid rgba(230, 126, 34, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+
+.modalSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modalSectionTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+}
+
+
+/* Segnalazioni */
+.reportList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.reportItem {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reportItemHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.reportItemBy {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.reportReason {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.reportDate {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.emptyReports {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
