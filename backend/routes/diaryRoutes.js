@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const requireAuth = require("../middleware/requireAuth");
-const { getDiary, getEntryById, createEntry, updateEntry, deleteEntry, getDiaryStats, getSegnalazioniByTrek, acceptSegnalazione, dismissSegnalazione, reopenSegnalazione, getSegnalazioniAccettate,} = require("../controllers/diaryController");
+const { getDiary, getEntryById, createEntry, updateEntry, deleteEntry, getDiaryStats, getSegnalazioniByTrek, acceptSegnalazione, dismissSegnalazione, reopenSegnalazione, getSegnalazioniAccettate, getSegnalazioniUtenti } = require("../controllers/diaryController");
 
 router.get("/", requireAuth, getDiary);      // utente legge il suo diario (tutte le entry)
 router.get("/stats", requireAuth, getDiaryStats);
@@ -16,6 +16,7 @@ router.get("/segnalazioni",                           requireAuth, getSegnalazio
 router.patch("/segnalazioni/:entryId/accept",         requireAuth, acceptSegnalazione);
 router.patch("/segnalazioni/:entryId/dismiss",        requireAuth, dismissSegnalazione);
 router.patch("/segnalazioni/:entryId/reopen",         requireAuth, reopenSegnalazione);
+router.get("/segnalazioni-utenti", requireAuth, getSegnalazioniUtenti);
 
 // -- voci diario
 router.get("/:id", requireAuth, getEntryById);

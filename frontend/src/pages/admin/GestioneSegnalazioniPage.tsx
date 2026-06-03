@@ -254,8 +254,8 @@ function TrekSegnalazioneCard({
   const Wrapper = isUtente
     ? ({ children }: { children: React.ReactNode }) => (
         <div className={reportStyles.reportCardLink}>{children}</div>
-      ) : (
-        { children }: { children: React.ReactNode }) => (
+      ) 
+    : ({ children }: { children: React.ReactNode }) => (
         <Link to={`/admin/treks/${trekId}`} className={reportStyles.reportCardLink}>{children}</Link>
       );
 
@@ -339,6 +339,7 @@ function TrekSegnalazioneCard({
               onClick={(e) => { 
                   e.stopPropagation(); 
                   e.preventDefault(); 
+                  onAction(entry._id, "accept", e);
                   navigate(`/admin/utenti?userId=${reportedUser._id}`); 
               }}
             >
@@ -389,8 +390,9 @@ export default function GestioneSegnalazioniPage() {
   const tabParam = searchParams.get("tab");
 
   // ── Tab attivo: "attivita" | "percorsi"
-  const [tab, setTab] = useState<"attivita" | "percorsi">(() => {
+  const [tab, setTab] = useState<"attivita" | "percorsi" | "utenti">(() => {
     if (tabParam === "percorsi") return "percorsi";
+    if (tabParam === "utenti") return "utenti";
     return "attivita";
   });
 
@@ -408,10 +410,15 @@ export default function GestioneSegnalazioniPage() {
   const [treksError, setTreksError] = useState<string | null>(null);
   const [trekActionLoading, setTrekActionLoading] = useState<string | null>(null);
 
+  const [segnalazioniUtenti, setSegnalazioniUtenti] = useState<SegnalazioneEntry[]>([]);
+  const [utentiLoading, setUtentiLoading] = useState(true);
+  const [utentiError, setUtentiError] = useState<string | null>(null);
+  const [utentiActionLoading, setUtentiActionLoading] = useState<string | null>(null);
+
   const isAdmin = user?.role === "admin";
 
   // ── Sync tab → searchParams
-  function switchTab(t: "attivita" | "percorsi") {
+  function switchTab(t: "attivita" | "percorsi" | "utenti") {
     setTab(t);
     setStatusFilter("all");
     setSearchParams({ tab: t });
@@ -472,6 +479,26 @@ export default function GestioneSegnalazioniPage() {
       if (!silent) setTreksLoading(false);
     }
   }, [isAdmin]);
+
+
+  const fetchSegnalazioniUtenti = useCallback(async (silent = false) => {
+    if(!isAdmin) return;
+    try {
+      const data = await http<SegnalazioneEntry[]>("/api/diary/segnalazioni-utenti");
+      setSegnalazioniUtenti(data);
+
+    } catch(err: unknown) {
+      if(!silent) setUtentiError(err instanceof Error ? err.message : "Errore");
+    } finally {
+      if(!silent) setUtentiLoading(false);
+    }
+  }, [isAdmin]);
+
+  useEffect(() => {
+    fetchSegnalazioniUtenti(false);
+    const interval = setInterval(() => fetchSegnalazioniUtenti(true), POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [fetchSegnalazioniUtenti]);
 
   // ── Effetti iniziali e polling ────────────────────────────────────────────
 
@@ -556,6 +583,34 @@ export default function GestioneSegnalazioniPage() {
     }
   }
 
+  async function handleUtentiAction(
+    entryId: string,
+    action: "accept" | "dismiss" | "reopen",
+    e: React.MouseEvent
+  ) {
+    e.stopPropagation();
+    e.preventDefault();
+    setUtentiActionLoading(entryId);
+    try {
+      await http(`/api/diary/segnalazioni/${entryId}/${action}`, { method: "PATCH" });
+
+      const newStato: ReportStatus =
+        action === "accept" ? "accepted" : action === "dismiss" ? "dismissed" : "pending";
+      setSegnalazioniUtenti((prev) =>
+        prev.map((s) =>
+          s._id === entryId
+            ? { ...s, segnalazione: { ...s.segnalazione, stato: newStato, gestitaDaAdmin: action !== "reopen" } }
+            : s
+        )
+      );
+
+    } catch(err: unknown) {
+      console.error(err);
+    } finally {
+      setUtentiActionLoading(null);
+    }
+  }
+
   // ── Guard ─────────────────────────────────────────────────────────────────
 
   if (!isAdmin) {
@@ -630,6 +685,27 @@ export default function GestioneSegnalazioniPage() {
           {trekPendingCount > 0 && (
             <span style={{ marginLeft: "0.4rem", background: "var(--accent)", color: "#fff", borderRadius: "9999px", fontSize: "0.72rem", padding: "1px 7px", verticalAlign: "middle" }}>
               {trekPendingCount}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => switchTab("utenti")}
+          style={{
+            padding: "0.5rem 1.25rem",
+            fontWeight: 600,
+            fontSize: "0.95rem",
+            background: "none",
+            border: "none",
+            borderBottom: tab === "utenti" ? "2px solid var(--accent)" : "2px solid transparent",
+            marginBottom: "-2px",
+            cursor: "pointer",
+            color: tab === "utenti" ? "var(--accent)" : "var(--text-muted)",
+          }}
+        >
+          Utenti
+          {segnalazioniUtenti.filter(s => s.segnalazione.stato === "pending").length > 0 && (
+            <span style={{ marginLeft: "0.4rem", background: "var(--accent)", color: "#fff", borderRadius: "9999px", fontSize: "0.72rem", padding: "1px 7px", verticalAlign: "middle" }}>
+              {segnalazioniUtenti.filter(s => s.segnalazione.stato === "pending").length}
             </span>
           )}
         </button>
@@ -775,6 +851,40 @@ export default function GestioneSegnalazioniPage() {
               )}
             </>
           )} */}
+        </>
+      )}
+
+      {tab === "utenti" && (
+        <>
+          {utentiLoading && <p className={styles.message}>Caricamento segnalazioni utenti...</p>}
+          {utentiError && <p className={styles.messageError}>{utentiError}</p>}
+          {!utentiLoading && !utentiError && (
+            <>
+              <p className={styles.message}>
+                {segnalazioniUtenti.filter(s => s.segnalazione.stato === "pending").length > 0
+                  ? `${segnalazioniUtenti.filter(s => s.segnalazione.stato === "pending").length} segnalazion${segnalazioniUtenti.filter(s => s.segnalazione.stato === "pending").length === 1 ? "e" : "i"} in attesa`
+                  : "Nessuna segnalazione utente in attesa"}
+              </p>
+              {segnalazioniUtenti.length === 0 ? (
+                <p className={styles.message}>Nessuna segnalazione utente.</p>
+              ) : (
+                <div className={reportStyles.reportList}>
+                  {segnalazioniUtenti
+                    .filter(s => statusFilter === "all" || s.segnalazione.stato === statusFilter)
+                    .map(entry => (
+                      <TrekSegnalazioneCard
+                        key={entry._id}
+                        trekId={0}
+                        trekName=""
+                        entry={entry}
+                        actionLoading={utentiActionLoading}
+                        onAction={handleUtentiAction}
+                      />
+                    ))}
+                </div>
+              )}
+            </>
+          )}
         </>
       )}
 

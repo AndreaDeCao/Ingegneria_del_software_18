@@ -455,7 +455,7 @@ const getSegnalazioniByTrek = async (req, res) => {
       {
         $match: {
           trekId: trek._id,
-          "segnalazione.tipo": { $exists: true },
+          "segnalazione.tipo": { $exists: true, $ne: "Utente" },
         },
       },
       {
@@ -627,5 +627,70 @@ async function addNotification(userId, type, message, ref = null) {
   }
 }
 
+
+/**
+ * GET /api/diary/segnalazioni-utenti
+ * Restituisce tutte le voci con segnalazione di tipo "Utente".
+ */
+const getSegnalazioniUtenti = async (req, res) => {
+  try {
+    const adminUser = await User.findById(req.userId).select("role");
+    if(!adminUser || adminUser.role !== "admin") {
+      return res.status(403).json({ error: "Accesso riservato agli amministratori" });
+    }
+
+    const entries = await DiaryEntry.aggregate([
+      {
+        $match: {
+          "segnalazione.tipo": "Utente",
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userId",
+          pipeline: [{ $project: { nickname: 1, email: 1, nome: 1, cognome: 1 } }],
+        },
+      },
+      { $addFields: { userId: { $arrayElemAt: ["$userId", 0] } } },
+      {
+        $lookup: {
+          from: "users",
+          localField: "segnalazione.utenteId",
+          foreignField: "_id",
+          as: "reportedUser",
+          pipeline: [{ $project: { nickname: 1, nome: 1, cognome: 1 } }],
+        },
+      },
+      { $addFields: { reportedUser: { $arrayElemAt: ["$reportedUser", 0] } } },
+      { $project: { userId: 1, titolo: 1, data: 1, segnalazione: 1, createdAt: 1, reportedUser: 1 } },
+      {
+        $addFields: {
+          _statoOrdine: {
+            $switch: {
+              branches: [
+                { case: { $eq: ["$segnalazione.stato", "pending"] }, then: 0 },
+                { case: { $eq: ["$segnalazione.stato", "accepted"] }, then: 1 },
+                { case: { $eq: ["$segnalazione.stato", "dismissed"] }, then: 2 },
+              ],
+              default: 0,
+            },
+          },
+        },
+      },
+      { $sort: { _statoOrdine: 1, createdAt: -1 } },
+      { $project: { _statoOrdine: 0 } },
+    ]);
+
+    res.json(entries);
+
+  } catch(err) {
+    console.error("getSegnalazioniUtenti:", err);
+    res.status(500).json({ error: "Errore nel recupero delle segnalazioni utenti" });
+  }
+};
+
 // ── SOSTITUISCI il module.exports esistente con questo ────────────────────────
-module.exports = { getDiary, getEntryById, createEntry, updateEntry, deleteEntry, getDiaryStats, getSegnalazioniByTrek, acceptSegnalazione, dismissSegnalazione, reopenSegnalazione, getSegnalazioniAccettate, };
+module.exports = { getDiary, getEntryById, createEntry, updateEntry, deleteEntry, getDiaryStats, getSegnalazioniByTrek, acceptSegnalazione, dismissSegnalazione, reopenSegnalazione, getSegnalazioniAccettate, getSegnalazioniUtenti };
