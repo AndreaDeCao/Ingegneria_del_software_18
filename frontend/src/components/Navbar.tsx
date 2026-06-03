@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import styles from "./Navbar.module.css";
 import { NavLink, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
@@ -64,6 +64,28 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
   const navigate = useNavigate();
   const isAdmin = user?.role === "admin";
 
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    if (menuOpen) {
+      document.addEventListener("keydown", handleKeyDown);
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [menuOpen]);
+
+
   const handleNavigate = (path: string) => {
     navigate(path);
     setMenuOpen(false);
@@ -71,173 +93,173 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
   }
 
   return(
-  <div style={{ position: "relative" }}>
-    <header className={`${styles.header} ${menuOpen ? styles.menuOpenHeader : ""}`}>
-      <button className={styles.hamburger} onClick={() => setMenuOpen(!menuOpen)}> 
-          {menuOpen ? "✕" : "☰"}
-        </button>
-      <div className={styles.logo} onClick={() => handleNavigate("/")} style={{ cursor: "pointer"}}>
-        <div className={styles.logoIcon}>
-          {theme === "dark" ? <LogoIcon /> : <LogoIconInverted />}
-        </div>
-        
-        <Link to="/" className={styles.logoName}>
-          Dolo<span>Mate</span>
-        </Link>
-      </div>
-
-      <nav className={styles.nav}>
-        {/* Nav links diversi per admin e utente normale */}
-        {isAdmin ? (
-          <>
-            <NavLink
-              to="/treks"
-              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-            >
-              Esplora
-            </NavLink>
-            <NavLink
-              to="/admin/attivita/visualizza"
-              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-            >
-              Attivita
-            </NavLink>
-            {/*<NavLink FIX ME
-              to="/admin/utenti"
-              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-            >
-              Utenti
-            </NavLink> */}
-            <NavLink
-              to="/admin/segnalazioni"
-              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-            >
-              Segnalazioni
-            </NavLink>
-          </>
-        ) : (
-          <>
-            <NavLink
-              to="/treks"
-              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-            >
-              Esplora
-            </NavLink>
-            <NavLink
-              to="/my-treks"
-              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-            >
-              I miei Percorsi
-            </NavLink>
-            <NavLink
-              to="/friends"
-              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-            >
-              Amici
-            </NavLink>
-          </>
-        )}
-
-        {!user ? (
-          <NavLink to="/login" className={styles.navLink}>
-            Login
-          </NavLink>
-        ) : (
-          <button
-            className={styles.navLink}
-            onClick={async () => {
-              await logout();
-              navigate("/", { replace: true });
-            }}
-          >
-            Logout
+    <div style={{ position: "relative" }}>
+      <header className={`${styles.header} ${menuOpen ? styles.menuOpenHeader : ""}`}>
+        <button className={styles.hamburger} onClick={() => setMenuOpen(!menuOpen)}> 
+            {menuOpen ? "✕" : "☰"}
           </button>
-        )}
+        <div className={styles.logo} onClick={() => handleNavigate("/")} style={{ cursor: "pointer"}}>
+          <div className={styles.logoIcon}>
+            {theme === "dark" ? <LogoIcon /> : <LogoIconInverted />}
+          </div>
+          
+          <Link to="/" className={styles.logoName}>
+            Dolo<span>Mate</span>
+          </Link>
+        </div>
 
-        <button className={styles.themeBtn} onClick={onToggleTheme}
-          title="Toggle theme" aria-label="Toggle dark/light mode">
-          {theme === "dark" ? <SunIcon /> : <MoonIcon />}
-        </button>
-        <button className={styles.avatar} onClick={() => handleNavigate("/account/profile")}> 
-          <svg width={20} height={20} viewBox="0 0 24 24" fill="white">
-            <circle cx={12} cy={8} r={4}/>
-            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-          </svg>
-        </button>
-      </nav>
-    </header>
+        <nav className={styles.nav}>
+          {/* Nav links diversi per admin e utente normale */}
+          {isAdmin ? (
+            <>
+              <NavLink
+                to="/treks"
+                className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+              >
+                Esplora
+              </NavLink>
+              <NavLink
+                to="/admin/attivita/visualizza"
+                className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+              >
+                Attivita
+              </NavLink>
+              {/*<NavLink FIX ME
+                to="/admin/utenti"
+                className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+              >
+                Utenti
+              </NavLink> */}
+              <NavLink
+                to="/admin/segnalazioni"
+                className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+              >
+                Segnalazioni
+              </NavLink>
+            </>
+          ) : (
+            <>
+              <NavLink
+                to="/treks"
+                className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+              >
+                Esplora
+              </NavLink>
+              <NavLink
+                to="/my-treks"
+                className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+              >
+                I miei Percorsi
+              </NavLink>
+              <NavLink
+                to="/friends"
+                className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+              >
+                Amici
+              </NavLink>
+            </>
+          )}
 
-    {menuOpen && (
-     <nav className={styles.dropdown}>
-      <DropdownItem
-        label="Account"
-        items={[
-          { label: "Profilo", path: "/account/profile" },
-          { label: "Sicurezza", path: "/account/security" },
-          { label: "Policy/Cookies", path: "/account/policy" },
-          //{ label: "Policy/Cookies", path: "./termini" }, //FIXME: policy e termini stessa cosa? (fix anche in app.tsx)
-        ]}
-        isOpen={openItem === "Account"}
-        onToggle={() => setOpenItem(openItem === "Account" ? null : "Account")}
-        onNavigate={handleNavigate}/>
+          {!user ? (
+            <NavLink to="/login" className={styles.navLink}>
+              Login
+            </NavLink>
+          ) : (
+            <button
+              className={styles.navLink}
+              onClick={async () => {
+                await logout();
+                navigate("/", { replace: true });
+              }}
+            >
+              Logout
+            </button>
+          )}
 
-        {/* Menu hamburger personalizzato per admin */}
-        {isAdmin ? (
-          <>
-            <DropdownItem
-              label="Attivita"
-              items={[
-                { label: "Visualizza Lista Attivita", path: "/attivita/visualizza" },
-                { label: "Crea Nuova Attivita", path: "/attivita/crea" },
-              ]}
-              isOpen={openItem === "AttivitaAdmin"}
-              onToggle={() => setOpenItem(openItem === "AttivitaAdmin" ? null : "AttivitaAdmin")}
-              onNavigate={handleNavigate}/>
+          <button className={styles.themeBtn} onClick={onToggleTheme}
+            title="Toggle theme" aria-label="Toggle dark/light mode">
+            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+          </button>
+          <button className={styles.avatar} onClick={() => handleNavigate("/account/profile")}> 
+            <svg width={20} height={20} viewBox="0 0 24 24" fill="white">
+              <circle cx={12} cy={8} r={4}/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            </svg>
+          </button>
+        </nav>
+      </header>
 
-            <DropdownItem
-              label="Segnalazioni"
-              items={[
-                { label: "Gestione Segnalazioni", path: "/admin/segnalazioni" },
-              ]}
-              isOpen={openItem === "Segnalazioni"}
-              onToggle={() => setOpenItem(openItem === "Segnalazioni" ? null : "Segnalazioni")}
-              onNavigate={handleNavigate}/>
-          </>
-        ) : (
-          <>
-            <DropdownItem
-              label="Diario"
-              items={[
-                { label: "Visualizza Diario", path: "/diario/visualizza" },
-                { label: "Crea Nuova Voce Diario", path: "/diario/crea" },
-              ]}
-              isOpen={openItem === "Diario"}
-              onToggle={() => setOpenItem(openItem === "Diario" ? null : "Diario")}
-              onNavigate={handleNavigate}/>
-
-            <DropdownItem
-              label="Attivita"
-              items={[
-                { label: "Visualizza Lista Attivita", path: "/attivita/visualizza" },
-                { label: "Crea Nuova Attivita", path: "/attivita/crea" },
-              ]}
-              isOpen={openItem === "Attivita"}
-              onToggle={() => setOpenItem(openItem === "Attivita" ? null : "Attivita")}
-              onNavigate={handleNavigate}/>
-          </>
-        )}
-
+      {menuOpen && (
+      <nav className={styles.dropdown} ref={dropdownRef}>
         <DropdownItem
-        label="Versione"
-        items={[
-          { label: "Versione corrente", path: "/versione/corrente" }
-        ]}
-        isOpen={openItem === "Versione"}
-        onToggle={() => setOpenItem(openItem === "Versione" ? null : "Versione")}
-        onNavigate={handleNavigate}/>
-        
-     </nav>
-    )}
-  </div>
+          label="Account"
+          items={[
+            { label: "Profilo", path: "/account/profile" },
+            { label: "Sicurezza", path: "/account/security" },
+            { label: "Policy/Cookies", path: "/account/policy" },
+            //{ label: "Policy/Cookies", path: "./termini" }, //FIXME: policy e termini stessa cosa? (fix anche in app.tsx)
+          ]}
+          isOpen={openItem === "Account"}
+          onToggle={() => setOpenItem(openItem === "Account" ? null : "Account")}
+          onNavigate={handleNavigate}/>
+
+          {/* Menu hamburger personalizzato per admin */}
+          {isAdmin ? (
+            <>
+              <DropdownItem
+                label="Attivita"
+                items={[
+                  { label: "Visualizza Lista Attivita", path: "/attivita/visualizza" },
+                  { label: "Crea Nuova Attivita", path: "/attivita/crea" },
+                ]}
+                isOpen={openItem === "AttivitaAdmin"}
+                onToggle={() => setOpenItem(openItem === "AttivitaAdmin" ? null : "AttivitaAdmin")}
+                onNavigate={handleNavigate}/>
+
+              <DropdownItem
+                label="Segnalazioni"
+                items={[
+                  { label: "Gestione Segnalazioni", path: "/admin/segnalazioni" },
+                ]}
+                isOpen={openItem === "Segnalazioni"}
+                onToggle={() => setOpenItem(openItem === "Segnalazioni" ? null : "Segnalazioni")}
+                onNavigate={handleNavigate}/>
+            </>
+          ) : (
+            <>
+              <DropdownItem
+                label="Diario"
+                items={[
+                  { label: "Visualizza Diario", path: "/diario/visualizza" },
+                  { label: "Crea Nuova Voce Diario", path: "/diario/crea" },
+                ]}
+                isOpen={openItem === "Diario"}
+                onToggle={() => setOpenItem(openItem === "Diario" ? null : "Diario")}
+                onNavigate={handleNavigate}/>
+
+              <DropdownItem
+                label="Attivita"
+                items={[
+                  { label: "Visualizza Lista Attivita", path: "/attivita/visualizza" },
+                  { label: "Crea Nuova Attivita", path: "/attivita/crea" },
+                ]}
+                isOpen={openItem === "Attivita"}
+                onToggle={() => setOpenItem(openItem === "Attivita" ? null : "Attivita")}
+                onNavigate={handleNavigate}/>
+            </>
+          )}
+
+          <DropdownItem
+          label="Versione"
+          items={[
+            { label: "Versione corrente", path: "/versione/corrente" }
+          ]}
+          isOpen={openItem === "Versione"}
+          onToggle={() => setOpenItem(openItem === "Versione" ? null : "Versione")}
+          onNavigate={handleNavigate}/>
+          
+      </nav>
+      )}
+    </div>
   );
 }

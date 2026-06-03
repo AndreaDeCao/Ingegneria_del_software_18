@@ -5,7 +5,7 @@ import TrekCardEsplora from "../../components/TrekCardEsplora";
 import type { Trek } from "../../types/Trek";
 
 import styles from "./Treks.module.css";
-import { SkeletonTrekList } from "../../components/SkeletonLoader";
+import { SkeletonTrekList, EmptyState, ErrorState  } from "../../components/SkeletonLoader";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -337,12 +337,12 @@ return (
       {loading ? (
         <SkeletonTrekList count={7} />
       ) : error ? (
-        <p className={styles.messageError}>Impossibile caricare i percorsi: {error}</p>
+        <ErrorState message="Impossibile caricare i percorsi. Riprova più tardi." />
       ) : (
         <>
           <p className={styles.count}>{filtered.length} Percorsi trovati</p>
           {filtered.length === 0 ? (
-            <p className={styles.message}>Nessun percorso trovato</p>
+            <EmptyState message="Nessun percorso trovato." />
           ) : (
             paginated.map((trek) => (
               <TrekCardEsplora key={trek.id} trek={trek} />

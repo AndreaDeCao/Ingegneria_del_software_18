@@ -9,8 +9,7 @@ import type { Event } from "../../types/Events";
 import { Link } from "react-router-dom";
 
 import styles from "../../App.module.css";
-// import { PageLoader } from "../../components/SkeletonLoader";
-import { SkeletonCardRow, SkeletonActivityList  } from "../../components/SkeletonLoader";
+import { SkeletonCardRow, SkeletonActivityList,  EmptyState, ErrorState  } from "../../components/SkeletonLoader";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -72,7 +71,8 @@ export default function PublicHomepage() {
       }
       return res.json();
     })
-    .then((data) => setEvents(data)).catch((err: Error) => {
+    .then((data) => setEvents(data))
+    .catch((err: Error) => {
       console.error("Errore fetch eventi:", err);
     })
     .finally(() => setLoadingEvents(false));
@@ -100,9 +100,9 @@ export default function PublicHomepage() {
             {loadingTreks ? (
               <SkeletonCardRow count={5} />
             ) : error ? (
-              <p className={styles.messageError}>Impossibile caricare i percorsi: {error}</p>
+              <ErrorState message="Impossibile caricare i percorsi. Riprova più tardi." />
             ) : treks.length === 0 ? (
-              <p className={styles.message}>Nessun percorso trovato nelle vicinanze.</p>
+              <EmptyState message="Nessun percorso trovato." />
             ) : (
               <div className={styles.cardsRow}>
                 {topRatedTreks.map((trek) => (
@@ -129,7 +129,7 @@ export default function PublicHomepage() {
             {loadingEvents ? (
               <SkeletonCardRow count={5} />
             ) : events.length === 0 ? (
-              <p className={styles.message}>Nessun evento disponibile.</p>
+              <EmptyState message="Nessun evento disponibile al momento." />
             ) : (
               <div className={styles.cardsRow}>
                 {events.slice(0, MAX_EVENT_CARDS).map((event) => (
@@ -149,7 +149,7 @@ export default function PublicHomepage() {
             <Link to="/attivita/visualizza" className={styles.sectionTitle}>
               Attività in programma
             </Link>
-            {!loadingActivities && (
+            {!loadingActivities && activities.length > 0 && (
               <span className={styles.sectionCount}>{MAX_ACTIVITY_CARDS} attività</span>
             )}
           </div>
@@ -157,7 +157,7 @@ export default function PublicHomepage() {
           {loadingActivities ? (
             <SkeletonActivityList count={4} />
           ) : activities.length === 0 ? (
-            <p className={styles.message}>Nessuna attività trovata.</p>
+            <EmptyState message="Nessuna attività in programma." />
           ) : (
             <div className={styles.activitiesColumn}>
               {activities.slice(0, MAX_ACTIVITY_CARDS).map((activity) => (

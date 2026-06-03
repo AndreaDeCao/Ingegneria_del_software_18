@@ -16,9 +16,9 @@
  *   {trekLoading ? <SkeletonCardRow count={5} /> : <TrekCards />}
  */
 
-import React from "react";
+// import React from "react";
 
-// ─── CSS IN JS (iniettato una volta sola) ────────────────────────────────────
+// --- CSS IN JS (iniettato una volta sola) ------------------------------------
 
 const STYLES = `
   @keyframes dolomate-shimmer {
@@ -261,7 +261,7 @@ if (typeof document !== "undefined" && !document.getElementById("dlm-skeleton-st
   document.head.appendChild(tag);
 }
 
-// ─── PAGE LOADER ─────────────────────────────────────────────────────────────
+// --- PAGE LOADER -----------------------------------
 
 /**
  * Loader a pagina intera con logo DoloMate animato.
@@ -283,7 +283,7 @@ export function PageLoader() {
   );
 }
 
-// ─── SKELETON CARD (Trek) ────────────────────────────────────────────────────
+// --- SKELETON CARD (Trek) --------------------------
 
 /**
  * Skeleton di una singola TrekCard.
@@ -351,7 +351,7 @@ export function SkeletonTrekList({ count = 7 }: { count?: number }) {
   );
 }
 
-// ─── SKELETON STAT ───────────────────────────────────────────────────────────
+// --- SKELETON STAT -------
 
 /**
  * Skeleton di una singola stat box.
@@ -378,7 +378,7 @@ export function SkeletonStatRow() {
   );
 }
 
-// ─── SKELETON ACTIVITY (sidebar destra) ─────────────────────────────────────
+// --- SKELETON ACTIVITY (sidebar destra) -----------
 
 /**
  * Skeleton di una activity card nella sidebar.
@@ -411,7 +411,7 @@ export function SkeletonActivityList({ count = 3 }: { count?: number }) {
   );
 }
 
-// ─── SKELETON TEXT (generico) ────────────────────────────────────────────────
+// --- SKELETON TEXT (generico) --------
 
 /**
  * Linee di testo skeleton generiche.
@@ -427,6 +427,31 @@ export function SkeletonText({ lines = 3 }: { lines?: number }) {
           style={{ height: 13, width: widths[i % widths.length] }}
         />
       ))}
+    </div>
+  );
+}
+
+
+// --- EMPTY / ERROR STATE -------------
+
+export function EmptyState({ message }: { icon?: string; message: string }) {
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center",
+      gap: 8, padding: "2rem 0", opacity: 0.6,
+    }}>
+      <p style={{ fontSize: 14, color: "var(--text-secondary)", textAlign: "center" }}>{message}</p>
+    </div>
+  );
+}
+
+export function ErrorState({ message }: { message: string }) {
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center",
+      gap: 8, padding: "2rem 0",
+    }}>
+      <p style={{ fontSize: 14, color: "var(--text-secondary)", textAlign: "center" }}> {message} </p>
     </div>
   );
 }
