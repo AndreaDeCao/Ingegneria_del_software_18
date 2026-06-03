@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
 import ReportCard from "../../components/ReportCard";
+
 import styles from "../../App.module.css";
+import { SkeletonReportCard, SkeletonStat  } from "../../components/SkeletonLoader";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 const MAX_PENDING_REPORTS = 5;
@@ -139,7 +141,9 @@ export default function AdminHomepage() {
           <p className={styles.sectionSubtitle}>Attività con segnalazioni ancora da esaminare.</p>
 
           {loading ? (
-            <p className={styles.adminMessage}>Caricamento...</p>
+            <>
+              <SkeletonReportCard />
+            </>
           ) : pendingActivityReports.length === 0 ? (
             <p className={styles.adminMessage}>Nessuna segnalazione attività in attesa.</p>
           ) : (
@@ -166,8 +170,10 @@ export default function AdminHomepage() {
           <p className={styles.sectionSubtitle}>Percorsi con segnalazioni da parte degli utenti ancora da esaminare.</p>
 
           {loading ? (
-            <p className={styles.adminMessage}>Caricamento...</p>
-          ) : pendingTrekReports.length === 0 ? (
+            <>
+              <SkeletonReportCard />
+            </>
+          ) : pendingActivityReports.length === 0 ? (
             <p className={styles.adminMessage}>Nessuna segnalazione percorso in attesa.</p>
           ) : (
             <>
@@ -189,7 +195,20 @@ export default function AdminHomepage() {
             <h2 className={styles.sectionTitle}>Segnalazioni Utenti</h2>
           </div>
           <p className={styles.sectionSubtitle}>Utenti con segnalazioni ancora da esaminare.</p>
-          <p className={styles.adminMessage}>Nessuna segnalazione utente in attesa.</p>
+          {/* <p className={styles.adminMessage}>Nessuna segnalazione utente in attesa.</p> */}
+          {loading ? (
+            <>
+              <SkeletonReportCard />
+            </>
+          ) : pendingActivityReports.length === 0 ? (
+            <p className={styles.adminMessage}>Nessuna segnalazione percorso in attesa.</p>
+          ) : (
+            <>
+              <div className={styles.pendingReportList}>
+                <p> temptemptemptemptemptemptemptemp</p>
+              </div>
+            </>
+          )}
 
         </section>
 
@@ -200,27 +219,36 @@ export default function AdminHomepage() {
           </div>
 
           <div className={styles.statsGrid}>
+            {loading ? (
+              <div style={{ display: "column", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <SkeletonStat />
+                <SkeletonStat />
+                <SkeletonStat />
+                <SkeletonStat />
+              </div>
+            ) : (
+              <>
+                <Link to="/admin/segnalazioni" className={styles.statCard} style={{ textDecoration: "none" }}>
+                  <span className={styles.statLabel}>Totale in attesa</span>
+                  <span className={styles.statValue}>{totalPendingCount}</span>
+                </Link>
 
-            <Link to="/admin/segnalazioni" className={styles.statCard} style={{ textDecoration: "none" }}>
-              <span className={styles.statLabel}>Totale in attesa</span>
-              <span className={styles.statValue}>{totalPendingCount}</span>
-            </Link>
+                <Link to="/admin/segnalazioni?tab=attivita" className={styles.statCard} style={{ textDecoration: "none" }}>
+                  <span className={styles.statLabel}>Attività con segnalazioni</span>
+                  <span className={styles.statValue}>{pendingActivitiesCount}</span>
+                </Link>
 
-            <Link to="/admin/segnalazioni?tab=attivita" className={styles.statCard} style={{ textDecoration: "none" }}>
-              <span className={styles.statLabel}>Attività con segnalazioni</span>
-              <span className={styles.statValue}>{pendingActivitiesCount}</span>
-            </Link>
+                <Link to="/admin/segnalazioni?tab=percorsi" className={styles.statCard} style={{ textDecoration: "none" }}>
+                  <span className={styles.statLabel}>Percorsi segnalati</span>
+                  <span className={styles.statValue}>{pendingTreksCount}</span>
+                </Link>
 
-            <Link to="/admin/segnalazioni?tab=percorsi" className={styles.statCard} style={{ textDecoration: "none" }}>
-              <span className={styles.statLabel}>Percorsi segnalati</span>
-              <span className={styles.statValue}>{pendingTreksCount}</span>
-            </Link>
-
-            <Link to="/admin/segnalazioni?filter=user" className={styles.statCard} style={{ textDecoration: "none" }}>
-              <span className={styles.statLabel}>Utenti segnalati</span>
-              <span className={styles.statValue}>0</span>
-            </Link>
-
+                <Link to="/admin/segnalazioni?filter=user" className={styles.statCard} style={{ textDecoration: "none" }}>
+                  <span className={styles.statLabel}>Utenti segnalati</span>
+                  <span className={styles.statValue}>0</span>
+                </Link>
+              </>
+            )}
           </div>
 
         </section>

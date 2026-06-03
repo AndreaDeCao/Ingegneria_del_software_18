@@ -3,7 +3,9 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
 import Modal from "../../components/Modal/Modal";
+
 import styles from "./ProfilePage.module.css";
+import { PageLoader } from "../../components/SkeletonLoader";
 
 const VERIFY_MESSAGES: Record<string, { text: string; type: "success" | "error" }> = { 
   success: { text: "Email verificata con successo.",          type: "success" },
@@ -436,9 +438,7 @@ export default function ProfilePage() {
       }
     }
 
-    if(loading) {
-      return <p className={styles.message}>Caricamento profilo...</p>
-    }
+    if (loading) return <PageLoader />;
 
     return (
       <main className={styles.main}>

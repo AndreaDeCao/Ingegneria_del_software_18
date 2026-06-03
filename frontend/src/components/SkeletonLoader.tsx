@@ -455,3 +455,23 @@ export function ErrorState({ message }: { message: string }) {
     </div>
   );
 }
+
+export function SkeletonReportCard() {
+  return (
+    <div className="dlm-skeleton-activity">
+      {/* Badge row: "Attività" + "In attesa" */}
+      <div className="dlm-skeleton-activity-tags">
+        <div className="dlm-skeleton" style={{ height: 22, width: 70, borderRadius: 99 }} />
+        <div className="dlm-skeleton" style={{ height: 22, width: 80, borderRadius: 99 }} />
+      </div>
+      {/* Titolo */}
+      <div className="dlm-skeleton" style={{ height: 18, width: "60%" }} />
+      {/* Box motivo */}
+      <div className="dlm-skeleton" style={{ height: 36, width: "100%", borderRadius: 8 }} />
+      {/* Righe organizzatore/segnalato/totale */}
+      <div className="dlm-skeleton" style={{ height: 12, width: "75%" }} />
+      <div className="dlm-skeleton" style={{ height: 12, width: "65%" }} />
+      <div className="dlm-skeleton" style={{ height: 12, width: "50%" }} />
+    </div>
+  );
+}

@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
 import Modal from "../../components/Modal/Modal";
+
 import styles from "./UtentiPageAdmin.module.css";
+import { PageLoader } from "../../components/SkeletonLoader";
 
 // Type segnalazione utente
 type UserReport = {
@@ -244,13 +246,7 @@ export default function AdminUtentiPage() {
     );
   }
 
-  if (loading) {
-    return (
-      <main className={styles.main}>
-        <p className={styles.message}>Caricamento utenti...</p>
-      </main>
-    );
-  }
+  if (loading) return <PageLoader />
 
   if (error) {
     return (
