@@ -326,3 +326,190 @@
   font-size: 13px;
   color: var(--text-secondary);
 }
+
+
+/* Azioni */
+.actionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.suspendRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.daysInput {
+  width: 60px;
+  height: 34px;
+  padding: 0 8px;
+  font-size: 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  text-align: center;
+  outline: none;
+}
+
+.daysInput:focus {
+  border-color: var(--accent);
+}
+
+.daysLabel {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.btnPrimary {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btnPrimary:hover {
+  opacity: 0.85;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnWarning {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid #e67e22;
+  background: var(--card-bg);
+  color: #a85c00;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btnWarning:hover {
+  background: #e67e22;
+  color: white;
+}
+
+.btnWarning:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnDanger {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid #c0392b;
+  background: var(--card-bg);
+  color: #c0392b;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btnDanger:hover {
+  background: #c0392b;
+  color: white;
+}
+
+.btnDanger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn:hover {
+  background: var(--accent-light);
+  color: var(--accent-text);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.empty {
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding: 8px 0;
+}
+
+.message {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.messageError {
+  font-size: 14px;
+  color: #c0392b;
+  margin: 0;
+}
+
+.loadingMsg {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-family: var(--font-body);
+}
+
+.bannerSuccess {
+  background: #eafaf1;
+  color: #1e8449;
+  border: 1px solid #1e8449;
+}
+
+.bannerError {
+  background: #fde2e4;
+  color: #ae1d29;
+  border: 1px solid #ae1d29;
+}
+
+.bannerClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  color: inherit;
+  padding: 0;
+  flex-shrink: 0;
+}
