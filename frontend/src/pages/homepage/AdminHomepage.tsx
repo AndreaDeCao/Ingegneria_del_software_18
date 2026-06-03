@@ -262,21 +262,22 @@ export default function AdminHomepage() {
                   <span className={styles.statValue}>{totalPendingCount}</span>
                 </Link>
 
-            <Link to="/admin/segnalazioni?tab=attivita" className={styles.statCard} style={{ textDecoration: "none" }}>
-              <span className={styles.statLabel}>Attività segnalate in attesa</span>
-              <span className={styles.statValue}>{pendingActivitiesCount}</span>
-            </Link>
+                <Link to="/admin/segnalazioni?tab=attivita" className={styles.statCard} style={{ textDecoration: "none" }}>
+                  <span className={styles.statLabel}>Attività segnalate in attesa</span>
+                  <span className={styles.statValue}>{pendingActivitiesCount}</span>
+                </Link>
 
-            <Link to="/admin/segnalazioni?tab=percorsi" className={styles.statCard} style={{ textDecoration: "none" }}>
-              <span className={styles.statLabel}>Percorsi segnalati in attesa</span>
-              <span className={styles.statValue}>{pendingTreksCount}</span>
-            </Link>
+                <Link to="/admin/segnalazioni?tab=percorsi" className={styles.statCard} style={{ textDecoration: "none" }}>
+                  <span className={styles.statLabel}>Percorsi segnalati in attesa</span>
+                  <span className={styles.statValue}>{pendingTreksCount}</span>
+                </Link>
 
-            <Link to="/admin/utenti?tab=utenti" className={styles.statCard} style={{ textDecoration: "none" }}>
-              <span className={styles.statLabel}>Utenti segnalati in attesa</span>
-              <span className={styles.statValue}>{pendingUsersCount}</span>
-            </Link>
-
+                <Link to="/admin/utenti?tab=utenti" className={styles.statCard} style={{ textDecoration: "none" }}>
+                  <span className={styles.statLabel}>Utenti segnalati in attesa</span>
+                  <span className={styles.statValue}>{pendingUsersCount}</span>
+                </Link>
+              </>
+            )}
           </div>
 
         </section>
