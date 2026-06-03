@@ -100,7 +100,7 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
               to="/treks"
               className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
             >
-              Esplora
+              Percorsi
             </NavLink>
             <NavLink
               to="/admin/attivita/visualizza"
@@ -108,12 +108,6 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
             >
               Attivita
             </NavLink>
-            {/*<NavLink FIX ME
-              to="/admin/utenti"
-              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-            >
-              Utenti
-            </NavLink> */}
             <NavLink
               to="/admin/segnalazioni"
               className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
@@ -149,7 +143,8 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
             Login
           </NavLink>
         ) : (
-          <button
+          <NavLink
+            to="/"
             className={styles.navLink}
             onClick={async () => {
               await logout();
@@ -157,7 +152,7 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
             }}
           >
             Logout
-          </button>
+          </NavLink>
         )}
 
         <button className={styles.themeBtn} onClick={onToggleTheme}
@@ -179,9 +174,6 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
         label="Account"
         items={[
           { label: "Profilo", path: "/account/profile" },
-          { label: "Sicurezza", path: "/account/security" },
-          { label: "Policy/Cookies", path: "/account/policy" },
-          //{ label: "Policy/Cookies", path: "./termini" }, //FIXME: policy e termini stessa cosa? (fix anche in app.tsx)
         ]}
         isOpen={openItem === "Account"}
         onToggle={() => setOpenItem(openItem === "Account" ? null : "Account")}

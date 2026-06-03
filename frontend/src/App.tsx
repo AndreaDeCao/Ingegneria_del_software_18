@@ -27,8 +27,6 @@ import Contatti from "./pages/informativa/Contatti";
 
 
 import ProfilePage from "./pages/account/ProfilePage";
-import SecurityPage from "./pages/account/SecurityPage";
-import PolicyPage from "./pages/account/PolicyPage";
 
 import VisualizzaDiarioPage from "./pages/diario/VisualizzaDiarioPage";
 import CreaVoceDiarioPage from "./pages/diario/CreaVoceDiarioPage";
@@ -110,8 +108,6 @@ export default function App() {
                   {/* Route protette — menu a tendina con sezione dinamica */}
                   
                   <Route path="/account/profile" element={<AppLayout><ProtectedRoute><ProfilePage /></ProtectedRoute></AppLayout>} />
-                  <Route path="/account/security" element={<AppLayout><ProtectedRoute><SecurityPage /></ProtectedRoute></AppLayout>} />
-                  <Route path="/account/policy" element={<AppLayout><ProtectedRoute><PolicyPage /></ProtectedRoute></AppLayout>} />
                   {/*<Route path="informativa/termini"  element={<AppLayout><Termini /></AppLayout>} />*/} {/* FIX ME: policy e termini stessa cosa? (fix anche in navbar.tsx) */}
                     
                   <Route path="/diario/visualizza" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><VisualizzaDiarioPage /></ProtectedRoute></AppLayout>} />
