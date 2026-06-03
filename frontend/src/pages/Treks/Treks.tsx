@@ -5,7 +5,7 @@ import TrekCardEsplora from "../../components/TrekCardEsplora";
 import type { Trek } from "../../types/Trek";
 
 import styles from "./Treks.module.css";
-import { SkeletonCardColumn } from "../../components/SkeletonLoader";
+import { SkeletonTrekList } from "../../components/SkeletonLoader";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -335,7 +335,7 @@ return (
     {/* Risultati */}
     <div className={styles.results}>
       {loading ? (
-        <SkeletonCardColumn count={7} />
+        <SkeletonTrekList count={7} />
       ) : error ? (
         <p className={styles.messageError}>Impossibile caricare i percorsi: {error}</p>
       ) : (

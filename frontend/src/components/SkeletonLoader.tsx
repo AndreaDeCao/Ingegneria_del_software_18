@@ -198,17 +198,56 @@ const STYLES = `
     gap: 16px;
     overflow: hidden;
   }
+    
+  /* ── Trek list card ── */
+  .dlm-skeleton-trek-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    width: 100%;
+    padding: 0; 
+  }
+
+  .dlm-skeleton-trek-card {
+    display: flex;
+    background: var(--card-bg, #fff);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    width: 100%;
+    height: 160px;
+    isolation: isolate;
+  }
+
+  [data-theme="dark"] .dlm-skeleton-trek-card,
+  .dark .dlm-skeleton-trek-card {
+    --card-bg: #242424;
+  }
+
+  .dlm-skeleton-trek-card-img {
+    width: 200px;
+    flex-shrink: 0;
+    height: auto;     
+   align-self: stretch;
+  }
+
+  .dlm-skeleton-trek-card-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .dlm-skeleton-trek-card-tags {
+    display: flex;
+    gap: 8px;
+  }
 
   .dlm-skeleton-stat-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-  }
-
-  /* ── column layout ── */
-  .dlm-skeleton-card-column-scroll {
-    display: flex;
-    flex-direction: column;
     gap: 16px;
   }
 
@@ -282,14 +321,31 @@ export function SkeletonCardRow({ count = 5 }: { count?: number }) {
   );
 }
 
-/**
- * Colonna di N SkeletonCard (per la sezione "Di tendenza").
- */
-export function SkeletonCardColumn({ count = 7 }: { count?: number }) {
+export function SkeletonTrekCard() {
   return (
-    <div className="dlm-skeleton-card-column-scroll">
+    <div className="dlm-skeleton-trek-card">
+      <div className="dlm-skeleton dlm-skeleton-trek-card-img" />
+      <div className="dlm-skeleton-trek-card-body">
+        <div className="dlm-skeleton" style={{ height: 20, width: "55%" }} />
+        <div className="dlm-skeleton-trek-card-tags">
+          <div className="dlm-skeleton" style={{ height: 24, width: 70, borderRadius: 99 }} />
+          <div className="dlm-skeleton" style={{ height: 24, width: 90, borderRadius: 99 }} />
+          <div className="dlm-skeleton" style={{ height: 24, width: 70, borderRadius: 99 }} />
+          <div className="dlm-skeleton" style={{ height: 24, width: 60, borderRadius: 99 }} />
+        </div>
+        <div className="dlm-skeleton-trek-card-tags">
+          <div className="dlm-skeleton" style={{ height: 18, width: 120, borderRadius: 99 }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function SkeletonTrekList({ count = 7 }: { count?: number }) {
+  return (
+    <div className="dlm-skeleton-trek-list">
       {Array.from({ length: count }).map((_, i) => (
-        <SkeletonCard key={i} />
+        <SkeletonTrekCard key={i} />
       ))}
     </div>
   );

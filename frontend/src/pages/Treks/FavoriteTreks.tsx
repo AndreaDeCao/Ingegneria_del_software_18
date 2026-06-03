@@ -7,7 +7,7 @@ import TrekCardFavorite from "../../components/TrekCardFavorite";
 import type { Trek } from "../../types/Trek";
 
 import styles from "./Treks.module.css";
-import { SkeletonCardColumn } from "../../components/SkeletonLoader";
+import { SkeletonTrekList } from "../../components/SkeletonLoader";
 
 /**
  * Converte stringa durata nel formato "X ore Y min" in minuti totali.
@@ -480,7 +480,7 @@ export default function FavoriteTreks() {
       {/* RISULTATI */}
       <div className={styles.results}>
         {loadingTreks ? (
-          <SkeletonCardColumn count={7} />
+          <SkeletonTrekList count={7} />
         ) : error ? (
           <p className={styles.messageError}>Impossibile caricare i percorsi: {error}</p>
         ) : (
