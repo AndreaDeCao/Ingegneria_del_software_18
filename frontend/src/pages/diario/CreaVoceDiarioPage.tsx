@@ -223,8 +223,8 @@ export default function CreaVoceDiarioPage() {
       await http("/api/diary", { method: "POST", body: JSON.stringify(payload) });
       setSuccess(true);
       setTimeout(() => navigate("/diario"), 1200);
-    } catch (err: any) {
-      const msg = err.message ?? "";
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
       if (msg.includes("413") || msg.toLowerCase().includes("large"))
         setErrors(["Payload troppo grande. Riduci il file GPX o le foto."]);
       else setErrors([msg || "Errore nel salvataggio"]);
@@ -438,7 +438,7 @@ export default function CreaVoceDiarioPage() {
 
                 {segnalazioneTipo === "Utente" && (
                   <div className={styles.fieldGroup} style={{ marginTop: "12px" }}>
-                    <label className={styles.label}>Utente da segnalare *</label>
+                    <label className={styles.label}>Utente da segnalare</label>
                     {segnalazioneUtente ? (
                       <div className={styles.userItem} style={{ cursor: "default" }}>
                         <div className={styles.userAvatar}>

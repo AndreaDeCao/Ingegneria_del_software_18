@@ -479,7 +479,17 @@ const getSegnalazioniByTrek = async (req, res) => {
         },
       },
       { $addFields: { userId: { $arrayElemAt: ["$userId", 0] } } },
-      { $project: { userId: 1, titolo: 1, data: 1, segnalazione: 1, createdAt: 1 } },
+      {
+        $lookup: {
+          from: "users",
+          localField: "segnalazione.utenteId",
+          foreignField: "_id",
+          as: "utentePopulated",
+          pipeline: [{ $project: { nickname: 1, nome: 1, cognome: 1 } }],
+        },
+      },
+      { $addFields: { utentePopulated: { $arrayElemAt: ["$utentePopulated", 0] }}},
+      { $project: { userId: 1, titolo: 1, data: 1, segnalazione: 1, createdAt: 1, utentePopulated: 1 } },
       {
         // pending=0, accepted=1, dismissed=2 → ordine naturale per l'admin
         $addFields: {

@@ -19,9 +19,10 @@ export type DiaryEntry = {
     avatarUrl: string;
   }[];
   segnalazione?: {
-    tipo: "Sentiero danneggiato" | "Neve/ghiaccio" | "Sentiero chiuso" | "Fauna pericolosa" | "Altro";
+    tipo: "Utente" | "Sentiero danneggiato" | "Neve/ghiaccio" | "Sentiero chiuso" | "Fauna pericolosa" | "Altro";
     descrizione?: string;
     gestitaDaAdmin?: boolean;
+    utenteId?: string;
   };
 
   trekId?: {                // popolato via .populate() dal backend
@@ -54,6 +55,7 @@ export type CreateDiaryEntryPayload = {
   segnalazione?: {
     tipo: string;
     descrizione?: string;
+    utenteId?: string;
   };
 };
 
@@ -68,4 +70,10 @@ export type SegnalazioneEntry = {
     stato: "pending" | "accepted" | "dismissed";
     gestitaDaAdmin: boolean;
   };
+  utentePopulated?: {
+    _id: string;
+    nickname?: string;
+    nome?: string;
+    cognome?: string;
+  } | null;
 };

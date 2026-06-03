@@ -674,20 +674,22 @@ exports.searchUsers = async (req, res) => {
     }
 
     const re = new RegExp(query, "i");
-    const users = await User.find({
-      _id: { $ne: req.userId },
+    const users = await User.collection.find({
+      _id: { $ne: new mongoose.Types.ObjectId(req.userId) },
       role: "user",
       $or: [
-        { nickname: re },
-        { nome: re },
-        { cognome: re },
+        { nickname: { $regex: query, $options: "i" } },
+        { nome: { $regex: query, $options: "i" } },
+        { cognome: { $regex: query, $options: "i" } },
       ],
-    })
-    .select("_id nome cognome nickname avatarUrl").limit(10);
+    }, {
+      projection: { nome: 1, cognome: 1, nickname: 1, avatarUrl: 1 }
+    }).limit(10).toArray();
 
     res.json(users);
 
   } catch(err) {
     res.status(500).json({ error: err.message });
   }
+
 };
