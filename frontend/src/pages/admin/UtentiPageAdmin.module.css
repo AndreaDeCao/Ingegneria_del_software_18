@@ -513,3 +513,58 @@
   padding: 0;
   flex-shrink: 0;
 }
+
+@media (max-width: 768px) {
+  .main {
+    width: 100%;
+    padding: 1rem;
+    gap: 20px;
+  }
+
+  .filtersRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .select {
+    width: 100%;
+  }
+
+  .card {
+    flex-wrap: wrap;
+  }
+
+  .cardRight {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .modalUserInfo {
+    flex-wrap: wrap;
+  }
+
+  .actionsRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .suspendRow {
+    flex-wrap: wrap;
+  }
+
+  .btnPrimary,
+  .btnWarning,
+  .btnDanger,
+  .btn {
+    width: 100%;
+    text-align: center;
+  }
+}

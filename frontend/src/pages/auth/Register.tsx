@@ -118,9 +118,9 @@ export default function Register() {
         <label>
           <input type="checkbox" required />
           {" "}Ho letto e accetto la{" "}
-          <a href="/privacy" target="_blank">Privacy Policy</a>
+          <a href="/privacy" target="_blank" className={styles.link}>Privacy Policy</a>
           {" "}e i{" "}
-          <a href="/termini" target="_blank">Termini di servizio</a>
+          <a href="/termini" target="_blank" className={styles.link}>Termini di servizio</a>
         </label>
 
         <TurnstileWidget
