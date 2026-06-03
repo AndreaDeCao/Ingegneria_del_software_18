@@ -1,101 +1,40 @@
 import { useAuth } from "../auth/AuthProvider";
-
 import styles from "./TrekCardEsplora.module.css";
 import type { Trek } from "../types/Trek";
 import { Link } from "react-router-dom";
 import StarRatingDisplay from "./StarRating";
 
-/**
- * In questo componente, definiamo un mapping tra i valori di difficoltà e le classi CSS corrispondenti.
- * Questo ci permette di applicare stili diversi a seconda della difficoltà del trek.
- * In futuro, potremmo voler aggiungere altre difficoltà o modificare gli stili, e questo approccio ci rende più flessibili.
- */
-const difficultyStyle: Record<Trek["difficulty"], string> = { 
-  Facile:   styles.badgeEasy,
-  Medio: styles.badgeMedium,
-  Difficile:   styles.badgeHard,
+const difficultyStyle: Record<Trek["difficulty"], string> = {
+  Facile:    styles.badgeEasy,
+  Medio:     styles.badgeMedium,
+  Difficile: styles.badgeHard,
 };
 
-/**
- * funzione per applicare il badge corretto in base alla durata
- * @param duration contiene la durata del trek con formato 'hh ore mm min'
- * @returns lo stile da applicare
- */
 function getDurationStyle(duration: string): string {
-  const hours   = parseInt(duration.match(/(\d+)\s*or[ae]/)?.[1]  ?? "0");
-  const minutes = parseInt(duration.match(/(\d+)\s*min/)?.[1]     ?? "0");
+  const hours   = parseInt(duration.match(/(\d+)\s*or[ae]/)?.[1] ?? "0");
+  const minutes = parseInt(duration.match(/(\d+)\s*min/)?.[1]    ?? "0");
   const total   = hours * 60 + minutes;
-
-  // console.log("ore:", hours, "minuti:", minutes, "totale:", total);
-
-  if (total < 60)  return styles.badgeEasy;    // < 1 ora      → verde
-  if (total <= 150) return styles.badgeMedium; // 1 ora a 2 ore 30 min   → giallo
-  return styles.badgeHard;                     // > 2ora e 30 min    → rosso
+  if (total < 60)   return styles.badgeEasy;
+  if (total <= 150) return styles.badgeMedium;
+  return styles.badgeHard;
 }
 
-/**
- * funzione per applicare il badge corretto in base alla lunghezza
- * @param lengthKm contiene la lunghezza in chilometri del percorso
- * @returns lo stile da applicare
- */
 function getLengthStyle(lengthKm: number): string {
-
-  if (lengthKm < 3.5)  return styles.badgeEasy;    // < 3 km       → verde
-  if (lengthKm <= 8) return styles.badgeMedium; // da 3 km a 7,5 km   → giallo
-  return styles.badgeHard;                     // > 7,5 km    → rosso
+  if (lengthKm < 3.5)  return styles.badgeEasy;
+  if (lengthKm <= 8)   return styles.badgeMedium;
+  return styles.badgeHard;
 }
 
-/**
- * funzione per applicare il badge corretto in base al dislivello
- * @param elevationGain contiene il dislivello in metri del percorso
- * @returns lo stile da applicare
- */
-function getElevationGainStyle(elevationGain: string): string {
-  // console.log(elevationGain);
-  const elevation = parseInt(elevationGain);
-
-  if (elevation < 300)  return styles.badgeEasy;    // < 300 m      → verde
-  if (elevation <= 700) return styles.badgeMedium; // da 300 m a 700 m   → giallo
-  return styles.badgeHard;                     // > 700 m    → rosso
+function getElevationStyle(elevationGain: string): string {
+  const e = parseInt(elevationGain);
+  if (e < 300)   return styles.badgeEasy;
+  if (e <= 700)  return styles.badgeMedium;
+  return styles.badgeHard;
 }
 
-/**
- * Rating percorso con stelle
- * @param {number} rating - Voto medio da 0 a 5
- */
-function StarRating({rating}: {rating: number}) {
-  return <StarRatingDisplay rating={rating} />;
-  /*
-  return (
-    <div className={styles.stars}>
-      {[1, 2, 3, 4, 5].map((star) => (
-        <span
-          key={star}
-          className={`${styles.star} ${
-            rating >= star ? styles.starFull :
-            rating >= star - 0.5 ? styles.starHalf :
-            styles.starEmpty
-          }`}
-          >
-            ★
-          </span>
-      ))}
-      <span className={styles.ratingNum}>
-        {rating > 0 ? rating.toFixed(1) : "-"}
-      </span>
-    </div>
-  );
-  */
-}
-
-/**
- * Il componente TrekCard riceve un oggetto trek come prop e lo visualizza in una card.
- */
-interface TrekCardEsploraProps { 
+interface TrekCardEsploraProps {
   trek: Trek;
 }
-
-
 
 function TrekCardEsplora({ trek }: TrekCardEsploraProps) {
   const { user } = useAuth();
@@ -108,25 +47,25 @@ function TrekCardEsplora({ trek }: TrekCardEsploraProps) {
     >
       <article className={styles.card}>
 
-        {/*Immagine*/}
+        {/* Immagine / placeholder */}
         <div className={styles.cardImg} />
-        
-        {/*Contenuto*/}
+
+        {/* Contenuto */}
         <div className={styles.cardBody}>
-            <h3 className={styles.cardName}>{trek.name}</h3>
-            <div className={styles.cardMeta}>
-              <span className={`${styles.badge} ${difficultyStyle[trek.difficulty]}`}>
+          <h3 className={styles.cardName}>{trek.name}</h3>
+
+          <div className={styles.cardMeta}>
+            <span className={`${styles.badge} ${difficultyStyle[trek.difficulty]}`}>
               {trek.difficulty}
             </span>
 
             {trek.closed && (
-              <span className={`${styles.badge}`} style={{ background: "#fee2e2", color: "#b91c1c" }}>
+              <span className={`${styles.badge} ${styles.badgeClosed}`}>
                 Chiuso
               </span>
             )}
 
             {trek.duration && (
-              // <span className={`${styles.badge} ${styles.badgeDuration}`}>
               <span className={`${styles.badge} ${getDurationStyle(trek.duration)}`}>
                 {trek.duration}
               </span>
@@ -139,27 +78,14 @@ function TrekCardEsplora({ trek }: TrekCardEsploraProps) {
             )}
 
             {trek.elevationGain && (
-              <span className={`${styles.badge} ${getElevationGainStyle(trek.elevationGain)}`}>
+              <span className={`${styles.badge} ${getElevationStyle(trek.elevationGain)}`}>
                 {trek.elevationGain} m
               </span>
             )}
           </div>
 
-          <StarRating rating={trek.averageRating ?? 0}/>
+          <StarRatingDisplay rating={trek.averageRating ?? 0} />
         </div>
-
-        {/* {(trek.friendCount || trek.likes) && (
-          <div className={styles.cardFooter}>
-            {trek.friendCount && (
-              <span className={styles.friends}>
-                {trek.friendCount} friends did this
-              </span>
-            )}
-            {trek.likes && (
-              <span className={styles.likes}>♥ {trek.likes}</span>
-            )}
-          </div>
-        )} */}
 
       </article>
     </Link>
