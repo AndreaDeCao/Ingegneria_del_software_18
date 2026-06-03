@@ -7,3 +7,11 @@ export type User = {
   nickname: string;
   role: "user" | "admin";
 };
+
+export type PopulatedUser = {
+  _id: string;
+  nickname?: string;
+  nome?: string;
+  cognome?: string;
+  email?: string;
+};

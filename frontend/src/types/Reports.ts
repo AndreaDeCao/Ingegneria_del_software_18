@@ -1,3 +1,4 @@
+import type { PopulatedUser } from "./User";
 // ── Tipi specifici per le segnalazioni ───────────────────────────────────
 
 export type ReportStatus = "pending" | "accepted" | "dismissed";
@@ -6,13 +7,6 @@ export type ReportStatus = "pending" | "accepted" | "dismissed";
  * Utente minimo usato nei campi popolati delle segnalazioni.
  * Allineato a Organizer.ts (stessi campi opzionali).
  */
-export type PopulatedUser = {
-  _id: string;
-  nickname?: string;
-  nome?: string;
-  cognome?: string;
-  email?: string;
-};
 
 export type Report = {
   _id: string;
@@ -36,7 +30,7 @@ export type ActivityWithReports = {
   activityDate: string;
   organizerID: PopulatedUser | string;
   trekID: string;
-  reports: Report[];
+  reports?: Report[];
   suspended?: boolean;
 };
 
@@ -45,3 +39,25 @@ export type FlatReport = {
   activity: ActivityWithReports;
   report: Report;
 };
+
+export type PopulatedReport = {
+  _id: string;
+  reportStatus: string;
+  reason: string;
+  reportedBy: PopulatedUser | string;
+  reportedAt: string;
+};
+
+export interface ReportCardProps {
+  type: "activity" | "trek" | "user";
+  id: string;
+  title: string;
+  reason: string;
+  organizerName?: string;
+  reportedBy: string;
+  reportedByName?: string;
+  reportCount?: number;
+  status?: "pending" | "accepted" | "dismissed";
+  targetLink: string;
+}
+
