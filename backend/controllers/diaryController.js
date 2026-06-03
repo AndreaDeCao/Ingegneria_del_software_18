@@ -455,7 +455,7 @@ const getSegnalazioniByTrek = async (req, res) => {
       {
         $match: {
           trekId: trek._id,
-          "segnalazione.tipo": { $exists: true },
+          "segnalazione.tipo": { $exists: true, $ne: "Utente" },
         },
       },
       {
