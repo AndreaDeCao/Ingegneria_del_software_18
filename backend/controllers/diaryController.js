@@ -66,7 +66,7 @@ const createEntry = async (req, res) => {
     const saved = await entry.save();
 
     if(amici && amici.length > 0) {
-      const author = await User.findById(req.userId);
+      const author = await user.findById(req.userId);
       for(const friendId of amici) {
         await addNotification(
           friendId,

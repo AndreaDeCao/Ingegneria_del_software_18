@@ -42,6 +42,8 @@ import AdminVisualizzaListaAttivitaPage from "./pages/admin/AdminVisualizzaLista
 import AdminDettagliAttivita from "./pages/admin/AdminDettagliAttivita";
 import AdminCreaAttivita from "./pages/admin/AdminCreaAttivita";
 import GestioneSegnalazioniPage from "./pages/admin/GestioneSegnalazioniPage";
+import TrekCreateAdmin from "./pages/admin/TrekCreateAdmin";
+import UtentiPageAdmin from "./pages/admin/UtentiPageAdmin";
 
 import TrekDetailsAdmin from "./pages/admin/TrekDetailsAdmin";
 
@@ -128,7 +130,9 @@ export default function App() {
                   <Route path="/attivita/crea" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><CreaAttivitaPage /></ProtectedRoute></AppLayout>} />
                   <Route path="/admin/attivita/crea" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><AdminCreaAttivita /></ProtectedRoute></AppLayout>} />
                   <Route path="/admin/treks/:id" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><TrekDetailsAdmin /></ProtectedRoute></AppLayout>} />
- 
+                  <Route path="/admin/treks/crea" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><TrekCreateAdmin /></ProtectedRoute></AppLayout>} />
+                  <Route path="/admin/utenti" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><UtentiPageAdmin /></ProtectedRoute></AppLayout>} />
+
                   {/* Route protette — admin 
                 */}
                 

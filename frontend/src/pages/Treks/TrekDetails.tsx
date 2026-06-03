@@ -167,6 +167,27 @@ export default function TrekDetails() {
     }
 
     fetchData();
+
+    // Polling: aggiorna trek + segnalazioni ogni 30 secondi (senza resettare loading)
+    async function pollData() {
+      try {
+        const trekResponse = await fetch(`${API_BASE}/treks/${id}`);
+        if (trekResponse.ok) {
+          const trekData = await trekResponse.json();
+          setTrek(trekData);
+        }
+        try {
+          const segnRes = await fetch(`${API_BASE}/api/diary/segnalazioni-accettate?trekId=${id}`);
+          if (segnRes.ok) {
+            const segnData = await segnRes.json();
+            setSegnalazioniAccettate(segnData.count > 0 ? segnData : null);
+          }
+        } catch { /* silenzioso */ }
+      } catch { /* silenzioso */ }
+    }
+
+    const pollInterval = setInterval(pollData, 30_000);
+    return () => clearInterval(pollInterval);
   }, [id]);  
 
   useEffect(() => {

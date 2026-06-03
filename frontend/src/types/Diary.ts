@@ -56,3 +56,16 @@ export type CreateDiaryEntryPayload = {
     descrizione?: string;
   };
 };
+
+export type SegnalazioneEntry = {
+  _id: string;
+  titolo: string;
+  createdAt: string;
+  userId: { _id: string; nickname?: string; email?: string } | null;
+  segnalazione: {
+    tipo: string;
+    descrizione?: string;
+    stato: "pending" | "accepted" | "dismissed";
+    gestitaDaAdmin: boolean;
+  };
+};

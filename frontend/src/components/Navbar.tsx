@@ -108,57 +108,63 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
           </Link>
         </div>
 
-        <nav className={styles.nav}>
-          {/* Nav links diversi per admin e utente normale */}
-          {isAdmin ? (
-            <>
-              <NavLink
-                to="/treks"
-                className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-              >
-                Esplora
-              </NavLink>
-              <NavLink
-                to="/admin/attivita/visualizza"
-                className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-              >
-                Attivita
-              </NavLink>
-              {/*<NavLink FIX ME
-                to="/admin/utenti"
-                className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-              >
-                Utenti
-              </NavLink> */}
-              <NavLink
-                to="/admin/segnalazioni"
-                className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-              >
-                Segnalazioni
-              </NavLink>
-            </>
-          ) : (
-            <>
-              <NavLink
-                to="/treks"
-                className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-              >
-                Esplora
-              </NavLink>
-              <NavLink
-                to="/my-treks"
-                className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-              >
-                I miei Percorsi
-              </NavLink>
-              <NavLink
-                to="/friends"
-                className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-              >
-                Amici
-              </NavLink>
-            </>
-          )}
+      <nav className={styles.nav}>
+        {/* Nav links diversi per admin e utente normale */}
+        {isAdmin ? (
+          <>
+            <NavLink
+              to="/admin/utenti"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Utenti
+            </NavLink>
+            <NavLink
+              to="/treks"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Esplora
+            </NavLink>
+            <NavLink
+              to="/admin/attivita/visualizza"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Attivita
+            </NavLink>
+            {/*<NavLink FIX ME
+              to="/admin/utenti"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Utenti
+            </NavLink> */}
+            <NavLink
+              to="/admin/segnalazioni"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Segnalazioni
+            </NavLink>
+          </>
+        ) : (
+          <>
+            <NavLink
+              to="/treks"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Esplora
+            </NavLink>
+            <NavLink
+              to="/my-treks"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              I miei Percorsi
+            </NavLink>
+            <NavLink
+              to="/friends"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Amici
+            </NavLink>
+          </>
+        )}
 
           {!user ? (
             <NavLink to="/login" className={styles.navLink}>
@@ -203,18 +209,27 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
           onToggle={() => setOpenItem(openItem === "Account" ? null : "Account")}
           onNavigate={handleNavigate}/>
 
-          {/* Menu hamburger personalizzato per admin */}
-          {isAdmin ? (
-            <>
-              <DropdownItem
-                label="Attivita"
-                items={[
-                  { label: "Visualizza Lista Attivita", path: "/attivita/visualizza" },
-                  { label: "Crea Nuova Attivita", path: "/attivita/crea" },
-                ]}
-                isOpen={openItem === "AttivitaAdmin"}
-                onToggle={() => setOpenItem(openItem === "AttivitaAdmin" ? null : "AttivitaAdmin")}
-                onNavigate={handleNavigate}/>
+        {/* Menu hamburger personalizzato per admin */}
+        {isAdmin ? (
+          <>
+            <DropdownItem
+              label="Utenti"
+              items={[
+                { label: "Gestione Utenti", path: "/admin/utenti" },
+              ]}
+              isOpen={openItem === "Utenti"}
+              onToggle={() => setOpenItem(openItem === "Utenti" ? null : "Utenti")}
+              onNavigate={handleNavigate}
+            />
+            <DropdownItem
+              label="Attivita"
+              items={[
+                { label: "Visualizza Lista Attivita", path: "/attivita/visualizza" },
+                { label: "Crea Nuova Attivita", path: "/attivita/crea" },
+              ]}
+              isOpen={openItem === "AttivitaAdmin"}
+              onToggle={() => setOpenItem(openItem === "AttivitaAdmin" ? null : "AttivitaAdmin")}
+              onNavigate={handleNavigate}/>
 
               <DropdownItem
                 label="Segnalazioni"

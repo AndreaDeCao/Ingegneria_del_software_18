@@ -16,7 +16,8 @@ router.get("/by-mongo-id/:mongoId", trekController.getNumericIdByMongoId);
 
 router.get("/:id", trekController.getTreksById);
 
-router.post("/", authenticate, requireAdmin, trekController.createTrek); 
+// Creazione percorso — solo admin
+router.post("/", requireAuth, requireAdmin, trekController.createTrek);
 
 //per ratings
 router.put('/:id/rate', requireAuth, rateTrek);
@@ -24,5 +25,8 @@ router.get('/:id/rate', requireAuth, getMyRating);
 
 //per admin update description
 router.patch("/:id/description", requireAuth, trekController.updateTrekDescription);
+
+//per admin toggle closed
+router.patch("/:id/closed", requireAuth, requireAdmin, trekController.toggleTrekClosed);
 
 module.exports = router;

@@ -8,6 +8,8 @@ export type Trek = {
   // friendCount?: number;
   // likes?: number;
 
+  closed: boolean;
+  
   duration: string
   lengthKm?: number;
   elevationGain?: string;

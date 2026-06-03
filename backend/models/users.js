@@ -76,7 +76,7 @@ reports: [
       required: true
     },
     reason: {type: String, default: "" },
-    reportedAy: { type: Date, default: Date.now},
+    reportedAt: { type: Date, default: Date.now},
     reportStatus: {
       type: String,
       enum: ["pending", "accepted", "dismissed"],

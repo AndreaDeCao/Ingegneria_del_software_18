@@ -10,6 +10,8 @@ const TrekSchema = new mongoose.Schema({ //fatti circa 70 sentieri
   description: String,
   SatRouteNumber: String,   // Numero percorso SAT (es: E101)
 
+  closed: { type: Boolean, default: false }, // Indica se il percorso è chiuso o meno
+
   duration: String,       // Durata stimata in ore (es: "3 ore")
   lengthKm: Number,    // Lunghezza del trekking in km
   elevationGain: String,     // Dislivello in metri FIXME - nel db è un numero intero
