@@ -50,6 +50,13 @@ export default function TrekDetailsAdmin() {
   const [segnalazioniError, setSegnalazioniError] = useState<string | null>(null);
   const [segnActionLoading, setSegnActionLoading] = useState(false);
 
+  // Modifica descrizione
+  const [editingDesc, setEditingDesc] = useState(false);
+  const [descDraft, setDescDraft] = useState("");
+  const [descSaving, setDescSaving] = useState(false);
+  const [descError, setDescError] = useState<string | null>(null);
+  const [descSuccess, setDescSuccess] = useState(false);
+
   const messageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
@@ -86,7 +93,41 @@ export default function TrekDetailsAdmin() {
 
   useEffect(() => {
     fetchSegnalazioni();
-  }, [fetchSegnalazioni]);
+
+    // Polling: aggiorna trek + segnalazioni ogni 30 secondi
+    const pollInterval = setInterval(async () => {
+      if (!id) return;
+      try {
+        const res = await fetch(`${API_BASE}/treks/${id}`);
+        if (res.ok) setTrek(await res.json());
+      } catch { /* silenzioso */ }
+      fetchSegnalazioni();
+    }, 30_000);
+
+    return () => clearInterval(pollInterval);
+  }, [fetchSegnalazioni, id]);
+
+  // Salva descrizione modificata
+  const handleSaveDescription = useCallback(async () => {
+    if (!id) return;
+    setDescSaving(true);
+    setDescError(null);
+    setDescSuccess(false);
+    try {
+      const updated = await http<Trek>(`/treks/${id}/description`, {
+        method: "PATCH",
+        body: JSON.stringify({ description: descDraft }),
+      });
+      setTrek(updated);
+      setEditingDesc(false);
+      setDescSuccess(true);
+      setTimeout(() => setDescSuccess(false), 3000);
+    } catch (err: any) {
+      setDescError(err.message ?? "Errore nel salvataggio della descrizione");
+    } finally {
+      setDescSaving(false);
+    }
+  }, [id, descDraft]);
 
   // ── Azioni segnalazioni ──────────────────────────────────────────────────
 
@@ -183,9 +224,51 @@ export default function TrekDetailsAdmin() {
           {/* Descrizione */}
           <div className={styles.section}>
             <h2 className={appStyles.sectionTitle}>Descrizione</h2>
-            <p className={appStyles.message}>
-              {trek.description || "Nessuna descrizione disponibile."}
-            </p>
+            {editingDesc ? (
+              <div>
+                <textarea
+                  rows={5}
+                  style={{ width: "100%", padding: "0.5rem", borderRadius: "6px", border: "1px solid var(--border)", background: "var(--bg-card)", color: "var(--text)", resize: "vertical", fontSize: "0.9rem", boxSizing: "border-box" }}
+                  value={descDraft}
+                  onChange={(e) => setDescDraft(e.target.value)}
+                />
+                <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+                  <button
+                    className={appStyles.primaryButton}
+                    onClick={handleSaveDescription}
+                    disabled={descSaving}
+                  >
+                    {descSaving ? "Salvataggio…" : "Salva"}
+                  </button>
+                  <button
+                    className={appStyles.secondaryButton}
+                    onClick={() => { setEditingDesc(false); setDescError(null); }}
+                    disabled={descSaving}
+                  >
+                    Annulla
+                  </button>
+                </div>
+                {descError && (
+                  <p style={{ color: "#b91c1c", fontSize: "0.85rem", marginTop: "0.4rem" }}>{descError}</p>
+                )}
+              </div>
+            ) : (
+              <div>
+                <p className={appStyles.message}>
+                  {trek.description || "Nessuna descrizione disponibile."}
+                </p>
+                {descSuccess && (
+                  <p style={{ color: "#15803d", fontSize: "0.85rem", marginBottom: "0.4rem" }}>Descrizione aggiornata ✓</p>
+                )}
+                <button
+                  className={appStyles.secondaryButton}
+                  style={{ marginTop: "0.5rem" }}
+                  onClick={() => { setDescDraft(trek.description ?? ""); setEditingDesc(true); setDescError(null); }}
+                >
+                  Modifica descrizione
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Info percorso */}
@@ -432,6 +515,9 @@ export default function TrekDetailsAdmin() {
             <div className={appStyles.buttonBox}>
               <Link to="/treks" className={appStyles.primaryButton}>
                 ← Lista percorsi
+              </Link>
+              <Link to="/admin/treks/crea" className={appStyles.primaryButton} style={{ marginTop: "0.5rem", display: "block" }}>
+                + Crea nuovo percorso
               </Link>
             </div>
 

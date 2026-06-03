@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import TrekCardEsplora from "../../components/TrekCardEsplora";
 import type { Trek } from "../../types/Trek";
 import styles from "./Treks.module.css";
+import { useAuth } from "../../auth/AuthProvider";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -38,6 +40,9 @@ function parseElevationGain(elevationGain: Trek["elevationGain"]): number {
 export default function Treks() {
   /** Elenco completo percorsi (backend) */
   const filtersRef = useRef<HTMLDivElement | null>(null);
+
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   const [treks, setTreks] = useState<Trek[]>([]);
 
@@ -332,7 +337,27 @@ return (
     <div className={styles.results}>
       {loading && <p className={styles.message}>Caricamento percorsi...</p>}
       {error && <p className={styles.messageError}>Impossibile caricare i percorsi: {error}</p>}
-      {!loading && !error && <p className={styles.count}>{filtered.length} Percorsi trovati</p>}
+      {!loading && !error && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <p className={styles.count}>{filtered.length} Percorsi trovati</p>
+          {isAdmin && (
+            <Link
+              to="/admin/treks/crea"
+              style={{
+                fontSize: "0.85rem",
+                padding: "0.35rem 0.85rem",
+                borderRadius: "6px",
+                background: "var(--accent)",
+                color: "#fff",
+                textDecoration: "none",
+                fontWeight: 600,
+              }}
+            >
+              + Crea percorso
+            </Link>
+          )}
+        </div>
+      )}
       {!loading && !error && filtered.length === 0 && <p className={styles.message}>Nessun percorso trovato</p>}
       {!loading && !error && paginated.map((trek) => (
         <TrekCardEsplora key={trek.id} trek={trek} />
