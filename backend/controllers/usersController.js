@@ -656,3 +656,38 @@ exports.updateNotificationStatus = async (req,res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+/**
+ * Cerca utenti per nickname, nome o cognome (escludendo se stesso).
+ *
+ * @route GET /api/users/search?q=query
+ * @param {import("express").Request} req - Query: { q }
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con lista utenti trovati
+ */
+exports.searchUsers = async (req, res) => {
+  try {
+    const query = req.query.q?.trim();
+    if(!query || query.length < 2) {
+      return res.status(400).json({ error: "Inserisci almeno 2 caratteri" });
+    }
+
+    const re = new RegExp(query, "i");
+    const users = await User.find({
+      _id: { $ne: req.userId },
+      role: "user",
+      $or: [
+        { nickname: re },
+        { nome: re },
+        { cognome: re },
+      ],
+    })
+    .select("_id nome cognome nickname avatarUrl").limit(10);
+
+    res.json(users);
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};

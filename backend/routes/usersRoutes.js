@@ -28,6 +28,8 @@ router.get("/verify-email-change/:token", userController.verifyEmailChange);
 router.get("/", userController.getUsers);
 router.post("/", userController.createUser);
 
+router.get("/search", requireAuth, userController.searchUsers);
+
 router.get("/:id", userController.getUserById);
 
 
