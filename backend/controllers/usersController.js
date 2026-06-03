@@ -24,7 +24,7 @@ async function findTrekByIdParam(trekId) {
 }
 
 async function getPopulatedFavoriteTreks(userId) {
-  if (userId.role === "admin") {
+  if (user.role === "admin") {
       return res.status(403).json({ message: 'Gli admin non possono avere percorsi preferiti' });
   }
   const user = await User.findById(userId).populate("favoriteTreks");

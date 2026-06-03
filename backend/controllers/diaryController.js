@@ -7,6 +7,9 @@ const Friendship = require("../models/friendship");
 // GET /api/diary --> restituisce le voci del diario dell'utente loggato
 const getDiary = async (req, res) => {
   try {
+    if (req.User.role === "admin") {
+      return res.status(403).json({ message: 'Gli admin non possono avere un diario' });
+    }
     const userId = new mongoose.Types.ObjectId(req.userId); // conversione esplicita
     const entries = await DiaryEntry
       .find({ userId })
@@ -25,6 +28,9 @@ const getDiary = async (req, res) => {
 
 const getEntryById = async (req, res) => {
   try {
+    if (req.User.role === "admin") {
+      return res.status(403).json({ message: 'Gli admin non possono avere un diario' });
+    }
     const entry = await DiaryEntry
       .findOne({ _id: req.params.id, userId: req.userId })
       .populate("trekId", "name difficulty duration lengthKm coordinates endCoordinates id")
@@ -41,6 +47,9 @@ const getEntryById = async (req, res) => {
 // POST /api/diary --> crea una nuova voce nel diario
 const createEntry = async (req, res) => {
   try {
+    if (req.User.role === "admin") {
+      return res.status(403).json({ message: 'Gli admin non possono avere un diario' });
+    }
     const {
       titolo, data, note, foto, valutazione, completato, trekId,
       percorsoPersonalizzato, gpxData, amici, segnalazione
@@ -87,6 +96,9 @@ const createEntry = async (req, res) => {
 
 const updateEntry = async (req, res) => {
   try {
+    if (req.User.role === "admin") {
+      return res.status(403).json({ message: 'Gli admin non possono avere un diario' });
+    }
     const entry = await DiaryEntry.findOne({ _id: req.params.id, userId: req.userId });
     if (!entry) return res.status(404).json({ error: "Voce non trovata" });
 
@@ -127,6 +139,9 @@ const updateEntry = async (req, res) => {
 
 const deleteEntry = async (req, res) => {
   try {
+    if (req.User.role === "admin") {
+      return res.status(403).json({ message: 'Gli admin non possono avere un diario' });
+    }
     const entry = await DiaryEntry.findOne({ _id: req.params.id, userId: req.userId });
     if (!entry) return res.status(404).json({ error: "Voce non trovata" });
     await entry.deleteOne();
@@ -249,6 +264,10 @@ function calcDifficultyPercentages(counts) {
 // GET /api/diary/stats --> statistiche del diario dell'utente loggato
 const getDiaryStats = async (req, res) => {
   try {
+    if (req.User.role === "admin") {
+      return res.status(403).json({ message: 'Gli admin non possono avere un diario' });
+    }
+ 
     const userId = new mongoose.Types.ObjectId(req.userId);
 
     // Recupera tutte le voci completate
