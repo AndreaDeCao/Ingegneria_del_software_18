@@ -168,7 +168,6 @@ export default function VisualizzaDiarioPage() {
 
       {entries.length === 0 ? (
         <div className={styles.emptyState}>
-          <p style={{ fontSize: "3rem" }}>📖</p>
           <p>Il tuo diario è ancora vuoto.</p>
           <button className={styles.saveButton} onClick={() => navigate("/diario/crea")}>
             Crea la prima voce
@@ -209,7 +208,7 @@ export default function VisualizzaDiarioPage() {
                 </div>
 
                 <div className={styles.entryBadges}>
-                  {entry.completato !== false && <span className={styles.badge}> Completato ✅</span>}
+                  {entry.completato !== false && <span className={styles.badge} style={{color: "var(--accent)", fontWeight: "bold"}}> Percorso completato</span>}
                   {entry.valutazione && (
                     <span className={styles.badge}>
                       {"★".repeat(entry.valutazione)}{"☆".repeat(5 - entry.valutazione)}

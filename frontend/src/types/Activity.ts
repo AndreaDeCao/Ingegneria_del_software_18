@@ -9,7 +9,7 @@ export type Activity = {
   maxParticipants: number;
   partecipantList: string[];
 
-  status: "Aperto" | "Chiuso" | "Annullato";
+  status: "Aperto" | "Chiuso" | "Annullato" | "Sospeso";
 
   travelMode?: "walking" | "bicycling";
 

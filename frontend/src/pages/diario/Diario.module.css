@@ -1064,3 +1064,9 @@
   color: var(--accent);
   flex-shrink: 0;
 }
+
+.link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: bold;
+}

@@ -764,28 +764,34 @@ select:focus {
   transform: none;
 }
 
-/* Bottone "Segnala attività" — tono neutro discreto */
 .reportButton {
-  padding: 10px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
   border-radius: 12px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-secondary);
+  border: 1px solid rgba(231, 76, 60, 0.25);
+  background: rgba(231, 76, 60, 0.06);
+  color: #c0392b;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .reportButton:hover {
-  background: rgba(230, 180, 34, 0.08);
-  color: #a07800;
-  border-color: rgba(230, 180, 34, 0.4);
+  background: rgba(231, 76, 60, 0.12);
+  border-color: rgba(231, 76, 60, 0.45);
 }
 
 .reportButton:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Active click */
+.reportButton:active {
+  transform: scale(0.97);
 }
 
 /* Badge conferma segnalazione già inviata */

@@ -585,12 +585,12 @@ export default function DettagliAttivita() {
             {/* Non può partecipare */}
             {!isOrganizer && !isParticipant && activity.visibility === "public" && !canJoin && (
               <button className={appStyles.primaryButton} disabled>
-                {activity.status !== "Aperto"
-                  ? `Iscrizione non disponibile (${activity.status ?? ""})`
-                  : isExpired
-                    ? "Attività scaduta"
-                    : isSuspended
-                      ? "Attività sospesa"
+                {isSuspended
+                  ? "Iscrizione non disponibile (sospesa dall'amministrazione)"
+                  : activity.status !== "Aperto"
+                    ? `Iscrizione non disponibile (${activity.status ?? ""})`
+                    : isExpired
+                      ? "Attività scaduta"
                       : "Attività al completo"}
               </button>
             )}
@@ -643,10 +643,27 @@ export default function DettagliAttivita() {
                     )}
                   </div>
                 )}
-                {!hasAlreadyReported && !reportSuccess && (
+                {/* {!hasAlreadyReported && !reportSuccess && (
                   <button className={styles.reportButton} onClick={() => setActiveModal("report")}>
                     Segnala attività
                   </button>
+                )} */}
+                {!isOrganizer && isParticipant && currentUserID && !hasAlreadyReported && !reportSuccess && (
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    borderTop: "1px solid var(--border)",
+                    paddingTop: "10px",
+                    marginTop: "4px",
+                  }}>
+                    <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+                      Problemi con questa attività?
+                    </span>
+                    <button className={styles.reportButton} onClick={() => setActiveModal("report")}>
+                      🚩 Segnala
+                    </button>
+                  </div>
                 )}
               </div>
             )}
