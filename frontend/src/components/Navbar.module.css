@@ -9,13 +9,14 @@
   top: 0;
   z-index: 10;
   transition: background 0.3s;
+  gap: 8px;
 }
-
 
 .logo {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .logoIcon {
@@ -35,17 +36,22 @@
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.3px;
+  white-space: nowrap;
 }
 
 .logoName span {
   color: var(--accent);
 }
 
+/* nav centrale: prende lo spazio disponibile, non schiaccia i rightControls */
 .nav {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto
+  margin-left: auto;
+  overflow: hidden;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .navLink {
@@ -57,6 +63,11 @@
   border: none;
   background: transparent;
   transition: background 0.2s, color 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
 }
 
 .navLink:hover {
@@ -64,12 +75,18 @@
   color: var(--accent-text);
 }
 
-/* to change */
-/* .active {} */
-
 .navLink.active {
   background: var(--accent);
   color: #fff;
+}
+
+/* controlli fissi a destra — NON si nascondono mai */
+.rightControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: 8px;
 }
 
 .themeBtn {
@@ -77,24 +94,18 @@
   height: 34px;
   border-radius: var(--radius-sm);
   border: 0.5px solid var(--border);
-  /* background: red !important; */ /* per test*/
   background: color-mix(in srgb, var(--card-bg) 60%, white);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: 4px;
   color: var(--text-primary);
   transition: background 0.2s;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .themeBtn:hover {
   background: var(--accent-light);
-}
-
-.rightControls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .hamburger {
@@ -111,13 +122,47 @@
   cursor: pointer;
   color: var(--text-primary);
   transition: background 0.2s;
-  margin-right: 10px;
+  flex-shrink: 0;
 }
 
-.hamburger:hover{
+.hamburger:hover {
   background: var(--accent-light);
 }
 
+/* bottone ··· per i link overflow */
+.overflowBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  border: 0.5px solid var(--border);
+  background: var(--card-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  letter-spacing: -1px;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background 0.2s;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.overflowBtn:hover {
+  background: var(--accent-light);
+}
+
+.overflowDot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* dropdown hamburger (sinistra) */
 .dropdown {
   display: flex;
   flex-direction: column;
@@ -125,21 +170,62 @@
   background: var(--card-bg);
   border: 0.5px solid var(--border);
   border-radius: 8px;
-  padding: 1rem;
-  gap: 4px;
+  padding: 0.75rem;
+  gap: 2px;
   position: absolute;
-  top: 60px;
-  left:16px;
+  top: calc(100% + 8px);
+  left: 0;
   z-index: 100;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  min-width: 180px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  min-width: 200px;
+}
+
+/* dropdown overflow (destra) */
+.overflowDropdown {
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  gap: 2px;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  min-width: 160px;
+}
+
+.overflowDropdownItem {
+  font-size: 14px;
+  color: var(--text-primary);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.overflowDropdownItem:hover {
+  background: var(--accent-light);
+  color: var(--accent-text);
+}
+
+.overflowDropdownItem.active {
+  background: var(--accent);
+  color: #fff;
 }
 
 .menuItem {
-  font-size: 16px;
+  font-size: 15px;
   font-family: var(--font-body);
   color: var(--text-primary);
-  padding:10px 16px;
+  padding: 9px 14px;
   border-radius: var(--radius-sm);
   border: none;
   background: none;
@@ -150,42 +236,40 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 24px;
 }
 
 .menuItem:hover {
   background: var(--accent-light);
   color: var(--accent-text);
-  font-family: var(--font-body);
 }
 
 .subMenu {
   display: flex;
   flex-direction: column;
-  padding-left: 16px;
-  gap: 2px;
+  padding-left: 14px;
+  gap: 1px;
+  margin-bottom: 2px;
 }
 
 .subMenuItem {
-  font-size: 14px;
+  font-size: 13px;
   font-family: var(--font-body);
   color: var(--text-secondary);
-  padding: 6px 16px;
+  padding: 6px 14px;
   border-radius: var(--radius-sm);
   border: none;
   background: none;
   width: 100%;
+  justify-content: flex-start; 
   text-align: left;
   cursor: pointer;
   transition: background 0.2s;
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
 }
 
 .subMenuItem:hover {
   background: var(--accent-light);
   color: var(--accent-text);
-  font-family: var(--font-body);
 }
 
 .chevron {
@@ -199,9 +283,13 @@
   flex-shrink: 0;
 }
 
+.chevronOpen {
+  transform: rotate(-135deg);
+}
+
 .avatar {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--accent);
   color: #fff;
@@ -212,9 +300,10 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: 0.2s;
+  transition: opacity 0.2s;
   overflow: hidden;
   padding: 0;
+  flex-shrink: 0;
 }
 
 .avatar:hover {
@@ -226,4 +315,26 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .header {
+    padding: 0.75rem 1rem;
+  }
+
+  /* nasconde SOLO i link, non i rightControls */
+  .nav {
+    display: none;
+  }
+
+  .logoName {
+    font-size: 22px;
+  }
+}
+
+@media (min-width: 769px) {
+  .nav {
+    display: flex;
+  }
 }

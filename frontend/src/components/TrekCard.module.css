@@ -3,8 +3,8 @@
   border-radius: var(--radius-lg);
   border: 0.5px solid var(--border);
   overflow: hidden;
-  min-width: 200px;
-  flex: 0 0 200px;
+  min-width: 260px;
+  flex: 0 0 260px;
   transition: transform 0.18s;
   cursor: pointer;
   display: flex;
@@ -124,4 +124,18 @@
   text-decoration: none;
   color: inherit;
   display: block;
+}
+
+@media (max-width: 768px) {
+  .card {
+    min-width: 72vw;
+    flex: 0 0 72vw;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    min-width: 85vw;
+    flex: 0 0 85vw;
+  }
 }
