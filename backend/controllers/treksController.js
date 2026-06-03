@@ -3,6 +3,23 @@ const mongoose = require("mongoose");
 const Trek = require("../models/treks");
 const Rating = require("../models/ratings");
 
+
+/**
+ * Genera il prossimo id numerico disponibile in modo sicuro contro le race condition.
+ * Usa findOneAndUpdate con $inc su un documento "counter" oppure, più semplicemente,
+ * legge il valore MAX corrente con una query aggregata e lo incrementa di 1.
+ *
+ * In caso di inserimento concorrente il vincolo `unique: true` su `id` farà fallire
+ * il secondo salvataggio con un errore di duplicate key (E11000); il chiamante dovrà
+ * effettuare un retry — vedi createTrek.
+ *
+ * @returns {Promise<number>}
+ */
+async function nextTrekId() {
+  const last = await Trek.findOne().sort({ id: -1 }).select("id").lean();
+  return last ? last.id + 1 : 1;
+}
+
 // GET tutti i percorsi
 exports.getTreks = async (req, res) => {
   try {
@@ -13,15 +30,62 @@ exports.getTreks = async (req, res) => {
   }
 };
 
-// POST crea percorso
+/**
+ * POST /api/treks — crea un nuovo percorso (solo admin).
+ *
+ * Genera automaticamente l'id numerico progressivo.
+ * In caso di conflitto su id (race condition) ritenta fino a 5 volte.
+ */
 exports.createTrek = async (req, res) => {
-  try {
-    const newTrek = new Trek(req.body);
-    await newTrek.save();
-    res.status(201).json(newTrek);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+  // Sicurezza: solo admin (il middleware requireAdmin blocca già prima,
+  // ma un controllo esplicito qui rende il controller autonomamente sicuro).
+  if (req.userRole !== "admin") {
+    return res.status(403).json({ error: "Accesso negato: solo gli admin possono creare percorsi." });
   }
+
+  // Campi che il client NON deve poter forzare
+  const { id: _ignored, averageRating: _r, ratingCount: _rc, ...safeBody } = req.body;
+
+  const MAX_RETRIES = 5;
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const newId = await nextTrekId();
+
+      const newTrek = new Trek({
+        ...safeBody,
+        id: newId,
+        createdBy: req.userId,
+      });
+
+      await newTrek.save();
+
+      // Risposta esplicita con entrambi gli id per il frontend
+      return res.status(201).json({
+        ...newTrek.toObject(),
+        numericId: newTrek.id,   // campo numerico custom
+        mongoId: newTrek._id,    // ObjectId MongoDB
+      });
+    } catch (err) {
+      // Duplicate key su campo `id` → qualcun altro ha preso lo stesso numero
+      const isDuplicateId =
+        err.code === 11000 &&
+        err.keyPattern &&
+        err.keyPattern.id;
+
+      if (isDuplicateId && attempt < MAX_RETRIES) {
+        // Ritenta con il prossimo id disponibile
+        continue;
+      }
+
+      // Errore di validazione o altri errori
+      const status = err.name === "ValidationError" ? 400 : 500;
+      return res.status(status).json({ error: err.message });
+    }
+  }
+
+  // Tutti i tentativi esauriti (estremamente raro in produzione normale)
+  return res.status(500).json({ error: "Impossibile assegnare un id univoco al percorso. Riprova." });
 };
 
 // GET /api/treks/mongo/:mongoId/number-id

@@ -80,11 +80,11 @@ export default function TrekCreateAdmin() {
 
     setSaving(true);
     try {
-      const created = await http<{ id: number; _id: string }>("/treks/", {
+      const created = await http<{ numericId: number; mongoId: string }>("/treks", {
         method: "POST",
         body: JSON.stringify(body),
       });
-      navigate(`/admin/treks/${created.id}`);
+      navigate(`/admin/treks/${created.numericId}`);
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message || "Errore nella creazione del percorso");
     } finally {
