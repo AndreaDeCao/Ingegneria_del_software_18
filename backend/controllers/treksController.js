@@ -94,6 +94,9 @@ exports.rateTrek = async (req, res) => {
     // Trova il trek tramite id numerico per ottenere il _id MongoDB
     const trek = await Trek.findOne({ id: parseInt(req.params.id) });
     if (!trek) return res.status(404).json({ message: 'Percorso non trovato' });
+    if (req.userId.role === "admin") {
+      return res.status(403).json({ message: 'Gli admin non possono votare' });
+    }
 
     await Rating.findOneAndUpdate(
       { trek: trek._id, user: req.userId },
@@ -115,6 +118,9 @@ exports.getMyRating = async (req, res) => {
   try {
     const trek = await Trek.findOne({ id: parseInt(req.params.id) });
     if (!trek) return res.status(404).json({ message: 'Percorso non trovato' });
+    if (req.userId.role === "admin") {
+      return res.status(403).json({ message: 'Gli admin non possono votare' });
+    }
 
     const rating = await Rating.findOne({ trek: trek._id, user: req.userId });
     res.json({ vote: rating?.vote ?? null, note: rating?.note ?? "" });

@@ -24,6 +24,9 @@ async function findTrekByIdParam(trekId) {
 }
 
 async function getPopulatedFavoriteTreks(userId) {
+  if (userId.role === "admin") {
+      return res.status(403).json({ message: 'Gli admin non possono avere percorsi preferiti' });
+  }
   const user = await User.findById(userId).populate("favoriteTreks");
   return user?.favoriteTreks ?? null;
 }
@@ -97,6 +100,9 @@ exports.addTrekToFavorites = async (req, res) => {
 
     // trova utente
     const user = await User.findById(userId);
+    if (user.role === "admin") {
+      return res.status(403).json({ message: 'Gli admin non possono avere percorsi preferiti' });
+    }
 
     if (!user) {
       return res.status(404).json({
@@ -156,6 +162,9 @@ exports.getFavoriteTreks = async (req, res) => {
         error: "Utente non trovato",
       });
     }
+    if (user.role === "admin") {
+      return res.status(403).json({ message: 'Gli admin non possono avere percorsi preferiti' });
+    }
 
     res.json(user.favoriteTreks);
   } catch (err) {
@@ -189,6 +198,9 @@ exports.removeTrekFromFavorites = async (req, res) => {
       return res.status(404).json({
         error: "Utente non trovato",
       });
+    }
+    if (user.role === "admin") {
+      return res.status(403).json({ message: 'Gli admin non possono avere percorsi preferiti' });
     }
 
     // controlla se è nei preferiti
