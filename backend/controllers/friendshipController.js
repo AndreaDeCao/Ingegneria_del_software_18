@@ -196,17 +196,23 @@ exports.getFriends = async (req, res) => {
 
     // Per ogni amicizia mostra dati dell'utente amico
     const friends = friendships.map((f) => {
+      //CONTROLLO in caso di dati inconsistenti (es. utente cancellato dopo accettazione) 
+      if (!f.sender || !f.receiver) return null; 
+
       const isSender = f.sender._id.toString() === req.userId;
+
       return {
         friendshipId: f._id,
         user: isSender ? f.receiver : f.sender,
         since: f.updatedAt,
       };
-    });
+    })
+    .filter(Boolean);
 
     res.json(friends);
 
   } catch(err) {
+    console.error("getFriends error:", err);
     res.status(500).json({ error: err.message });
   }
 };
