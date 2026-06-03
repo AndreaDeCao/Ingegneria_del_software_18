@@ -149,7 +149,7 @@ export default function AdminHomepage() {
 
           <div className={styles.sectionHead}>
             <h2 className={styles.sectionTitle}>Benvenuto, Admin!</h2>
-            <p className={styles.sectionSubtitle}>Qui puoi gestire percorsi, attività e segnalazioni.</p>
+            <p className={styles.sectionSubtitle}>Qui puoi gestire percorsi, attivit, utenti e segnalazioni.</p>
           </div>
 
           {/* ── Segnalazioni attività ── */}
