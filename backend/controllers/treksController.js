@@ -158,7 +158,7 @@ exports.rateTrek = async (req, res) => {
     // Trova il trek tramite id numerico per ottenere il _id MongoDB
     const trek = await Trek.findOne({ id: parseInt(req.params.id) });
     if (!trek) return res.status(404).json({ message: 'Percorso non trovato' });
-    if (req.user.role === "admin") {
+    if (req.userRole === "admin") {
       return res.status(403).json({ message: 'Gli admin non possono votare' });
     }
 
@@ -182,7 +182,7 @@ exports.getMyRating = async (req, res) => {
   try {
     const trek = await Trek.findOne({ id: parseInt(req.params.id) });
     if (!trek) return res.status(404).json({ message: 'Percorso non trovato' });
-    if (req.user.role === "admin") {
+    if (req.userRole === "admin") {
       return res.status(403).json({ message: 'Gli admin non possono votare' });
     }
 
@@ -218,7 +218,7 @@ exports.updateTrekDescription = async (req, res) => {
     const { description } = req.body;
 
     // req.user dev'essere popolato dal tuo middleware auth (es. verifyToken)
-    if (!req.user || req.user.role !== "admin") {
+    if (!req.user || req.userRole !== "admin") {
       return res.status(403).json({ error: "Accesso negato: solo gli admin possono modificare la descrizione." });
     }
 
