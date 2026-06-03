@@ -656,3 +656,40 @@ exports.updateNotificationStatus = async (req,res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+/**
+ * Cerca utenti per nickname, nome o cognome (escludendo se stesso).
+ *
+ * @route GET /api/users/search?q=query
+ * @param {import("express").Request} req - Query: { q }
+ * @param {import("express").Response} res
+ * @returns {Promise<void>} JSON con lista utenti trovati
+ */
+exports.searchUsers = async (req, res) => {
+  try {
+    const query = req.query.q?.trim();
+    if(!query || query.length < 2) {
+      return res.status(400).json({ error: "Inserisci almeno 2 caratteri" });
+    }
+
+    const re = new RegExp(query, "i");
+    const users = await User.collection.find({
+      _id: { $ne: new mongoose.Types.ObjectId(req.userId) },
+      role: "user",
+      $or: [
+        { nickname: { $regex: query, $options: "i" } },
+        { nome: { $regex: query, $options: "i" } },
+        { cognome: { $regex: query, $options: "i" } },
+      ],
+    }, {
+      projection: { nome: 1, cognome: 1, nickname: 1, avatarUrl: 1 }
+    }).limit(10).toArray();
+
+    res.json(users);
+
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+
+};

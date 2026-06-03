@@ -7,6 +7,7 @@ import appStyles from "../../App.module.css";
 import styles from "./Diario.module.css";
 
 const SEGNALAZIONE_TIPI = [
+  "Utente",
   "Sentiero danneggiato",
   "Neve/ghiaccio",
   "Sentiero chiuso",
@@ -15,6 +16,14 @@ const SEGNALAZIONE_TIPI = [
 ];
 
 type FriendOption = {
+  _id: string;
+  nome: string;
+  cognome: string;
+  nickname: string;
+  avatarUrl?: string;
+}
+
+type UserOption = {
   _id: string;
   nome: string;
   cognome: string;
@@ -45,6 +54,11 @@ export default function CreaVoceDiarioPage() {
   const [segnalazioneAttiva, setSegnalazioneAttiva] = useState(false);
   const [segnalazioneTipo, setSegnalazioneTipo]     = useState("");
   const [segnalazioneDesc, setSegnalazioneDesc]     = useState("");
+
+  const [segnalazioneUtente, setSegnalazioneUtente] = useState<UserOption | null>(null);
+  const [segnalazioneUtenteSearch, setSegnalazioneUtenteSearch] = useState("");
+  const [segnalazioneUtenteResults, setSegnalazioneUtenteResults] = useState<UserOption[]>([]);
+  const [segnalazioneUtenteSearching, setSegnalazioneUtenteSearching] = useState(false);
 
   const [loading, setLoading]   = useState(false);
   const [errors, setErrors]     = useState<string[]>([]);
@@ -172,6 +186,10 @@ export default function CreaVoceDiarioPage() {
     if (modalitaPercorso === "personalizzato" && !percorsoPersonalizzato.trim()) errs.push("Inserisci il nome del percorso personalizzato");
     if (gpxData && gpxData.length > 5 * 1024 * 1024) errs.push("Il file GPX è troppo grande (max 5MB)");
     if (segnalazioneAttiva && !segnalazioneTipo) errs.push("Seleziona il tipo di segnalazione");
+    if (segnalazioneAttiva && segnalazioneTipo === "Utente" && !segnalazioneUtente) 
+      errs.push("Seleziona l'utente da segnalare");
+    if (segnalazioneAttiva && segnalazioneTipo === "Utente" && !segnalazioneDesc.trim()) 
+      errs.push("La descrizione è obbligatoria per segnalare un utente");
     return errs;
   }
 
@@ -193,7 +211,11 @@ export default function CreaVoceDiarioPage() {
       gpxData: gpxData || undefined,
       amici: selectedFriends.map(f => f._id),
       segnalazione: segnalazioneAttiva && segnalazioneTipo
-        ? { tipo: segnalazioneTipo, descrizione: segnalazioneDesc || undefined }
+        ? { 
+          tipo: segnalazioneTipo, 
+          descrizione: segnalazioneDesc || undefined,
+          utenteId: segnalazioneTipo === "Utente" ? segnalazioneUtente?._id : undefined
+        }
         : undefined,
     };
 
@@ -201,14 +223,28 @@ export default function CreaVoceDiarioPage() {
       await http("/api/diary", { method: "POST", body: JSON.stringify(payload) });
       setSuccess(true);
       setTimeout(() => navigate("/diario"), 1200);
-    } catch (err: any) {
-      const msg = err.message ?? "";
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
       if (msg.includes("413") || msg.toLowerCase().includes("large"))
         setErrors(["Payload troppo grande. Riduci il file GPX o le foto."]);
       else setErrors([msg || "Errore nel salvataggio"]);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function searchUtentiDaSegnalare(q: string) {
+    if(q.trim().length < 2) { setSegnalazioneUtenteResults([]); return; }
+    setSegnalazioneUtenteSearching(true);
+    try {
+      const results = await http<UserOption[]>(`/users/search?q=${encodeURIComponent(q.trim())}`);
+      setSegnalazioneUtenteResults(results);
+
+    } catch {
+      setSegnalazioneUtenteResults([]);
+    } finally {
+      setSegnalazioneUtenteSearching(false);
     }
   }
 
@@ -396,9 +432,72 @@ export default function CreaVoceDiarioPage() {
                       onClick={() => setSegnalazioneTipo(tipo)}
                     >
                       {tipo}
-                    </button>
+                    </button>                 
                   ))}
                 </div>
+
+                {segnalazioneTipo === "Utente" && (
+                  <div className={styles.fieldGroup} style={{ marginTop: "12px" }}>
+                    <label className={styles.label}>Utente da segnalare</label>
+                    {segnalazioneUtente ? (
+                      <div className={styles.userItem} style={{ cursor: "default" }}>
+                        <div className={styles.userAvatar}>
+                          {segnalazioneUtente.avatarUrl
+                            ? <img src={segnalazioneUtente.avatarUrl} alt="avatar" className={styles.userAvatarImg} />
+                            : <span>{segnalazioneUtente.nome[0].toUpperCase()}</span>
+                          }
+                        </div>
+                        <div className={styles.userInfo}>
+                          <p className={styles.userName}>{segnalazioneUtente.nome} {segnalazioneUtente.cognome}</p>
+                          <p className={styles.userNick}>@{segnalazioneUtente.nickname}</p>
+                        </div>
+                        <button 
+                          className={styles.fotoRemove} 
+                          onClick={() => setSegnalazioneUtente(null)}
+                        >✕</button>
+                      </div>
+                    ) : (
+                      <>
+                        <input
+                          className={styles.input}
+                          placeholder="Cerca utente per nickname o nome... (min. 2 caratteri)"
+                          value={segnalazioneUtenteSearch}
+                          onChange={(e) => {
+                            setSegnalazioneUtenteSearch(e.target.value);
+                            searchUtentiDaSegnalare(e.target.value);
+                          }}
+                        />
+                        {segnalazioneUtenteSearching && <p className={styles.hint}>Ricerca...</p>}
+                        {segnalazioneUtenteResults.length > 0 && (
+                          <div className={styles.usersList}>
+                            {segnalazioneUtenteResults.map(u => (
+                              <div
+                                key={u._id}
+                                className={styles.userItem}
+                                onClick={() => {
+                                  setSegnalazioneUtente(u);
+                                  setSegnalazioneUtenteSearch("");
+                                  setSegnalazioneUtenteResults([]);
+                                }}
+                              >
+                                <div className={styles.userAvatar}>
+                                  {u.avatarUrl
+                                    ? <img src={u.avatarUrl} alt="avatar" className={styles.userAvatarImg} />
+                                    : <span>{u.nome[0].toUpperCase()}</span>
+                                  }
+                                </div>
+                                <div className={styles.userInfo}>
+                                  <p className={styles.userName}>{u.nome} {u.cognome}</p>
+                                  <p className={styles.userNick}>@{u.nickname}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
 
                 <label className={styles.label}>Descrizione</label>
                 <textarea

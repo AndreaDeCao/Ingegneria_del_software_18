@@ -24,6 +24,7 @@ const DiaryEntrySchema = new mongoose.Schema({
     tipo: {
       type: String,
       enum: [
+        "Utente",
         "Sentiero danneggiato",
         "Neve/ghiaccio",
         "Sentiero chiuso",
@@ -32,6 +33,7 @@ const DiaryEntrySchema = new mongoose.Schema({
       ]
     },
     descrizione: { type: String, maxlength: 1000 },
+    utenteId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 
     stato: {
       type: String,

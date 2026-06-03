@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { http } from "../../auth/api";
 
 import styles from "../attivita/attivitaPage.module.css";
@@ -46,6 +46,12 @@ interface SegnalazioneEntry {
     gestitaDaAdmin: boolean;
     gestitaAt?: string | null;
   };
+  reportedUser?: {
+    _id: string;
+    nickname?: string;
+    nome?: string;
+    cognome?: string;
+  } | null;
 }
 
 interface TrekWithSegnalazioni {
@@ -232,27 +238,69 @@ function TrekSegnalazioneCard({
   actionLoading: string | null;
   onAction: (entryId: string, action: "accept" | "dismiss" | "reopen", e: React.MouseEvent) => void;
 }) {
+  const navigate = useNavigate();
   const stato = entry.segnalazione.stato;
   const isPending = stato === "pending";
   const isLoading = actionLoading === entry._id;
+  const isUtente = entry.segnalazione.tipo === "Utente";
 
   const utente = entry.userId;
   const displayName = utente?.nickname ? `@${utente.nickname}` : utente?.email ?? "Utente sconosciuto";
   const email = utente?.email;
   const nomeCompleto = utente ? [utente.nome, utente.cognome].filter(Boolean).join(" ") : null;
 
+  const reportedUser = entry.reportedUser;
+
+  const Wrapper = isUtente
+    ? ({ children }: { children: React.ReactNode }) => (
+        <div className={reportStyles.reportCardLink}>{children}</div>
+      ) : (
+        { children }: { children: React.ReactNode }) => (
+        <Link to={`/admin/treks/${trekId}`} className={reportStyles.reportCardLink}>{children}</Link>
+      );
+
   return (
-    <Link to={`/admin/treks/${trekId}`} className={reportStyles.reportCardLink}>
+    <Wrapper>
       <div className={`${reportStyles.reportCard} ${isPending ? reportStyles.reportCardPending : ""}`}>
         <div className={reportStyles.reportCardHeader}>
           <div className={reportStyles.reportCardLeft}>
-            <span className={reportStyles.reportCategory}>Percorso</span>
-            <span className={reportStyles.reportActivityTitle}>{trekName}</span>
+            <span className={reportStyles.reportCategory}>
+              {isUtente ? "Utente" : "Percorso"}
+            </span>
+            <span className={reportStyles.reportActivityTitle}>
+              {isUtente ? (reportedUser?.nickname ? `@${reportedUser.nickname}` : "Utente segnalato") : trekName}
+            </span>
           </div>
           <span className={`${styles.statusBadge} ${STATUS_BADGE_CLASS[stato]}`}>
             {STATUS_LABEL[stato]}
           </span>
         </div>
+
+        {!isUtente && (
+          <div className={reportStyles.reportMeta}>
+            <span 
+              className={reportStyles.reportActivityTitle} 
+              style={{ fontSize: "13px", fontWeight: 400 }}
+            >
+              Percorso: {trekName}
+            </span>
+          </div>
+        )}
+
+        {isUtente && reportedUser && (
+          <div className={reportStyles.reportMeta}>
+            <span>
+              Utente segnalato: 
+              <strong>{reportedUser.nickname ? `@${reportedUser.nickname}` : ""}</strong>
+              {reportedUser.nome && (
+                <>
+                  <span className={reportStyles.metaSeparator}>·</span>
+                  <span className={reportStyles.metaMuted}>{reportedUser.nome} {reportedUser.cognome}</span>
+                </>
+              )}
+            </span>
+          </div>
+        )}
 
         {/* Segnalatore */}
         <div className={reportStyles.reportMeta}>
@@ -262,7 +310,7 @@ function TrekSegnalazioneCard({
               <><span style={{ opacity: 0.5, margin: "0 6px" }}>·</span><span style={{ opacity: 0.7 }}>{email}</span></>
             )}
             {nomeCompleto && (
-              <><span style={{ opacity: 0.5, margin: "0 6px" }}>·</span><span style={{ opacity: 0.7 }}>{nomeCompleto}</span></>
+              <><span style={{ opacity: 0.5, margin: "0 6px" }}>·</span><span style={{ opacity: 0.75 }}>{nomeCompleto}</span></>
             )}
           </span>
         </div>
@@ -274,11 +322,32 @@ function TrekSegnalazioneCard({
         </div>
 
         <p className={reportStyles.reportReason}>
-          <strong>{entry.segnalazione.tipo}</strong>
-          {entry.segnalazione.descrizione ? `: ${entry.segnalazione.descrizione}` : ""}
+          {isUtente ? entry.segnalazione.descrizione : (
+            <>
+              <strong>{entry.segnalazione.tipo}</strong>
+              {entry.segnalazione.descrizione ? `: ${entry.segnalazione.descrizione}` : ""}
+            </>
+          )}
         </p>
 
-        {isPending && (
+        
+        
+        {isUtente && reportedUser?._id && (
+          <div className={reportStyles.reportActions}>
+            <button
+              className={styles.acceptReportButton}
+              onClick={(e) => { 
+                  e.stopPropagation(); 
+                  e.preventDefault(); 
+                  navigate(`/admin/utenti?userId=${reportedUser._id}`); 
+              }}
+            >
+              Visualizza utente
+            </button>
+          </div>
+        )}
+
+        {!isUtente && isPending && (
           <div className={reportStyles.reportActions}>
             <button className={styles.acceptReportButton} onClick={(e) => onAction(entry._id, "accept", e)} disabled={isLoading}>
               {isLoading ? "Attendere..." : "Accetta"}
@@ -289,7 +358,7 @@ function TrekSegnalazioneCard({
           </div>
         )}
 
-        {stato === "accepted" && (
+        {!isUtente && stato === "accepted" && (
           <div className={reportStyles.reportActions}>
             <button className={styles.dismissReportButton} onClick={(e) => onAction(entry._id, "dismiss", e)} disabled={isLoading} title="Rimuove il banner dagli utenti">
               {isLoading ? "Attendere..." : "Rigetta (rimuovi banner)"}
@@ -300,7 +369,7 @@ function TrekSegnalazioneCard({
           </div>
         )}
 
-        {stato === "dismissed" && (
+        {!isUtente && stato === "dismissed" && (
           <div className={reportStyles.reportActions}>
             <button className={styles.dismissReportButton} onClick={(e) => onAction(entry._id, "reopen", e)} disabled={isLoading}>
               {isLoading ? "Attendere..." : "Riporta in attesa"}
@@ -308,7 +377,7 @@ function TrekSegnalazioneCard({
           </div>
         )}
       </div>
-    </Link>
+    </Wrapper>
   );
 }
 

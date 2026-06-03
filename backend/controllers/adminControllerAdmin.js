@@ -10,9 +10,9 @@ exports.getUsers = async (req, res) => {
   try {
     const { search, status } = req.query;
 
-    const query = {};
+    const query = { role: "user" };
 
-    if(search?.trim()) {
+    if (search?.trim() && search.trim().length >= 2) {
       const re = new RegExp(search.trim(), "i");
       query.$or = [
         { nickname: re },
@@ -22,19 +22,21 @@ exports.getUsers = async (req, res) => {
       ];
     }
 
-    if(status === "banned") {
+    if (status === "banned") {
       query.isBanned = true;
-    } else if(status === "suspended") {
+    } else if (status === "suspended") {
       query.isSuspended = true;
-    } else if(status === "active") {
-      query.isBanned = false;
+      query.isBanned = { $ne: true };
+    } else if (status === "active") {
+      query.isBanned = { $ne: true };
+      query.isSuspended = { $ne: true };
     }
 
-    const user = await User.find(query)
-      .where("role").equals("user")
-      .select("_id nome cognome nickname email role avatarUrl isBanned isSuspended suspendedUntil createdAt reports");
+    const users = await User.find(query).select(
+      "_id nome cognome nickname email role avatarUrl isBanned isSuspended suspendedUntil createdAt reports"
+    );
 
-    res.json(user);
+    res.json(users);
 
   } catch(err) {
     res.status(500).json({ error: err.message });

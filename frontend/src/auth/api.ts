@@ -139,6 +139,23 @@ export async function http<T>(path: string, init?: RequestInit/*, _retried = fal
     throw new Error("Sessione scaduta");
   }
 
+  if (res.status === 403) {
+    const text = await res.text().catch(() => "");
+    try {
+      const data = JSON.parse(text) as { error?: string; message?: string; suspendedUntil?: string };
+      if (data.error === "banned") {
+        window.dispatchEvent(new CustomEvent("auth:banned", { detail: { message: data.message } }));
+        throw new Error(data.message ?? "Account bannato");
+      }
+      if (data.error === "suspended") {
+        window.dispatchEvent(new CustomEvent("auth:suspended", { detail: { message: data.message, suspendedUntil: data.suspendedUntil } }));
+        throw new Error(data.message ?? "Account sospeso");
+      }
+    } catch {
+      // ignora parse errors
+    }
+  }
+
   if (!res.ok) {
     const text = await res.text().catch(() => "");
 
