@@ -522,3 +522,61 @@
   background: #c0392b;
   color: white;
 }
+
+@media (max-width: 768px) {
+  .main {
+    width: 100%;
+    padding: 1rem;
+    gap: 20px;
+  }
+
+  .avatarSection {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .avatarWrapper,
+  .avatarPlaceholder {
+    width: 80px;
+    height: 80px;
+  }
+
+  .avatarBtn {
+    flex-wrap: wrap;
+  }
+
+  .row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 14px 0;
+  }
+
+  .rowRight {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .value {
+    flex: 1;
+    word-break: break-all;
+  }
+
+  .notifBtn {
+    align-self: auto;
+    width: 100%;
+    text-align: center;
+  }
+
+  .modalActions {
+    flex-direction: column-reverse;
+  }
+
+  .cancelBtn,
+  .saveBtn,
+  .deleteBtn {
+    width: 100%;
+    padding: 10px;
+    text-align: center;
+  }
+}
