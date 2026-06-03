@@ -182,6 +182,7 @@ Ingegneria_del_software_18
 │  │  │  ├─ Navbar.tsx
 │  │  │  ├─ ReportCard.module.css
 │  │  │  ├─ ReportCard.tsx
+│  │  │  ├─ SkeletonLoader.tsx
 │  │  │  ├─ StarRating.module.css
 │  │  │  ├─ StarRating.tsx
 │  │  │  ├─ TrekCard.module.css

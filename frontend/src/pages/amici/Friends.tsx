@@ -103,22 +103,6 @@ export default function Friends() {
     }
   }
 
-  //----------FUNZ SINGOLE PER SENDERE PIU REATTIVO--------------
-  async function reloadFriends() {
-    const data = await http<Friend[]>("/api/friendships");
-    setFriends(data);
-  }
-
-  async function reloadIncoming() {
-    const data = await http<FriendRequest[]>("/api/friendships/requests/incoming");
-    setIncoming(data);
-  }
-
-  async function reloadOutgoing() {
-    const data = await http<FriendRequest[]>("/api/friendships/requests/outgoing");
-    setOutgoing(data);
-  }
-
 
   //Cerca utenti per nickname, nome o cognome
   async function handleSearch() {
@@ -148,8 +132,7 @@ export default function Friends() {
       setSuccessMsg("Richiesta inviata");
       setSearchResults([]);
       setSearchQuery("");
-      // await loadAll();
-      await reloadOutgoing(); //TODO CONTROLLA
+      await loadAll();
 
     } catch(err: unknown) {
       if(err instanceof Error) setError(err.message);
@@ -167,13 +150,11 @@ export default function Friends() {
     try {
       await http(`/api/friendships/accept/${friendshipId}`, { method: "PUT" });
       setSuccessMsg("Amicizia accettata");
-      // await loadAll(); 
-      await reloadFriends(); //TODO CONTROLLA
+      await loadAll(); 
 
     } catch(err: unknown) {
       if (err instanceof Error) setError(err.message);
-      // await loadAll();    // ripristino il display delle amicizie se c'è stato un errore
-      await reloadIncoming(); // ripristina solo incoming  //TODO CONTROLLA
+      await loadAll();    // ripristino il display delle amicizie se c'è stato un errore
     }
   }
 
@@ -207,12 +188,11 @@ export default function Friends() {
     try {
       await http(`/api/friendships/${friendshipId}`, { method: "DELETE" });
       setSuccessMsg("Amico rimosso.");
-      // await loadAll();  //TODO CONTROLLA
+      await loadAll(); 
 
     } catch(err: unknown) {
       if (err instanceof Error) setError(err.message);
-      // await loadAll(); // ripristino il display delle amicizie se c'è stato un errore
-      await reloadFriends();  //TODO CONTROLLA
+      await loadAll(); // ripristino il display delle amicizie se c'è stato un errore
     }
   }
 
