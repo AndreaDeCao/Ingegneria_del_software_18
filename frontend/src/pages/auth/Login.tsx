@@ -1,6 +1,7 @@
-import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import GoogleSignInButton from "../../components/GoogleSignInButton";
 import TurnstileWidget from "../../components/TurnstileWidget";
@@ -14,16 +15,30 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileKey, setTurnstileKey] = useState(0);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [error, setError] = useState<string | null>(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam === "banned") return "Il tuo account è stato bannato permanentemente.";
+    if (errorParam === "suspended") return "Il tuo account è sospeso. Contatta il supporto per maggiori informazioni.";
+    return null;
+  });
+
   const resetTurnstile = () => {
     setTurnstileToken("");
     setTurnstileKey((k) => k + 1);
   };
+
+  useEffect(() => {
+    if (searchParams.get("error")) {
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
 
   return (
     <div className={styles.container}>

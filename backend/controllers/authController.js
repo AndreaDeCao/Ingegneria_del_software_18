@@ -241,6 +241,18 @@ exports.login = async (req, res) => {
       return res.status(403).json({ error: "Devi verificare la tua email prima di accedere. Controlla la tua casella di posta."});
     }
 
+    if (user.isBanned) {
+      return res.status(403).json({ error: "banned", message: "Il tuo account è stato bannato permanentemente." });
+    }
+
+    if (user.isSuspended && user.suspendedUntil && new Date(user.suspendedUntil) > new Date()) {
+      return res.status(403).json({ 
+        error: "suspended", 
+        message: "Il tuo account è sospeso.",
+        suspendedUntil: user.suspendedUntil
+      });
+    }
+
     const accessToken = setAuth(res, user._id, user.role); //nuova versione con refresh token nei cookie e access token nell'header Authorization
 
     // c'era un return dopo res.json() — il codice dopo non veniva mai eseguito
@@ -390,6 +402,8 @@ exports.googleCallback = async(req, res) => {
     //Verifica anti-CSRF: devo avere state ricevuto = state nel cookie
     const savedState = req.cookies?.oauth_state;
 
+    const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+
     res.clearCookie("oauth_state");
     if(!state || state !== savedState) {
       return res.status(403).json({ error: "State non valido" });
@@ -445,11 +459,18 @@ exports.googleCallback = async(req, res) => {
       }
     }
 
+    if (user.isBanned) {
+      return res.redirect(`${frontendUrl}/login?error=banned`);
+    }
+
+    if (user.isSuspended && user.suspendedUntil && new Date(user.suspendedUntil) > new Date()) {
+      return res.redirect(`${frontendUrl}/login?error=suspended`);
+    }
+
     //Crea access e refresh token
     const accessToken = setAuth(res, user._id, user.role);
 
     //Reinderizza al frontend
-    const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
     res.redirect(`${frontendUrl}/auth/callback?accessToken=${accessToken}`);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -491,6 +512,9 @@ exports.githubCallback = async (req, res) => {
     // Verifica anti-CSRF — stesso cookie usato da Google
     const savedState = req.cookies?.oauth_state;
     res.clearCookie("oauth_state"); 
+
+    const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+
     if (!state || state !== savedState) {
       return res.status(403).json({ error: "State non valido" });
     }
@@ -558,9 +582,16 @@ exports.githubCallback = async (req, res) => {
       }
     }
 
+    if (user.isBanned) {
+      return res.redirect(`${frontendUrl}/login?error=banned`);
+    }
+
+    if (user.isSuspended && user.suspendedUntil && new Date(user.suspendedUntil) > new Date()) {
+      return res.redirect(`${frontendUrl}/login?error=suspended`);
+    }
+
     const accessToken = setAuth(res, user._id, user.role);
 
-    const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
     res.redirect(`${frontendUrl}/auth/callback?accessToken=${accessToken}`);
   } catch (err) {
     res.status(500).json({ error: err.message });

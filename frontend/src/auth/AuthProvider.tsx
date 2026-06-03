@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { LoginRequest, RegisterRequest, SafeUser } from "./api";
 import { authApi, refreshAccessToken, setAccessToken } from "./api";
+import styles from "./BanModal.module.css";
 
 type AuthContextValue = {
   user: SafeUser | null;
@@ -30,7 +31,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         const r = await authApi.me();
-        if (!cancelled) setUser(r.user);
+        if (!cancelled) {
+          if (r.user) {
+            setUser(r.user);
+          }
+        }
       } catch {
         if (!cancelled) setUser(null);
       } finally {
@@ -101,6 +106,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [user, loading]);
 
+  const [banStatus, setBanStatus] = useState<{
+    type: "banned" | "suspended";
+    message: string;
+    suspendedUntil?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    function handleBanned(e: Event) {
+      const detail = (e as CustomEvent).detail as { message?: string };
+      setBanStatus({ 
+        type: "banned",
+        message: detail.message ?? "Il tuo account è stato bannato." 
+      });
+      setAccessToken(null);
+      setUser(null);
+    }
+
+    function handleSuspended(e: Event) {
+      const detail = (e as CustomEvent).detail as { message?: string; suspendedUntil?: string };
+      setBanStatus({ 
+        type: "suspended", 
+        message: detail.message ?? "Il tuo account è sospeso.", 
+        suspendedUntil: detail.suspendedUntil 
+      });
+      setAccessToken(null);
+      setUser(null);
+    }
+
+    window.addEventListener("auth:banned", handleBanned);
+    window.addEventListener("auth:suspended", handleSuspended);
+    return () => {
+      window.removeEventListener("auth:banned", handleBanned);
+      window.removeEventListener("auth:suspended", handleSuspended);
+    };
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -132,9 +173,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [user, loading]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {banStatus && (
+        <div className={styles.overlay}>
+          <div className={`${styles.modal} ${banStatus.type === "banned" ? styles.modalBanned : styles.modalSuspended}`}>
+            <h2 className={`${styles.title} ${banStatus.type === "banned" ? styles.titleBanned : styles.titleSuspended}`}>
+              {banStatus.type === "banned" ? "Account bannato" : "Account sospeso"}
+            </h2>
+            <p className={styles.message}>{banStatus.message}</p>
+            {banStatus.type === "suspended" && banStatus.suspendedUntil && (
+              <p className={styles.date}>
+                Sospeso fino al {new Date(banStatus.suspendedUntil).toLocaleDateString("it-IT", {
+                  day: "2-digit", month: "long", year: "numeric"
+                })}
+              </p>
+            )}
+            <button
+              className={banStatus.type === "banned" ? styles.btnBanned : styles.btnSuspended}
+              onClick={async () => {
+                await authApi.logout();
+                setAccessToken(null);
+                setUser(null);
+                setBanStatus(null);
+              }}
+            >
+              Esci dall'account
+            </button>
+          </div>
+        </div>
+      )}
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
+
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within <AuthProvider>");

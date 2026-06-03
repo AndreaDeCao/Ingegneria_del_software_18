@@ -157,31 +157,6 @@ export default function AdminUtentiPage() {
 
   const isAdmin = adminUser?.role === "admin";
 
-
-  /**
-   * Recupera la lista utenti dal backend con filtri opzionali.
-   *
-   * @param {boolean} silent - Se true non aggiorna lo stato di loading/error
-   * @returns {Promise<void>}
-   */
-  async function fetchUsers(silent = false) {
-  if(!isAdmin) return;
-
-  try {
-    const params = new URLSearchParams();
-    if (search.trim()) params.set("search", search.trim());
-    if (statusFilter !== "all") params.set("status", statusFilter);
-
-    const data = await http<AdminUser[]>(`/api/admin/users?${params.toString()}`);
-    setUsers(data);
-
-  } catch(err: unknown) {
-    if (!silent && err instanceof Error) setError(err.message);
-  } finally {
-    if (!silent) setLoading(false);
-  }
-}
-
   useEffect(() => {
   let cancelled = false;
 
@@ -220,23 +195,41 @@ export default function AdminUtentiPage() {
    * @returns {Promise<void>}
    */
   async function handleAction(action: "suspend" | "unsuspend" | "ban" | "unban", days?: number) {
-    if (!selectedUser) return;
-    setActionLoading(true);
-    try {
-      const body = action === "suspend" ? { days } : undefined;
-      await http(`/api/admin/users/${selectedUser._id}/${action}`, {
-        method: "PATCH",
-        body: body ? JSON.stringify(body) : undefined,
+  if (!selectedUser) return;
+  setActionLoading(true);
+  try {
+    const body = action === "suspend" ? { days } : undefined;
+    await http(`/api/admin/users/${selectedUser._id}/${action}`, {
+      method: "PATCH",
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    
+    
+    setUsers(prev => prev.map(u => 
+      u._id === selectedUser._id 
+        ? { ...u, 
+            isBanned: action === "ban" ? true : action === "unban" ? false : u.isBanned,
+            isSuspended: action === "suspend" ? true : action === "unsuspend" ? false : u.isSuspended,
+            suspendedUntil: action === "suspend" ? new Date(Date.now() + (days ?? 7) * 24 * 60 * 60 * 1000).toISOString() 
+              : action === "unsuspend" ? null : u.suspendedUntil }
+        : u
+    ));
+
+    const updatedUser = users.find(u => u._id === selectedUser._id);
+    if (updatedUser) {
+      setSelectedUser({
+        ...updatedUser,
+        isBanned: action === "ban" ? true : action === "unban" ? false : updatedUser.isBanned,
+        isSuspended: action === "suspend" ? true : action === "unsuspend" ? false : updatedUser.isSuspended,
       });
-      await fetchUsers(true);
-      const updated = users.find(u => u._id === selectedUser._id);
-      setSelectedUser(updated ?? null);
-    } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message);
-    } finally {
-      setActionLoading(false);
     }
+
+  } catch(err: unknown) {
+    if (err instanceof Error) setError(err.message);
+  } finally {
+    setActionLoading(false);
   }
+}
 
   if (!isAdmin) {
     return (
