@@ -66,7 +66,7 @@ const createEntry = async (req, res) => {
     const saved = await entry.save();
 
     if(amici && amici.length > 0) {
-      const author = await user.findById(req.userId);
+      const author = await User.findById(req.userId);
       for(const friendId of amici) {
         await addNotification(
           friendId,
@@ -484,12 +484,12 @@ const getSegnalazioniByTrek = async (req, res) => {
           from: "users",
           localField: "segnalazione.utenteId",
           foreignField: "_id",
-          as: "utentePopulated",
+          as: "reportedUser",
           pipeline: [{ $project: { nickname: 1, nome: 1, cognome: 1 } }],
         },
       },
-      { $addFields: { utentePopulated: { $arrayElemAt: ["$utentePopulated", 0] }}},
-      { $project: { userId: 1, titolo: 1, data: 1, segnalazione: 1, createdAt: 1, utentePopulated: 1 } },
+      { $addFields: { reportedUser: { $arrayElemAt: ["$reportedUser", 0] }}},
+      { $project: { userId: 1, titolo: 1, data: 1, segnalazione: 1, createdAt: 1, reportedUser: 1 } },
       {
         // pending=0, accepted=1, dismissed=2 → ordine naturale per l'admin
         $addFields: {

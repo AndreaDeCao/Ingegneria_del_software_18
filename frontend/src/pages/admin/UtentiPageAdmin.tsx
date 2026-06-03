@@ -3,6 +3,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
 import Modal from "../../components/Modal/Modal";
 import styles from "./UtentiPageAdmin.module.css";
+import { useSearchParams } from "react-router-dom";
 
 // Type segnalazione utente
 type UserReport = {
@@ -156,6 +157,15 @@ export default function AdminUtentiPage() {
   const [searchTrigger, setSearchTrigger] = useState(0);
 
   const isAdmin = adminUser?.role === "admin";
+
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const userId = searchParams.get("userId");
+    if (!userId || users.length === 0) return;
+    const target = users.find(u => u._id === userId);
+    if (target) setSelectedUser(target);
+  }, [users, searchParams]);
 
   useEffect(() => {
   let cancelled = false;
