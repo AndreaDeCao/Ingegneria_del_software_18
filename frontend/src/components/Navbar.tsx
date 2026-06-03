@@ -91,6 +91,12 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
         {isAdmin ? (
           <>
             <NavLink
+              to="/admin/utenti"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Utenti
+            </NavLink>
+            <NavLink
               to="/treks"
               className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
             >
@@ -184,6 +190,15 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
         {/* Menu hamburger personalizzato per admin */}
         {isAdmin ? (
           <>
+            <DropdownItem
+              label="Utenti"
+              items={[
+                { label: "Gestione Utenti", path: "/admin/utenti" },
+              ]}
+              isOpen={openItem === "Utenti"}
+              onToggle={() => setOpenItem(openItem === "Utenti" ? null : "Utenti")}
+              onNavigate={handleNavigate}
+            />
             <DropdownItem
               label="Attivita"
               items={[

@@ -10,7 +10,7 @@ exports.getUsers = async (req, res) => {
   try {
     const { search, status } = req.query;
 
-    const query = { role: { $ne: "admin" }};
+    const query = {};
 
     if(search?.trim()) {
       const re = new RegExp(search.trim(), "i");
@@ -24,17 +24,15 @@ exports.getUsers = async (req, res) => {
 
     if(status === "banned") {
       query.isBanned = true;
-    } 
-    else if(status === "suspended") {
+    } else if(status === "suspended") {
       query.isSuspended = true;
-    }
-    else if(status === "active") {
+    } else if(status === "active") {
       query.isBanned = false;
     }
 
-    const user = await User.find(query).select(
-      "_id nome cognome nickname email role avatarUrl isBanned isSuspended suspendedUntil createdAt reports"
-    );
+    const user = await User.find(query)
+      .where("role").equals("user")
+      .select("_id nome cognome nickname email role avatarUrl isBanned isSuspended suspendedUntil createdAt reports");
 
     res.json(user);
 

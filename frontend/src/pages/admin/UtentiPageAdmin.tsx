@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
 import Modal from "../../components/Modal/Modal";
-import styles from "./AdminUtentiPage.module.css";
+import styles from "./UtentiPageAdmin.module.css";
 
 // Type segnalazione utente
 type UserReport = {
