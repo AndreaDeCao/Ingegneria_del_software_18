@@ -24,6 +24,8 @@ export default function AdminHomepage() {
   const [totalPendingCount, setTotalPendingCount] = useState(0);
   const [pendingActivityReports, setPendingActivityReports] = useState<ReportCardProps[]>([]);
   const [pendingTrekReports, setPendingTrekReports] = useState<ReportCardProps[]>([]);
+  const [pendingUserReports, setPendingUserReports] = useState<ReportCardProps[]>([]);
+  const [pendingUsersCount, setPendingUsersCount] = useState(0);
 
   const fetchAll = useCallback(async () => {
     if (user?.role !== "admin") return;
@@ -68,7 +70,9 @@ export default function AdminHomepage() {
 
       // ── Percorsi — fan-out per trekId ──
       let trekCards: ReportCardProps[] = [];
+      let userCards: ReportCardProps[] = [];
       let totalTrekPending = 0;
+      let totalUserPending = 0;
 
       const treksRes = await fetch(`${API_BASE}/treks/`);
       if (treksRes.ok) {
@@ -83,18 +87,33 @@ export default function AdminHomepage() {
             if (res.status !== "fulfilled") return;
             const pendingEntries = res.value.filter((s) => s.segnalazione.stato === "pending");
             if (!pendingEntries.length) return;
-            totalTrekPending += pendingEntries.length;
             for (const entry of pendingEntries) {
               const u = entry.userId;
-              trekCards.push({
-                type: "trek",
-                id: entry._id,
-                title: batch[idx].name,
-                reason: [entry.segnalazione.tipo, entry.segnalazione.descrizione].filter(Boolean).join(": ") || "Nessun motivo",
-                reportedBy: u?._id ?? "",
-                reportedByName: u?.nickname ?? u?.email ?? "Utente sconosciuto",
-                targetLink: `/admin/treks/${batch[idx].id}`,
-              });
+              if (entry.segnalazione.tipo === "Utente") {
+                // segnalazione su un utente: punta alla pagina utenti
+                const reportedUser = (entry as any).reportedUser;
+                totalUserPending++;
+                userCards.push({
+                  type: "user",
+                  id: entry._id,
+                  title: reportedUser?.nickname ? `@${reportedUser.nickname}` : "Utente segnalato",
+                  reason: entry.segnalazione.descrizione || "Nessun motivo",
+                  reportedBy: u?._id ?? "",
+                  reportedByName: u?.nickname ?? u?.email ?? "Utente sconosciuto",
+                  targetLink: reportedUser?._id ? `/admin/utenti?userId=${reportedUser._id}` : `/admin/utenti`,
+                });
+              } else {
+                totalTrekPending++;
+                trekCards.push({
+                  type: "trek",
+                  id: entry._id,
+                  title: batch[idx].name,
+                  reason: [entry.segnalazione.tipo, entry.segnalazione.descrizione].filter(Boolean).join(": ") || "Nessun motivo",
+                  reportedBy: u?._id ?? "",
+                  reportedByName: u?.nickname ?? u?.email ?? "Utente sconosciuto",
+                  targetLink: `/admin/treks/${batch[idx].id}`,
+                });
+              }
             }
           });
         }
@@ -102,9 +121,11 @@ export default function AdminHomepage() {
 
       setPendingActivityReports(activityCards);
       setPendingTrekReports(trekCards);
+      setPendingUserReports(userCards);
       setPendingActivitiesCount(activitiesWithPending);
       setPendingTreksCount(totalTrekPending);
-      setTotalPendingCount(totalActivityPending + totalTrekPending);
+      setPendingUsersCount(totalUserPending);
+      setTotalPendingCount(totalActivityPending + totalTrekPending + totalUserPending);
     } finally {
       setLoading(false);
     }
@@ -118,6 +139,7 @@ export default function AdminHomepage() {
 
   const visibleActivityReports = pendingActivityReports.slice(0, MAX_PENDING_REPORTS);
   const visibleTrekReports = pendingTrekReports.slice(0, MAX_PENDING_REPORTS);
+  const visibleUserReports = pendingUserReports.slice(0, MAX_PENDING_REPORTS);
 
   return (
     <main className={styles.main}>
@@ -184,12 +206,32 @@ export default function AdminHomepage() {
             </>
           )}
 
-          {/* ── Segnalazioni utenti (futuro) ── */}
+          {/* ── Segnalazioni utenti ── */}
           <div className={styles.sectionHead} style={{ marginTop: "1.5rem" }}>
-            <h2 className={styles.sectionTitle}>Segnalazioni Utenti</h2>
+            <Link to="/admin/utenti?tab=utenti">
+              <h2 className={styles.sectionTitle}>Segnalazioni Utenti</h2>
+            </Link>
           </div>
           <p className={styles.sectionSubtitle}>Utenti con segnalazioni ancora da esaminare.</p>
-          <p className={styles.adminMessage}>Nessuna segnalazione utente in attesa.</p>
+
+          {loading ? (
+            <p className={styles.adminMessage}>Caricamento...</p>
+          ) : pendingUserReports.length === 0 ? (
+            <p className={styles.adminMessage}>Nessuna segnalazione utente in attesa.</p>
+          ) : (
+            <>
+              <div className={styles.pendingReportList}>
+                {visibleUserReports.map((report, index) => (
+                  <ReportCard key={`user-${report.id}-${index}`} {...report} status="pending" />
+                ))}
+              </div>
+              {pendingUserReports.length > MAX_PENDING_REPORTS && (
+                <Link to="/admin/utenti" className={styles.viewAllReports}>
+                  Vedi tutti ({pendingUserReports.length} in attesa)
+                </Link>
+              )}
+            </>
+          )}
 
         </section>
 
@@ -207,18 +249,18 @@ export default function AdminHomepage() {
             </Link>
 
             <Link to="/admin/segnalazioni?tab=attivita" className={styles.statCard} style={{ textDecoration: "none" }}>
-              <span className={styles.statLabel}>Attività con segnalazioni</span>
+              <span className={styles.statLabel}>Attività segnalate in attesa</span>
               <span className={styles.statValue}>{pendingActivitiesCount}</span>
             </Link>
 
             <Link to="/admin/segnalazioni?tab=percorsi" className={styles.statCard} style={{ textDecoration: "none" }}>
-              <span className={styles.statLabel}>Percorsi segnalati</span>
+              <span className={styles.statLabel}>Percorsi segnalati in attesa</span>
               <span className={styles.statValue}>{pendingTreksCount}</span>
             </Link>
 
-            <Link to="/admin/segnalazioni?filter=user" className={styles.statCard} style={{ textDecoration: "none" }}>
-              <span className={styles.statLabel}>Utenti segnalati</span>
-              <span className={styles.statValue}>0</span>
+            <Link to="/admin/utenti?tab=utenti" className={styles.statCard} style={{ textDecoration: "none" }}>
+              <span className={styles.statLabel}>Utenti segnalati in attesa</span>
+              <span className={styles.statValue}>{pendingUsersCount}</span>
             </Link>
 
           </div>
