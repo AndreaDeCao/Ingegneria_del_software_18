@@ -57,6 +57,9 @@ export default function TrekDetailsAdmin() {
   const [descError, setDescError] = useState<string | null>(null);
   const [descSuccess, setDescSuccess] = useState(false);
 
+  const [closedLoading, setClosedLoading] = useState(false);
+  const [closedError, setClosedError] = useState<string | null>(null);
+
   const messageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
@@ -128,6 +131,22 @@ export default function TrekDetailsAdmin() {
       setDescSaving(false);
     }
   }, [id, descDraft]);
+
+  // ── Toggle chiusura percorso ─────────────────────────────────────────────
+
+  const handleToggleClosed = useCallback(async () => {
+    if (!id) return;
+    setClosedLoading(true);
+    setClosedError(null);
+    try {
+      const result = await http<{ closed: boolean }>(`/treks/${id}/closed`, { method: "PATCH" });
+      setTrek((prev) => prev ? { ...prev, closed: result.closed } : prev);
+    } catch (err: any) {
+      setClosedError(err.message ?? "Errore nel cambio stato del percorso");
+    } finally {
+      setClosedLoading(false);
+    }
+  }, [id]);
 
   // ── Azioni segnalazioni ──────────────────────────────────────────────────
 
@@ -217,6 +236,11 @@ export default function TrekDetailsAdmin() {
             {aperte.length > 0 && (
               <span className={`${adminStyles.statusBadge} ${adminStyles.statusPendingReport}`}>
                 {aperte.length} segnalaz. aperte
+              </span>
+            )}
+            {trek.closed && (
+              <span className={adminStyles.statusBadge} style={{ background: "#fee2e2", color: "#b91c1c" }}>
+                Chiuso
               </span>
             )}
           </div>
@@ -519,6 +543,28 @@ export default function TrekDetailsAdmin() {
               <Link to="/admin/treks/crea" className={appStyles.primaryButton} style={{ marginTop: "0.5rem", display: "block" }}>
                 + Crea nuovo percorso
               </Link>
+            </div>
+
+            {/* Toggle chiusura percorso */}
+            <div className={styles.card}>
+              <h3 className={appStyles.sectionTitle}>Stato percorso</h3>
+              <p style={{ fontSize: "0.9rem", marginBottom: "0.6rem" }}>
+                Il percorso e attualmente{" "}
+                <strong style={{ color: trek.closed ? "#b91c1c" : "#15803d" }}>
+                  {trek.closed ? "chiuso" : "aperto"}
+                </strong>.
+              </p>
+              <button
+                className={trek.closed ? appStyles.primaryButton : appStyles.secondaryButton}
+                onClick={handleToggleClosed}
+                disabled={closedLoading}
+                style={{ width: "100%" }}
+              >
+                {closedLoading ? "Salvataggio…" : trek.closed ? "Riapri percorso" : "Chiudi percorso"}
+              </button>
+              {closedError && (
+                <p style={{ color: "#b91c1c", fontSize: "0.85rem", marginTop: "0.4rem" }}>{closedError}</p>
+              )}
             </div>
 
             {/* Valutazione */}

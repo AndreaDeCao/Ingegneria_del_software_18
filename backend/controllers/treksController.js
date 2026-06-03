@@ -193,6 +193,25 @@ exports.getMyRating = async (req, res) => {
   }
 };
 
+// PATCH /treks/:id/closed  — solo admin
+exports.toggleTrekClosed = async (req, res) => {
+  try {
+    if (req.userRole !== "admin") {
+      return res.status(403).json({ error: "Accesso negato: solo gli admin possono modificare lo stato del percorso." });
+    }
+
+    const trek = await Trek.findOne({ id: parseInt(req.params.id) });
+    if (!trek) return res.status(404).json({ error: "Trek non trovato." });
+
+    trek.closed = !trek.closed;
+    await trek.save();
+
+    res.json({ closed: trek.closed });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // PATCH /treks/:id/description  — solo admin
 exports.updateTrekDescription = async (req, res) => {
   try {

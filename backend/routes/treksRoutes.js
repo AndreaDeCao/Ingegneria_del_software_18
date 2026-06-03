@@ -26,4 +26,7 @@ router.get('/:id/rate', requireAuth, getMyRating);
 //per admin update description
 router.patch("/:id/description", requireAuth, trekController.updateTrekDescription);
 
+//per admin toggle closed
+router.patch("/:id/closed", requireAuth, requireAdmin, trekController.toggleTrekClosed);
+
 module.exports = router;

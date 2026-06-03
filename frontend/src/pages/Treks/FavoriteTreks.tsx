@@ -140,6 +140,7 @@ export default function FavoriteTreks() {
    * Filtri
    */
   const filtered = treks.filter((trek) => {
+    if (trek.closed) return false;
     if (
       search &&
       !trek.name.toLowerCase().includes(search.toLowerCase())

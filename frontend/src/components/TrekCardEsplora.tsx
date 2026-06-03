@@ -119,6 +119,12 @@ function TrekCardEsplora({ trek }: TrekCardEsploraProps) {
               {trek.difficulty}
             </span>
 
+            {trek.closed && (
+              <span className={`${styles.badge}`} style={{ background: "#fee2e2", color: "#b91c1c" }}>
+                Chiuso
+              </span>
+            )}
+
             {trek.duration && (
               // <span className={`${styles.badge} ${styles.badgeDuration}`}>
               <span className={`${styles.badge} ${getDurationStyle(trek.duration)}`}>

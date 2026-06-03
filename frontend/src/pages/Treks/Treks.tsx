@@ -138,6 +138,7 @@ function handleSort(criterion: typeof sortBy) {
  * @returns {boolean} true se il percorso soddisfa tutti i filtri attivi
  */
   const filtered = treks.filter((trek) => {
+    if (!isAdmin && trek.closed) return false;
     if(search && !trek.name.toLowerCase().includes(search.toLowerCase())) return false;
     if(difficulty && trek.difficulty !== difficulty) return false;
     if(maxLength && trek.lengthKm && trek.lengthKm > Number(maxLength)) return false;
