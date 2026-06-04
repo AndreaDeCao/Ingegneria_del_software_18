@@ -43,7 +43,7 @@ const stack = [
   { layer: 'Database', tech: 'MongoDB', note: 'Mongoose ODM' },
   { layer: 'Autenticazione', tech: 'JWT + OAuth 2.0', note: 'Google, GitHub, bcrypt' },
   { layer: 'Mappe', tech: 'API geografiche esterne', note: 'Leaflet / Mapbox' },
-  { layer: 'Meteo', tech: 'API meteo esterne', note: 'Previsioni in tempo reale' },
+  { layer: 'Meteo', tech: 'API meteo Trentino', note: 'Previsioni in tempo reale' },
   { layer: 'Deploy', tech: 'Render / Vercel', note: 'Backend e frontend separati' },
   { layer: 'Containerizzazione', tech: 'Docker + Docker Compose', note: 'Ambiente riproducibile' },
 ];
