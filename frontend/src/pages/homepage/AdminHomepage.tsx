@@ -204,7 +204,7 @@ export default function AdminHomepage() {
               <h2 className={styles.sectionTitle}>Segnalazioni Percorsi</h2>
             </Link>
           </div>
-          <p className={styles.sectionSubtitle}>Percorsi con segnalazioni da parte degli utenti ancora da esaminare.</p>
+          <p className={styles.sectionSubtitle}>Percorsi con segnalazioni ancora da esaminare.</p>
 
           {loading ? (
             <>
@@ -236,7 +236,9 @@ export default function AdminHomepage() {
           <p className={styles.sectionSubtitle}>Utenti con segnalazioni ancora da esaminare.</p>
 
           {loading ? (
-            <p className={styles.adminMessage}>Caricamento...</p>
+            <>
+              <SkeletonReportCard />
+            </>
           ) : pendingUserReports.length === 0 ? (
             <p className={styles.adminMessage}>Nessuna segnalazione utente in attesa.</p>
           ) : (
