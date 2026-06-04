@@ -134,7 +134,7 @@ export default function AdminCreaAttivita() {
 
           <div style={{ paddingBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h1 className={styles.pageTitle}>Crea Attività (Admin)</h1>
-            <Link to="/admin/attivita" className={appStyles.primaryButton}>
+            <Link to="/admin/attivita/visualizza" className={appStyles.primaryButton}>
               Lista Attività
             </Link>
           </div>
