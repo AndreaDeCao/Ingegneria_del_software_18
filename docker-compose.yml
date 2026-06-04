@@ -1,56 +1,36 @@
 services:
-
   backend:
     build: ./backend
     container_name: backend
     ports:
       - "3000:3000"
     volumes:
-      - ./backend:/app                # sync codice
-      - /app/node_modules            # evito conflitti
+      - ./backend:/app
+      - /app/node_modules
+    env_file:
+      - ./backend/.env          # legge le variabili da file
     networks:
       - app-network
-    # depends_on:
-    #   - database
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile    # usa il Dockerfile di dev
     container_name: frontend
     ports:
       - "5173:5173"
     volumes:
       - ./frontend:/app
-      - /app/node_modules # evita conflitti node_modules tra host e container
+      - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
+      - VITE_API_URL=http://localhost:3000
     networks:
       - app-network
     depends_on:
       - backend
 
-  # database:
-  #   image: postgres:15
-  #   container_name: postgres-db
-  #   restart: always
-  #   environment:
-  #     POSTGRES_USER: user
-  #     POSTGRES_PASSWORD: password
-  #     POSTGRES_DB: dolomate
-  #   ports:
-  #     - "5432:5432"
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data   # PERSISTENZA
-  #   networks:
-  #     - app-network
-
-# NETWORK condivisa tra i servizi
 networks:
   app-network:
     driver: bridge
-
-# VOLUMI (persistenti)
-# volumes:
-#   postgres_data:           # salva dati DB anche dopo stop container
-  # backend_node_modules:   # evita conflitti node_modules
-  # frontend_node_modules:  # evita conflitti node_modules

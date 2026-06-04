@@ -7,6 +7,8 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const weatherRoutes = require("./routes/weatherRoutes");
 
+const PORT = process.env.PORT || 3000;
+
 const mongoose = require("mongoose");
 require("dotenv").config();
 
@@ -14,8 +16,27 @@ const app = express();
 mongoose.set("sanitizeFilter", true);
 
 app.use(
+  // cors({
+  //   // origin: process.env.FRONTEND_URL ?? "http://localhost:5173",
+  //   origin: process.env.CLIENT_URL || "http://localhost:5173",
+  //   credentials: true,
+  //   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  //   allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
+  // })
   cors({
-    origin: process.env.FRONTEND_URL ?? "http://localhost:5173",
+    origin: function(origin, callback) {
+      const allowed = (process.env.CLIENT_URL || "")
+        .split(",")
+        .map(s => s.trim())
+        .filter(Boolean);
+      
+      // permetti anche richieste senza origin (es. Postman, curl)
+      if (!origin || allowed.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS bloccato per origin: ${origin}`));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
@@ -96,6 +117,8 @@ mongoose.connect(process.env.MONGODB_URI, { family: 4 })  // Imposta family: 4 p
 // });
 
 
-app.listen(3000, () => {
-  console.log("Server running on http://localhost:3000");
-});
+// app.listen(3000, () => {
+//   console.log("Server running on http://localhost:3000");
+// });
+
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

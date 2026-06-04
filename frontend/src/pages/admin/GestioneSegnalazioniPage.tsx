@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { http } from "../../auth/api";
 
 import styles from "../attivita/attivitaPage.module.css";
-import reportStyles from "./GestioneSegnalazioni.module.css";
+import reportStyles from "./Gestionesegnalazioni.module.css";
 import { SkeletonReportCard  } from "../../components/SkeletonLoader";
 
 import { useAuth } from "../../auth/AuthProvider";

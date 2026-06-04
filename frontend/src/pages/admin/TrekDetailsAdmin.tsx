@@ -5,7 +5,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { http } from "../../auth/api";
 import type { Trek } from "../../types/Trek";
 import appStyles from "../../App.module.css";
-import styles from "../treks/TrekDetails.module.css";
+import styles from "../Treks/TrekDetails.module.css";
 import adminStyles from "../admin/AdminattivitaPage.module.css";
 
 import StarRating from "../../components/StarRating";
