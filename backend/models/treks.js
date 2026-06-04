@@ -10,9 +10,11 @@ const TrekSchema = new mongoose.Schema({ //fatti circa 70 sentieri
   description: String,
   SatRouteNumber: String,   // Numero percorso SAT (es: E101)
 
+  closed: { type: Boolean, default: false }, // Indica se il percorso è chiuso o meno
+
   duration: String,       // Durata stimata in ore (es: "3 ore")
   lengthKm: Number,    // Lunghezza del trekking in km
-  elevationGain: String,     // Dislivello in metri
+  elevationGain: String,     // Dislivello in metri FIXME - nel db è un numero intero
 
   /*tracciaGPX: String,     // URL o percorso del file GPX
   mappaOffline: String,*/   // URL o percorso del file mappa offline
@@ -27,9 +29,17 @@ const TrekSchema = new mongoose.Schema({ //fatti circa 70 sentieri
     lon: Number,
   },
 
+  endCoordinates: {                                     // Coordinate GPS del punto di arrivo
+    lat: Number,
+    lon: Number,
+  },
+
   /*meteoLocationId: String,  // ID per identificare la località meteo associata al trek*/
 
   condizioniAttuali: String,  // Condizioni meteo/percorribilità
+
+  averageRating: { type: Number, default: 0 },
+  ratingCount:   { type: Number, default: 0 },
 
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 });

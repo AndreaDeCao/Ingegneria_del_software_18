@@ -1,0 +1,90 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 420px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: center;
+}
+
+.modalBanned {
+  border: 2px solid #c0392b;
+}
+
+.modalSuspended {
+  border: 2px solid #e67e22;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.titleBanned {
+  color: #c0392b;
+}
+
+.titleSuspended {
+  color: #e67e22;
+}
+
+.message {
+  color: var(--text-primary);
+  font-size: 15px;
+  margin: 0;
+}
+
+.date {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin: 0;
+}
+
+.btnBanned {
+  padding: 8px 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: #c0392b;
+  color: white;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.btnBanned:hover {
+  opacity: 0.85;
+}
+
+.btnSuspended {
+  padding: 8px 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: #e67e22;
+  color: white;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.btnSuspended:hover {
+  opacity: 0.85;
+}

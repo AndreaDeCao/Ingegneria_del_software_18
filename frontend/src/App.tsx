@@ -12,12 +12,13 @@ import ProtectedRoute from "./auth/ProtectedRoute";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import AuthCallback from "./pages/auth/AuthCallback";
+import RequestTemporaryPassword from "./pages/auth/RequestTemporaryPassword";
 
 import Treks from "./pages/Treks/Treks";
-import MyTreks from "./pages/Treks/MyTreks";
+import FavoriteTreks from "./pages/Treks/FavoriteTreks";
 import TrekDetails from "./pages/Treks/TrekDetails";
 
-import Friends from "./pages/Friends";
+import Friends from "./pages/amici/Friends";
 import Home from "./pages/Home";
 
 import Privacy from "./pages/informativa/Privacy";
@@ -26,14 +27,23 @@ import Contatti from "./pages/informativa/Contatti";
 
 
 import ProfilePage from "./pages/account/ProfilePage";
-import SecurityPage from "./pages/account/SecurityPage";
-import PolicyPage from "./pages/account/PolicyPage";
 
 import VisualizzaDiarioPage from "./pages/diario/VisualizzaDiarioPage";
 import CreaVoceDiarioPage from "./pages/diario/CreaVoceDiarioPage";
+import DettagliVoceDiarioPage from "./pages/diario/DettagliVoceDiarioPage";
 
-import VisualizzaAttivitaPage from "./pages/attivita/VisualizzaAttivitaPage";
+import VisualizzaAttivitaPage from "./pages/attivita/VisualizzaListaAttivitaPage";
 import CreaAttivitaPage from "./pages/attivita/CreaAttivitaPage";
+import DettagliAttivita from "./pages/attivita/dettagliAttivita";
+
+import AdminVisualizzaListaAttivitaPage from "./pages/admin/AdminVisualizzaListaAttivitaPage";
+import AdminDettagliAttivita from "./pages/admin/AdminDettagliAttivita";
+import AdminCreaAttivita from "./pages/admin/AdminCreaAttivita";
+import GestioneSegnalazioniPage from "./pages/admin/GestioneSegnalazioniPage";
+import TrekCreateAdmin from "./pages/admin/TrekCreateAdmin";
+import UtentiPageAdmin from "./pages/admin/UtentiPageAdmin";
+
+import TrekDetailsAdmin from "./pages/admin/TrekDetailsAdmin";
 
 import VersioneCorrentePage from "./pages/versione/VersioneCorrentePage";
 
@@ -87,32 +97,42 @@ export default function App() {
                   {/* Auth */}
                   <Route path="/login"    element={<AppLayout><Login /></AppLayout>} />
                   <Route path="/register" element={<AppLayout><Register /></AppLayout>} />
-        
+                  <Route path="/forgotten-password" element={<AppLayout><RequestTemporaryPassword /></AppLayout>} />
+
                   {/* Treks — pubblica */}
                   <Route path="/treks" element={<AppLayout><Treks /></AppLayout>} />
         
                   {/* Route protette — navigazione principale */}
-                  <Route path="/my-treks" element={<AppLayout><ProtectedRoute>
-                    <MyTreks />
-                  </ProtectedRoute></AppLayout>} />
-                  <Route path="/friends"  element={<AppLayout><ProtectedRoute><Friends /></ProtectedRoute></AppLayout>} />
+                  <Route path="/my-treks" element={ <AppLayout><ProtectedRoute allowedRoles={["user"]}><FavoriteTreks /></ProtectedRoute></AppLayout>}/>                  <Route path="/friends"  element={<AppLayout><ProtectedRoute><Friends /></ProtectedRoute></AppLayout>} />
         
                   {/* Route protette — menu a tendina con sezione dinamica */}
                   
                   <Route path="/account/profile" element={<AppLayout><ProtectedRoute><ProfilePage /></ProtectedRoute></AppLayout>} />
-                  <Route path="/account/security" element={<AppLayout><ProtectedRoute><SecurityPage /></ProtectedRoute></AppLayout>} />
-                  <Route path="/account/policy" element={<AppLayout><ProtectedRoute><PolicyPage /></ProtectedRoute></AppLayout>} />
                   {/*<Route path="informativa/termini"  element={<AppLayout><Termini /></AppLayout>} />*/} {/* FIX ME: policy e termini stessa cosa? (fix anche in navbar.tsx) */}
+                    
+                  <Route path="/diario/visualizza" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><VisualizzaDiarioPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/diario/crea" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><CreaVoceDiarioPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/diario/:id" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><DettagliVoceDiarioPage /></ProtectedRoute></AppLayout>} />
 
-                  <Route path="/diario/visualizza" element={<AppLayout><ProtectedRoute><VisualizzaDiarioPage /></ProtectedRoute></AppLayout>} />
-                  <Route path="/diario/crea" element={<AppLayout><ProtectedRoute><CreaVoceDiarioPage /></ProtectedRoute></AppLayout>} />
-
-                  <Route path="/attivita/visualizza" element={<AppLayout><ProtectedRoute><VisualizzaAttivitaPage /></ProtectedRoute></AppLayout>} />
-                  <Route path="/attivita/crea" element={<AppLayout><ProtectedRoute><CreaAttivitaPage /></ProtectedRoute></AppLayout>} />
-
+                  <Route path="/attivita/visualizza" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><VisualizzaAttivitaPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/attivita/crea" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><CreaAttivitaPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/attivita/:id" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><DettagliAttivita /></ProtectedRoute></AppLayout>} />
+                  
                   <Route path="/versione/corrente" element={<AppLayout><VersioneCorrentePage /></AppLayout>} />
+                  
+                  <Route path="/admin/attivita/visualizza" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><AdminVisualizzaListaAttivitaPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/admin/attivita/:id" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><AdminDettagliAttivita /></ProtectedRoute></AppLayout>} />
+                  <Route path="/admin/segnalazioni" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><GestioneSegnalazioniPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/attivita/crea" element={<AppLayout><ProtectedRoute allowedRoles={["user"]}><CreaAttivitaPage /></ProtectedRoute></AppLayout>} />
+                  <Route path="/admin/attivita/crea" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><AdminCreaAttivita /></ProtectedRoute></AppLayout>} />
+                  <Route path="/admin/treks/:id" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><TrekDetailsAdmin /></ProtectedRoute></AppLayout>} />
+                  <Route path="/admin/treks/crea" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><TrekCreateAdmin /></ProtectedRoute></AppLayout>} />
+                  <Route path="/admin/utenti" element={<AppLayout><ProtectedRoute allowedRoles={["admin"]}><UtentiPageAdmin /></ProtectedRoute></AppLayout>} />
 
-                {/*
+                  {/* Route protette — admin 
+                */}
+                
+                  {/*
                   <Route path="/profile/profilo"  element={<AppLayout><ProtectedRoute> 
                     <ProfilePage />
                   </ProtectedRoute></AppLayout>} />

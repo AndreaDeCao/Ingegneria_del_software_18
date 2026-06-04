@@ -3,8 +3,9 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/users");
 const {OAuth2Client } = require("google-auth-library"); 
 const crypto = require("crypto");
-const {sendVerificationEmail} = require("../services/emailService");
+const { sendVerificationEmail, sendTemporaryPasswordEmail } = require("../services/emailService");
 
+const REFRESH_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 function getJwtSecret() {
   // const secret = process.env.JWT_SECRET; //obsoleto, non usato più, sostituito da JWT_ACCESS_SECRET e JWT_REFRESH_SECRET
@@ -27,7 +28,21 @@ function safeUser(userDoc) {
     email: userDoc.email,
     nickname: userDoc.nickname,
     role: userDoc.role,
+    avatarUrl: userDoc.avatarUrl ?? null,
+    favoriteTreks: userDoc.favoriteTreks ?? [],
   };
+}
+
+function generateTemporaryPassword(length = 12) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let password = "";
+  while (password.length < length) {
+    const byte = crypto.randomBytes(1)[0];
+    if (byte < chars.length * Math.floor(256 / chars.length)) {
+      password += chars[byte % chars.length];
+    }
+  }
+  return password;
 }
 
 // Setta il refresh token in un cookie httpOnly e restituisce l'access token nel body
@@ -43,17 +58,17 @@ function setAuth(res, userId, role="user") {
   );
  
   const refreshToken = jwt.sign(
-    { sub: userId.toString() },
+    { sub: userId.toString(), role },
     getJwtRefreshSecret(),
-    { expiresIn: "15m" }
+    { expiresIn: "7d" }
   );
  
   // Refresh token → cookie httpOnly (invisibile a JS)
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
-    sameSite: "lax", // permette l'invio del cookie anche in richieste cross-site, ma solo se provengono da link o form (non da fetch/ajax), riducendo il rischio di CSRF mantenendo la funzionalità del refresh token
+    sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 1000, // 1 ora
+    maxAge: REFRESH_TOKEN_MAX_AGE_MS,
     path: "/api/auth/refresh", // cookie inviato SOLO a questo endpoint
   });
  
@@ -66,6 +81,7 @@ function clearAuth(res) {
   res.clearCookie("refresh_token", {
     httpOnly: true,
     sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
     path: "/api/auth/refresh",
   });
 }
@@ -167,6 +183,36 @@ exports.register = async (req, res) => {
   }
 };
 
+exports.requestTemporaryPassword = async (req, res) => {
+  try {
+    const { email } = req.body ?? {};
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ error: "Email mancante" });
+    }
+
+    const user = await User.findOne({ email }).select("+passwordHash");
+    if (!user) return res.status(404).json({ error: "Utente non trovato" });
+    if ((user.googleId || user.githubId) && !user.emailVerified) {
+        user.emailVerified = true;
+        /* console.log("changing bool on db") */  //TEST raggiungimento e cambiamento
+    }
+
+    const tempPassword = generateTemporaryPassword(12);
+    const saltedRound = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) : 15;
+    const tempPasswordHash = await bcrypt.hash(tempPassword, saltedRound);
+
+    user.passwordHash = tempPasswordHash;
+    user.tempPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // valida per 1 ora
+    await user.save();
+
+    await sendTemporaryPasswordEmail(email, tempPassword);
+
+    res.json({ message: "Password provvisoria inviata via email. Controlla la tua casella di posta." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body ?? {}; //se email o password sono undefined, li sostituisce con stringa vuota per evitare errori di bcrypt.compare che si aspetta stringhe
@@ -195,7 +241,19 @@ exports.login = async (req, res) => {
       return res.status(403).json({ error: "Devi verificare la tua email prima di accedere. Controlla la tua casella di posta."});
     }
 
-    const accessToken = setAuth(res, user._id); //nuova versione con refresh token nei cookie e access token nell'header Authorization
+    if (user.isBanned) {
+      return res.status(403).json({ error: "banned", message: "Il tuo account è stato bannato permanentemente." });
+    }
+
+    if (user.isSuspended && user.suspendedUntil && new Date(user.suspendedUntil) > new Date()) {
+      return res.status(403).json({ 
+        error: "suspended", 
+        message: "Il tuo account è sospeso.",
+        suspendedUntil: user.suspendedUntil
+      });
+    }
+
+    const accessToken = setAuth(res, user._id, user.role); //nuova versione con refresh token nei cookie e access token nell'header Authorization
 
     // c'era un return dopo res.json() — il codice dopo non veniva mai eseguito
     res.json({ user: safeUser(user), accessToken }); //manda i dati dell'utente (senza passwordHash) e il token di accesso al client, che lo salverà e lo userà per autenticarsi nelle richieste future
@@ -214,17 +272,14 @@ exports.logout = async (req, res) => {
 
 exports.refresh = (req, res) => {
   const token = req.cookies?.refresh_token;
-  if (!token) return res.status(401).json({ error: "Refresh token mancante" });
+  if (!token) return res.json({ accessToken: null });
 
   try {
     const payload = jwt.verify(token, getJwtRefreshSecret());
-    const accessToken = jwt.sign(
-      { sub: payload.sub },
-      getJwtSecret(),
-      { expiresIn: "15m" }
-    );
+    const accessToken = setAuth(res, payload.sub, payload.role ?? "user");
     res.json({ accessToken });
   } catch {
+    clearAuth(res);
     res.status(401).json({ error: "Refresh token non valido o scaduto" });
   }
 };
@@ -347,6 +402,8 @@ exports.googleCallback = async(req, res) => {
     //Verifica anti-CSRF: devo avere state ricevuto = state nel cookie
     const savedState = req.cookies?.oauth_state;
 
+    const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+
     res.clearCookie("oauth_state");
     if(!state || state !== savedState) {
       return res.status(403).json({ error: "State non valido" });
@@ -402,11 +459,18 @@ exports.googleCallback = async(req, res) => {
       }
     }
 
+    if (user.isBanned) {
+      return res.redirect(`${frontendUrl}/login?error=banned`);
+    }
+
+    if (user.isSuspended && user.suspendedUntil && new Date(user.suspendedUntil) > new Date()) {
+      return res.redirect(`${frontendUrl}/login?error=suspended`);
+    }
+
     //Crea access e refresh token
-    const accessToken = setAuth(res, user._id);
+    const accessToken = setAuth(res, user._id, user.role);
 
     //Reinderizza al frontend
-    const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
     res.redirect(`${frontendUrl}/auth/callback?accessToken=${accessToken}`);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -448,6 +512,9 @@ exports.githubCallback = async (req, res) => {
     // Verifica anti-CSRF — stesso cookie usato da Google
     const savedState = req.cookies?.oauth_state;
     res.clearCookie("oauth_state"); 
+
+    const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+
     if (!state || state !== savedState) {
       return res.status(403).json({ error: "State non valido" });
     }
@@ -515,9 +582,16 @@ exports.githubCallback = async (req, res) => {
       }
     }
 
-    const accessToken = setAuth(res, user._id);
+    if (user.isBanned) {
+      return res.redirect(`${frontendUrl}/login?error=banned`);
+    }
 
-    const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+    if (user.isSuspended && user.suspendedUntil && new Date(user.suspendedUntil) > new Date()) {
+      return res.redirect(`${frontendUrl}/login?error=suspended`);
+    }
+
+    const accessToken = setAuth(res, user._id, user.role);
+
     res.redirect(`${frontendUrl}/auth/callback?accessToken=${accessToken}`);
   } catch (err) {
     res.status(500).json({ error: err.message });

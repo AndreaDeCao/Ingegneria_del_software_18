@@ -1,9 +1,12 @@
-import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import GoogleSignInButton from "../../components/GoogleSignInButton";
 import TurnstileWidget from "../../components/TurnstileWidget";
+import styles from "./Auth.module.css";
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export default function Login() {
   const { login } = useAuth();
@@ -12,24 +15,39 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileKey, setTurnstileKey] = useState(0);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [error, setError] = useState<string | null>(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam === "banned") return "Il tuo account è stato bannato permanentemente.";
+    if (errorParam === "suspended") return "Il tuo account è sospeso. Contatta il supporto per maggiori informazioni.";
+    return null;
+  });
 
   const resetTurnstile = () => {
     setTurnstileToken("");
     setTurnstileKey((k) => k + 1);
   };
 
-  return (
-    <div style={{ padding: 24, maxWidth: 520, left: "50%", transform: "translateX(-50%)", position: "relative", marginTop: 50}}>
-     {/* <div style={{ padding: 24, position: "relative", marginTop: 40, maxWidth: 400, marginLeft: "auto", marginRight: "auto" }}> */}
-      <h2>Form di login</h2>
-      <br />
+  useEffect(() => {
+    if (searchParams.get("error")) {
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
 
-      <form
+  return (
+    <div className={styles.container}>
+      <h2 className={styles.heading}>Accedi</h2>
+      {/* <p className={styles.intro}>
+        Inserisci le tue credenziali e completa il CAPTCHA per accedere all'app.
+      </p> */}
+
+      <form className={styles.form}
         onSubmit={async (e) => {
           e.preventDefault();
           setError(null);
@@ -40,7 +58,7 @@ export default function Login() {
               setSubmitting(false);
               return;
             }
-            await login({ email, password, turnstileToken }); // Passiamo anche il token del captcha alla funzione di login
+            await login({ email, password, turnstileToken });
             const to = location.state?.from ?? "/home";
             navigate(to, { replace: true });
           } catch (err) {
@@ -59,10 +77,10 @@ export default function Login() {
           }
         }}
       >
-        <label style={{ display: "block", marginTop: 12 }}>
+        <label className={styles.label}>
           Email
           <input
-            style={{ width: "100%", padding: 8 }}
+            className={styles.input}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
@@ -71,10 +89,10 @@ export default function Login() {
           />
         </label>
 
-        <label style={{ display: "block", marginTop: 12 }}>
+        <label className={styles.label}>
           Password
           <input
-            style={{ width: "100%", padding: 8 }}
+            className={styles.input}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             type="password"
@@ -92,55 +110,36 @@ export default function Login() {
           }}
         />
 
-        {error && (
-          <div
-            role="alert"
-            style={{
-              marginTop: 12,
-              padding: 12,
-              borderRadius: 8,
-              border: "1px solid #f5c6cb",
-              background: "#fdecea",
-              color: "#7a1f1f",
-            }}
-          >
-            {error}
-          </div>
-        )}
+        {error && <div role="alert" className={styles.errorBox}>{error}</div>}
 
-        
-
-        <button type="submit" disabled={submitting} style={{ marginTop: 16, width: "100%", padding: 10, cursor: "pointer" , background: "#ececec", color: "#000000", border: `1px solid`, borderRadius: 6 }}>
+        <button type="submit" disabled={submitting} className={styles.submitButton}>
           {submitting ? "Accesso..." : "Accedi"}
         </button>
       </form>
 
-      {/* Separatore */}
-      <div style={{display: "flex", alignItems: "center", gap: 8, margin: "16px 0"}}>
-        <hr style={{ flex: 1}}/>
-        <span style={{ color: "#888", fontSize: 13}}>oppure</span>
-        <hr style={{ flex: 1}}/>
+      <div className={styles.divider}>
+        <hr className={styles.dividerLine} />
+        <span className={styles.orText}>oppure</span>
+        <hr className={styles.dividerLine} />
       </div>
-      
-      <button
-        onClick={() => window.location.href = "http://localhost:3000/api/auth/github"}
-        style={{ width: "100%", padding: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", background: "#fff", color: "#000", border: "1px solid #000", borderRadius: 6 }}>
-        <img src="./GitHub_Lockup_Black.svg" width={100} height={18} alt="GitHub" />
-      </button>
 
-      {/* Login con Google */}
-      {/* <button
-        onClick={() => window.location.href = "http://localhost:3000/api/auth/google"}
-        style={{ width: "100%", padding: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer"}}>
+      <div className={styles.socialGrid}>
+        <button
+          onClick={() => window.location.href = `${API_BASE}/api/auth/github`}
+          className={styles.githubButton}
+        >
+          <img src="./GitHub_Lockup_Black.svg" width={100} height={18} alt="GitHub" />
+        </button>
 
-        <img src="https://www.google.com/favicon.ico" width={16} height={16} alt="Google" />
-        Accedi con Google
-      </button> */}
-      <br />
-      <GoogleSignInButton label="Accedi con Google" />
+        <GoogleSignInButton label="Accedi con Google" />
+      </div>
 
-      <p style={{ marginTop: 16 }}>
-        Non hai un account? <Link to="/register" style={{ color: 'blue' }}>Registrati</Link>
+      <p className={styles.caption}>
+        Non hai un account? <Link to="/register" className={styles.link}>Registrati</Link>
+      </p>
+
+      <p className={styles.caption}>
+        Password dimenticata? <Link to="/forgotten-password" className={styles.link}>Richiedi password provvisoria</Link>
       </p>
     </div>
   );

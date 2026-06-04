@@ -1,0 +1,83 @@
+.reportCard {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  border: 0.5px solid var(--border);
+  overflow: hidden;
+  width: 320px;
+  min-width: 320px;
+  transition: transform 0.18s;
+  cursor: pointer;
+}
+
+.reportCard:hover {
+  transform: translateY(-3px);
+}
+
+.reportCardBody {
+  padding: 14px;
+}
+
+.reportTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.reportReason {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  padding: 8px;
+  background: var(--bg-secondary, rgba(0,0,0,0.03));
+  border-radius: 8px;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.reportMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.reportMetaItem {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.reportMetaLabel {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.reportMetaValue {
+  color: var(--text-primary);
+}
+
+.reportBadge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-weight: 500;
+  background: var(--accent-light);
+  color: var(--accent-text);
+  margin-top: 8px;
+}
+
+.reportBadgePending {
+  background: rgba(230, 180, 34, 0.18);
+  border: 1px solid rgba(230, 180, 34, 0.5);
+  color: #a07800;
+}
+
+.reportCardLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}

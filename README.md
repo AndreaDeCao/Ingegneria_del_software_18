@@ -101,8 +101,11 @@ Ingegneria_del_software_18
 │  │  ├─ activityController.js
 │  │  ├─ authController.js
 │  │  ├─ diaryController.js
+│  │  ├─ routeController.js
 │  │  ├─ treksController.js
 │  │  ├─ usersController.js
+│  │  ├─ eventController.js
+│  │  ├─ friendshipController.js
 │  │  └─ weatherController.js
 │  ├─ data
 │  │  └─ meteoLocations.json
@@ -117,20 +120,29 @@ Ingegneria_del_software_18
 │  │  ├─ activityRoutes.js
 │  │  ├─ authRoutes.js
 │  │  ├─ diaryRoutes.js
+│  │  ├─ routeRoutes.js
 │  │  ├─ userRoutes.js
+│  │  ├─ eventsRoutes.js
+│  │  ├─ friendshipRoutes.js
 │  │  ├─ weatherRoutes.js
 │  │  └─ treksRoutes.js
 │  ├─ models
 │  │  ├─ activities.js
+│  │  ├─ activitieInvitations.js
 │  │  ├─ diary.js
 │  │  ├─ treks.js
+│  │  ├─ ratings.js
+│  │  ├─ events.js
+│  │  ├─ friendship.js
 │  │  └─ users.js
+│  ├─ scripts
+│  │  └─ seedEvents.js
 │  ├─ oas3.yaml
 │  ├─ package-lock.json
 │  ├─ package.json
-│  ├─ services
-│  │  └─ emailService.js
-│  └─ swagger.js
+│  └─ services
+│     ├─ routeService.js
+│     └─ emailService.js
 ├─ docker-compose.yml
 ├─ frontend
 │  ├─ .dockerignore
@@ -155,16 +167,29 @@ Ingegneria_del_software_18
 │  │  ├─ components
 │  │  │  ├─ ActivityCard.module.css
 │  │  │  ├─ ActivityCard.tsx
+│  │  │  ├─ DiaryCard.module.css
+│  │  │  ├─ DiaryCard.tsx
+│  │  │  ├─ EventCard.module.css
+│  │  │  ├─ EventCard.tsx
 │  │  │  ├─ Footer.module.css
 │  │  │  ├─ Footer.tsx
 │  │  │  ├─ GoogleSignInButton.module.css
 │  │  │  ├─ GoogleSignInButton.tsx
+│  │  │  ├─ Modal
+│  │  │  │  ├─ Modal.module.css
+│  │  │  │  └─ Modal.tsx
 │  │  │  ├─ Navbar.module.css
 │  │  │  ├─ Navbar.tsx
+│  │  │  ├─ ReportCard.module.css
+│  │  │  ├─ ReportCard.tsx
+│  │  │  ├─ StarRating.module.css
+│  │  │  ├─ StarRating.tsx
 │  │  │  ├─ TrekCard.module.css
 │  │  │  ├─ TrekCard.tsx
 │  │  │  ├─ TrekCardEsplora.module.css
 │  │  │  ├─ TrekCardEsplora.tsx
+│  │  │  ├─ TrekCardFavorite.module.css
+│  │  │  ├─ TrekCardFavorite.tsx
 │  │  │  ├─ TrekMap.tsx
 │  │  │  └─ TurnstileWidget.tsx
 │  │  ├─ hooks
@@ -175,17 +200,31 @@ Ingegneria_del_software_18
 │  │  │  ├─ account
 │  │  │  │  ├─ AccountPage.tsx
 │  │  │  │  ├─ PolicyPage.tsx
+│  │  │  │  ├─ ProfilePage.module.css
 │  │  │  │  ├─ ProfilePage.tsx
 │  │  │  │  └─ SecurityPage.tsx
+│  │  │  ├─ admin
+│  │  │  │  ├─ Gestionesegnalazioni.module.css
+│  │  │  │  └─ GestioneSegnalazioniPage.tsx
+│  │  │  ├─ amici
+│  │  │  │  ├─ Friends.module.css
+│  │  │  │  └─ Friends.tsx
 │  │  │  ├─ attivita
+│  │  │  │  ├─ attivitaPage.module.css
 │  │  │  │  ├─ CreaAttivitaPage.tsx
-│  │  │  │  └─ VisualizzaAttivitaPage.tsx
+│  │  │  │  ├─ dettagliAttivita.tsx
+│  │  │  │  └─ VisualizzaListaAttivitaPage.tsx
 │  │  │  ├─ auth
+│  │  │  │  ├─ Auth.module.css
 │  │  │  │  ├─ AuthCallback.tsx
 │  │  │  │  ├─ Login.tsx
-│  │  │  │  └─ Register.tsx
+│  │  │  │  ├─ Register.tsx
+│  │  │  │  └─ RequestTemporaryPassword.tsx
 │  │  │  ├─ diario
 │  │  │  │  ├─ CreaVoceDiarioPage.tsx
+│  │  │  │  ├─ DettagliDiario.module.css
+│  │  │  │  ├─ DettagliVoceDiarioPage.tsx
+│  │  │  │  ├─ Diario.module.css
 │  │  │  │  └─ VisualizzaDiarioPage.tsx
 │  │  │  ├─ Friends.tsx
 │  │  │  ├─ Home.tsx
@@ -209,7 +248,14 @@ Ingegneria_del_software_18
 │  │  ├─ ScrollToTop.tsx
 │  │  └─ types
 │  │     ├─ Activity.ts
+│  │     ├─ ActivityInvite.ts
+│  │     ├─ ActivityPopulated.ts
 │  │     ├─ Diary.ts
+│  │     ├─ DiaryStats.ts
+│  │     ├─ Events.ts
+│  │     ├─ Friend.ts
+│  │     ├─ Organizer.ts
+│  │     ├─ Participant.ts
 │  │     ├─ Trek.ts
 │  │     └─ User.ts
 │  ├─ tsconfig.app.json

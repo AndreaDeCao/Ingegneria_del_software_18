@@ -3,6 +3,8 @@ const router = express.Router();
 const trekController = require("../controllers/treksController");
 const authenticate = require("../middleware/requireAuth");
 const requireAdmin = require("../middleware/requireAdmin");
+const requireAuth = require("../middleware/requireAuth");
+const { rateTrek, getMyRating } = require('../controllers/treksController');
 
 // router.post("/", trekController.createTrek);
 // router.get("/treks", authenticate, trekController.getTreks);
@@ -10,9 +12,21 @@ const requireAdmin = require("../middleware/requireAdmin");
 
 router.get("/", trekController.getTreks);
 
+router.get("/by-mongo-id/:mongoId", trekController.getNumericIdByMongoId);
+
 router.get("/:id", trekController.getTreksById);
 
-router.post("/", authenticate, requireAdmin, trekController.createTrek); 
+// Creazione percorso — solo admin
+router.post("/", requireAuth, requireAdmin, trekController.createTrek);
 
+//per ratings
+router.put('/:id/rate', requireAuth, rateTrek);
+router.get('/:id/rate', requireAuth, getMyRating);
+
+//per admin update description
+router.patch("/:id/description", requireAuth, trekController.updateTrekDescription);
+
+//per admin toggle closed
+router.patch("/:id/closed", requireAuth, requireAdmin, trekController.toggleTrekClosed);
 
 module.exports = router;

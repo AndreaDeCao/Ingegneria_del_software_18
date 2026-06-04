@@ -62,11 +62,14 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openItem, setOpenItem] = useState<string | null>(null);
   const navigate = useNavigate();
+  const isAdmin = user?.role === "admin";
+
   const handleNavigate = (path: string) => {
     navigate(path);
     setMenuOpen(false);
     setOpenItem(null);
   }
+
   return(
   <div style={{ position: "relative" }}>
     <header className={`${styles.header} ${menuOpen ? styles.menuOpenHeader : ""}`}>
@@ -84,31 +87,64 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
       </div>
 
       <nav className={styles.nav}>
-        <NavLink
-          to="/treks"
-          className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-        >
-          Esplora
-        </NavLink>
-        <NavLink
-          to="/my-treks"
-          className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-        >
-          I miei Percorsi
-        </NavLink>
-        <NavLink
-          to="/friends"
-          className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
-        >
-          Amici
-        </NavLink>
+        {/* Nav links diversi per admin e utente normale */}
+        {isAdmin ? (
+          <>
+            <NavLink
+              to="/admin/utenti"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Utenti
+            </NavLink>
+            <NavLink
+              to="/treks"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Percorsi
+            </NavLink>
+            <NavLink
+              to="/admin/attivita/visualizza"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Attivita
+            </NavLink>
+            <NavLink
+              to="/admin/segnalazioni"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Segnalazioni
+            </NavLink>
+          </>
+        ) : (
+          <>
+            <NavLink
+              to="/treks"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Esplora
+            </NavLink>
+            <NavLink
+              to="/my-treks"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              I miei Percorsi
+            </NavLink>
+            <NavLink
+              to="/friends"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              Amici
+            </NavLink>
+          </>
+        )}
 
         {!user ? (
           <NavLink to="/login" className={styles.navLink}>
             Login
           </NavLink>
         ) : (
-          <button
+          <NavLink
+            to="/"
             className={styles.navLink}
             onClick={async () => {
               await logout();
@@ -116,7 +152,7 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
             }}
           >
             Logout
-          </button>
+          </NavLink>
         )}
 
         <button className={styles.themeBtn} onClick={onToggleTheme}
@@ -138,33 +174,65 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
         label="Account"
         items={[
           { label: "Profilo", path: "/account/profile" },
-          { label: "Sicurezza", path: "/account/security" },
-          { label: "Policy/Cookies", path: "/account/policy" },
-          //{ label: "Policy/Cookies", path: "./termini" }, //FIXME: policy e termini stessa cosa? (fix anche in app.tsx)
         ]}
         isOpen={openItem === "Account"}
         onToggle={() => setOpenItem(openItem === "Account" ? null : "Account")}
         onNavigate={handleNavigate}/>
 
-        <DropdownItem
-        label="Diario"
-        items={[
-          { label: "Visualizza Diario", path: "/diario/visualizza" },
-          { label: "Crea Nuova Voce Diario", path: "/diario/crea" },
-        ]}
-        isOpen={openItem === "Diario"}
-        onToggle={() => setOpenItem(openItem === "Diario" ? null : "Diario")}
-        onNavigate={handleNavigate}/>
+        {/* Menu hamburger personalizzato per admin */}
+        {isAdmin ? (
+          <>
+            <DropdownItem
+              label="Utenti"
+              items={[
+                { label: "Gestione Utenti", path: "/admin/utenti" },
+              ]}
+              isOpen={openItem === "Utenti"}
+              onToggle={() => setOpenItem(openItem === "Utenti" ? null : "Utenti")}
+              onNavigate={handleNavigate}
+            />
+            <DropdownItem
+              label="Attivita"
+              items={[
+                { label: "Visualizza Lista Attivita", path: "/attivita/visualizza" },
+                { label: "Crea Nuova Attivita", path: "/attivita/crea" },
+              ]}
+              isOpen={openItem === "AttivitaAdmin"}
+              onToggle={() => setOpenItem(openItem === "AttivitaAdmin" ? null : "AttivitaAdmin")}
+              onNavigate={handleNavigate}/>
 
-        <DropdownItem
-        label="Attività"
-        items={[
-          { label: "Visualizza Attività", path: "/attivita/visualizza" },
-          { label: "Crea Nuova Attività", path: "/attivita/crea" },
-        ]}
-        isOpen={openItem === "Attività"}
-        onToggle={() => setOpenItem(openItem === "Attività" ? null : "Attività")}
-        onNavigate={handleNavigate}/>
+            <DropdownItem
+              label="Segnalazioni"
+              items={[
+                { label: "Gestione Segnalazioni", path: "/admin/segnalazioni" },
+              ]}
+              isOpen={openItem === "Segnalazioni"}
+              onToggle={() => setOpenItem(openItem === "Segnalazioni" ? null : "Segnalazioni")}
+              onNavigate={handleNavigate}/>
+          </>
+        ) : (
+          <>
+            <DropdownItem
+              label="Diario"
+              items={[
+                { label: "Visualizza Diario", path: "/diario/visualizza" },
+                { label: "Crea Nuova Voce Diario", path: "/diario/crea" },
+              ]}
+              isOpen={openItem === "Diario"}
+              onToggle={() => setOpenItem(openItem === "Diario" ? null : "Diario")}
+              onNavigate={handleNavigate}/>
+
+            <DropdownItem
+              label="Attivita"
+              items={[
+                { label: "Visualizza Lista Attivita", path: "/attivita/visualizza" },
+                { label: "Crea Nuova Attivita", path: "/attivita/crea" },
+              ]}
+              isOpen={openItem === "Attivita"}
+              onToggle={() => setOpenItem(openItem === "Attivita" ? null : "Attivita")}
+              onNavigate={handleNavigate}/>
+          </>
+        )}
 
         <DropdownItem
         label="Versione"

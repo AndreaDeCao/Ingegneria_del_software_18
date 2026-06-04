@@ -17,11 +17,13 @@ app.use(
   cors({
     origin: process.env.FRONTEND_URL ?? "http://localhost:5173",
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
   })
 ); // permette richieste dal frontend
-app.use(express.json());
+// app.use(express.json());
+app.use(express.json({ limit: "100mb" }));
+app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 app.use(cookieParser());
 
 // Sanitizzazione input (NoSQL injection): rimuove chiavi con '$' o '.' da body/query/params
@@ -45,12 +47,21 @@ app.use((req, _res, next) => {
   next();
 });
 
+app.get("/test-eventi", (req, res) => {
+  res.json({ ok: true });
+});
+
 const userRoutes = require("./routes/usersRoutes");
 const trekRoutes = require("./routes/treksRoutes");
 const authRoutes = require("./routes/authRoutes");
 const activityRoutes = require("./routes/activityRoutes"); //!!!
 const diaryRoutes = require("./routes/diaryRoutes");
+const eventRoutes = require("./routes/eventRoutes");
 
+const routeRoutes = require("./routes/routeRoutes");
+const friendshipRoutes = require("./routes/friendshipRoutes");
+
+const adminRoutes = require("./routes/adminRoutesAdmin");
 
 app.use("/treks", trekRoutes);
 app.use("/users", userRoutes);
@@ -58,6 +69,11 @@ app.use("/api/auth", authRoutes);
 app.use("/activities", activityRoutes); 
 app.use("/api/weather", weatherRoutes); 
 app.use("/api/diary", diaryRoutes);
+app.use("/api/trento-events", eventRoutes);
+app.use("/api/route", routeRoutes);
+app.use("/api/friendships", friendshipRoutes);
+
+app.use("/api/admin", adminRoutes);
 
 // Connessione a MongoDB
 mongoose.connect(process.env.MONGODB_URI, { family: 4 })  // Imposta family: 4 per forzare l'uso di IPv4
@@ -78,6 +94,7 @@ mongoose.connect(process.env.MONGODB_URI, { family: 4 })  // Imposta family: 4 p
 //   if (!trek) return res.status(404).json({ error: "Percorso non trovato" });
 //   res.json(trek);
 // });
+
 
 app.listen(3000, () => {
   console.log("Server running on http://localhost:3000");

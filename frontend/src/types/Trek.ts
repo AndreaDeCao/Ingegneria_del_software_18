@@ -1,5 +1,6 @@
 export type Trek = {
-  id: string;
+  _id: string;
+  id: number;
   name: string;
   difficulty: "Facile" | "Medio" | "Difficile";
   description?: string;
@@ -7,6 +8,8 @@ export type Trek = {
   // friendCount?: number;
   // likes?: number;
 
+  closed: boolean;
+  
   duration: string
   lengthKm?: number;
   elevationGain?: string;
@@ -17,10 +20,19 @@ export type Trek = {
 
   minAltitude?: number;
   maxAltitude?: number;
-  coordinates?: {
+  
+  coordinates: {
+    lat: number;
+    lon: number;
+  };
+
+  endCoordinates?: {
     lat: number;
     lon: number;
   };
 
   condizioniAttuali?: string;
+
+  averageRating?: number;
+  ratingCount?: number;
 };
