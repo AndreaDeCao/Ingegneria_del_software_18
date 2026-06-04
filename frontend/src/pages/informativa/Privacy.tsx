@@ -60,6 +60,11 @@ export default function Privacy() {
             <li>dati di posizione geografica;</li>
             <li>dati tecnici e di utilizzo dell’Applicazione.</li>
           </ul>
+
+          <p>
+            Completando la registrazione, l'utente dichiara di aver letto, compreso
+            e accettato integralmente i presenti Termini e Condizioni e la Privacy Policy.
+          </p>
         </section>
 
         <section className={styles.section}>
@@ -201,14 +206,19 @@ export default function Privacy() {
         </section>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>
-            11. Cookie e Tecnologie Simili
-          </h2>
-
+          <h2 className={styles.sectionTitle}>11. Cookie e Tecnologie Simili</h2>
           <p>
-            L’Applicazione può utilizzare cookie o tecnologie simili per
-            migliorare l’esperienza utente, mantenere la sessione attiva e
-            raccogliere informazioni statistiche anonime.
+            L'Applicazione utilizza esclusivamente cookie tecnici strettamente
+            necessari al funzionamento del servizio:
+          </p>
+          <ul>
+            <li>cookie di sessione e autenticazione, per mantenere l'utente connesso;</li>
+            <li>cookie CSRF, per la protezione della sicurezza delle richieste.</li>
+          </ul>
+          <p>
+            Non vengono utilizzati cookie di profilazione, marketing o analytics.
+            Questi cookie non richiedono consenso in quanto strettamente necessari
+            ai sensi della normativa ePrivacy.
           </p>
         </section>
 

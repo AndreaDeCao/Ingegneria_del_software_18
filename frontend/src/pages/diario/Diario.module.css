@@ -1131,3 +1131,9 @@
   font-size: 12px;
   color: var(--text-secondary);
 }
+
+.link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: bold;
+}

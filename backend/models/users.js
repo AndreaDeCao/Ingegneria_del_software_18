@@ -25,6 +25,8 @@ const UserSchema = new mongoose.Schema({
 
   avatarUrl: { type: String, default: null },
 
+  privacyAcceptedAt: { type: Date, default: null },
+
   notifications: [ {
     type: {
       type: String,

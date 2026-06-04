@@ -115,6 +115,14 @@ export default function Register() {
           />
         </label>
 
+        <label>
+          <input type="checkbox" required />
+          {" "}Ho letto e accetto la{" "}
+          <a href="/privacy" target="_blank" className={styles.link}>Privacy Policy</a>
+          {" "}e i{" "}
+          <a href="/termini" target="_blank" className={styles.link}>Termini di servizio</a>
+        </label>
+
         <TurnstileWidget
           key={turnstileKey}
           onVerify={(token) => setTurnstileToken(token)}

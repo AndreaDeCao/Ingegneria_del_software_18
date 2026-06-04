@@ -28,8 +28,8 @@ export default function Contatti() {
               href="mailto:support@dolomate.com"
               className={styles.contactValue}
             >
-              work in progress...
-              {/*support@dolomate.com */}
+              {/* work in progress... */}
+              dolomateapp@gmail.com
             </a>
           </div>
         </section>
@@ -48,8 +48,9 @@ export default function Contatti() {
               href="mailto:privacy@dolomate.com"
               className={styles.contactValue}
             >
-              work in progress...
+              {/* work in progress... */}
               {/* privacy@dolomate.com FIX ME: usare stessa email per privacy e termini? (fix anche in navbar.tsx) */}
+              dolomateapp@gmail.com
             </a>
           </div>
         </section>
@@ -68,8 +69,9 @@ export default function Contatti() {
               href="mailto:report@dolomate.com"
               className={styles.contactValue}
             >
-              work in progress...
+              {/* work in progress... */}
               {/*report@dolomate.com */}
+              dolomateapp@gmail.com
             </a>
           </div>
         </section>

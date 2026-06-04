@@ -57,3 +57,9 @@
   color: inherit;
   display: block;
 }
+
+@media (max-width: 768px) {
+  .card {
+    min-height: unset;
+  }
+}

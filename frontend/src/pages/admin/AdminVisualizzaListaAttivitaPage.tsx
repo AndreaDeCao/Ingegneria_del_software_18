@@ -1,6 +1,9 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
+
 import styles from "./AdminattivitaPage.module.css";
 import appStyles from "../../App.module.css";
+import { PageLoader } from "../../components/SkeletonLoader";
+
 import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 
@@ -159,13 +162,7 @@ export default function AdminVisualizzaListaAttivitaPage() {
     currentUserID
   ]);
 
-  if (loading) {
-    return (
-      <main className={styles.page}>
-        <p className={styles.message}>Caricamento attività...</p>
-      </main>
-    );
-  }
+  if (loading) return <PageLoader />
 
   if (error) {
     return (

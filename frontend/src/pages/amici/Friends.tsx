@@ -1,20 +1,10 @@
 import { useEffect, useState } from "react";
 import { http } from "../../auth/api";
-import styles from "./Friends.module.css";
-import type { Friend } from "../../types/Friend";
 
-// // Type amico dell'utente
-// type Friend = {
-//   friendshipId: string;
-//   user: {
-//     _id: string;
-//     nome: string;
-//     cognome: string;
-//     nickname: string;
-//     avatarUrl?: string;
-//   };
-//   since: string;
-// };
+import styles from "./Friends.module.css";
+import { PageLoader, EmptyState, ErrorState } from "../../components/SkeletonLoader";
+
+import type { Friend } from "../../types/Friend";
 
 // Type richiesta di amicizia
 type FriendRequest = {
@@ -80,6 +70,7 @@ export default function Friends() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadAll();
@@ -107,6 +98,8 @@ export default function Friends() {
 
     } catch(err: unknown) {
       if(err instanceof Error) setError(err.message);
+    } finally {
+      setLoading(false); 
     }
   }
 
@@ -150,13 +143,18 @@ export default function Friends() {
   // Accetta richiesta di amicizia
   async function acceptRequest(friendshipId: string) {
     setError(null);
+    
+    // rimuovo subito dalla UI senza aspettare loadAll (3 fetch)
+    setIncoming(prev => prev.filter(r => r._id !== friendshipId));
+
     try {
       await http(`/api/friendships/accept/${friendshipId}`, { method: "PUT" });
       setSuccessMsg("Amicizia accettata");
-      await loadAll();
+      await loadAll(); 
 
     } catch(err: unknown) {
       if (err instanceof Error) setError(err.message);
+      await loadAll();    // ripristino il display delle amicizie se c'è stato un errore
     }
   }
 
@@ -164,6 +162,10 @@ export default function Friends() {
   // Rifiuta richiesta di amicizia
   async function declineRequest(friendshipId: string) {
     setError(null);
+    
+    // rimuovo subito dalla UI senza aspettare loadAll (3 fetch)
+    setIncoming(prev => prev.filter(r => r._id !== friendshipId));
+
     try {
       await http(`/api/friendships/decline/${friendshipId}`, { method: "PUT" });
       setSuccessMsg("Amicizia rifiutata");
@@ -171,6 +173,7 @@ export default function Friends() {
 
     } catch(err: unknown) {
       if (err instanceof Error) setError(err.message);
+      await loadAll();    // ripristino il display delle amicizie se c'è stato un errore
     }
   }
 
@@ -178,13 +181,18 @@ export default function Friends() {
   // Rimuove amico dalla lista amici
   async function removeFriend(friendshipId: string) {
     setError(null);
+
+    // rimuovo subito dalla UI senza aspettare loadAll (3 fetch)
+    setFriends(prev => prev.filter(f => f.friendshipId !== friendshipId));
+
     try {
       await http(`/api/friendships/${friendshipId}`, { method: "DELETE" });
       setSuccessMsg("Amico rimosso.");
-      await loadAll();
+      await loadAll(); 
 
     } catch(err: unknown) {
       if (err instanceof Error) setError(err.message);
+      await loadAll(); // ripristino il display delle amicizie se c'è stato un errore
     }
   }
 
@@ -204,10 +212,12 @@ export default function Friends() {
   }
 
 
+  if (loading) return <PageLoader />;
+
   return (
     <main className={styles.main}>
       <h1 className={styles.title}>Amici</h1>
-
+      
       {/* MESSAGGI */}
       {successMsg && (
         <Banner 
@@ -216,12 +226,27 @@ export default function Friends() {
           onClose={() => setSuccessMsg(null)}
         />
       )}
-      {error && (
+      {/* {error && (
         <Banner
           msg={error}
           type="error"
           onClose={() => setError(null)}
         />
+      )} */}
+      {/* {error && !loading && (
+        <ErrorState message="Impossibile caricare i dati. Controlla la connessione e riprova." />
+      )} */}
+      {error && (
+        error.toLowerCase().includes("failed to fetch") ||
+        error.toLowerCase().includes("impossibile") ? (
+          <ErrorState message="Impossibile caricare i dati. Controlla la connessione e riprova." />
+        ) : (
+          <Banner
+            msg={error}
+            type="error"
+            onClose={() => setError(null)}
+          />
+        )
       )}
 
       {/* CERCA UTENTI */}
@@ -269,7 +294,7 @@ export default function Friends() {
         )}
 
         {searchResults.length === 0 && hasSearched && !searching && (
-          <p className={styles.empty}>Nessun utente trovato.</p>
+          <EmptyState message="Nessun utente trovato." />
         )}
       </section>
 
@@ -344,7 +369,7 @@ export default function Friends() {
         </h2>
 
         {friends.length === 0 ? (
-          <p className={styles.empty}>Non hai ancora amici</p>
+          <EmptyState message="Non hai ancora amici." />
         ) : (
           <div className={styles.list}>
             {friends.map(({ friendshipId, user: friend }) => (

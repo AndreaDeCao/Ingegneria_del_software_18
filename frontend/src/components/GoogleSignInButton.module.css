@@ -3,6 +3,8 @@
   -webkit-user-select: none;
   -ms-user-select: none;
   -webkit-appearance: none;
+  user-select: auto;
+  appearance: initial;
   background-color: #ffffff;
   background-image: none;
   border: 1px solid #747775;

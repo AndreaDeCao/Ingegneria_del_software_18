@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 
+import { PageLoader } from "../../components/SkeletonLoader";
 import styles from "./attivitaPage.module.css";
 import appStyles from "../../App.module.css";
 
@@ -250,7 +251,7 @@ export default function DettagliAttivita() {
       hour: "2-digit", minute: "2-digit",
     });
 
-  if (loading) return <main className={styles.page}><p className={styles.message}>Caricamento attività...</p></main>;
+  if (loading) return <PageLoader />;
   if (error || !activity) return <main className={styles.page}><p className={styles.messageError}>{error || "Attività non trovata"}</p></main>;
 
   const currentUserID = user?._id;
@@ -406,7 +407,7 @@ export default function DettagliAttivita() {
           )}
 
           {/* Banner segnalazioni accettate */}
-          {hasAcceptedReport && (
+          {(!isSuspended && hasAcceptedReport) && (
             <div className={styles.reportedBanner}>
               <span className={styles.reportedBannerTitle}>
                 {isOrganizer ? "La tua attività è stata segnalata" : "Questa attività è stata segnalata"}
@@ -584,12 +585,12 @@ export default function DettagliAttivita() {
             {/* Non può partecipare */}
             {!isOrganizer && !isParticipant && activity.visibility === "public" && !canJoin && (
               <button className={appStyles.primaryButton} disabled>
-                {activity.status !== "Aperto"
-                  ? `Iscrizione non disponibile (${activity.status ?? ""})`
-                  : isExpired
-                    ? "Attività scaduta"
-                    : isSuspended
-                      ? "Attività sospesa"
+                {isSuspended
+                  ? "Iscrizione non disponibile (sospesa dall'amministrazione)"
+                  : activity.status !== "Aperto"
+                    ? `Iscrizione non disponibile (${activity.status ?? ""})`
+                    : isExpired
+                      ? "Attività scaduta"
                       : "Attività al completo"}
               </button>
             )}
@@ -642,10 +643,27 @@ export default function DettagliAttivita() {
                     )}
                   </div>
                 )}
-                {!hasAlreadyReported && !reportSuccess && (
+                {/* {!hasAlreadyReported && !reportSuccess && (
                   <button className={styles.reportButton} onClick={() => setActiveModal("report")}>
                     Segnala attività
                   </button>
+                )} */}
+                {!isOrganizer && isParticipant && currentUserID && !hasAlreadyReported && !reportSuccess && (
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    borderTop: "1px solid var(--border)",
+                    paddingTop: "10px",
+                    marginTop: "4px",
+                  }}>
+                    <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+                      Problemi con questa attività?
+                    </span>
+                    <button className={styles.reportButton} onClick={() => setActiveModal("report")}>
+                      🚩 Segnala
+                    </button>
+                  </div>
                 )}
               </div>
             )}

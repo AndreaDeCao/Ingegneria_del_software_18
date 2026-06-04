@@ -33,8 +33,8 @@
   color: var(--text-secondary);
 }
 
-.sectionTreks {
-}
+/* .sectionTreks {
+} */
 
 .sectionEvents {
   margin-bottom: 2.5rem;
@@ -347,4 +347,88 @@
 .statLabel {
   font-size: 0.8rem;
   color: var(--text-muted, #666);
+}
+
+/* ── RESPONSIVE ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .main {
+    padding: 1rem 0.75rem;
+  }
+
+  .contentLayout {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .leftColumn {
+    width: 100%;
+  }
+
+  .rightColumn {
+    width: 100%;
+  }
+
+  /* .activitiesColumn {
+    max-height: none;
+    overflow-y: visible;
+  } */
+
+  .activitiesColumn {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: visible;
+    max-height: none;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+  }
+
+  .activitiesColumn::-webkit-scrollbar {
+    display: none;
+  }
+
+  .activitiesColumn > * {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+    min-width: 75vw;
+  }
+
+  .sectionTitle {
+    font-size: 20px;
+  }
+
+  .sectionSubtitle {
+    font-size: 16px;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .diaryCardsRow {
+    grid-template-columns: 1fr;
+  }
+
+  .cardsRow {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cardsRow > * {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+    min-width: 80vw;
+  } 
+}
+
+@media (max-width: 480px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .cardsRow > * {
+    min-width: 90vw;
+  }
 }

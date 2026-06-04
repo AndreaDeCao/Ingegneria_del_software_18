@@ -2,14 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { http } from "../../auth/api";
 import type { DiaryEntry } from "../../types/Diary";
+
 import appStyles from "../../App.module.css";
 import styles from "./Diario.module.css";
+import { PageLoader } from "../../components/SkeletonLoader";
 
 type ModalType = "delete" | null;
 
 function parseGpxDistanceDuration(gpxText: string): { distanceMeters: number; durationSeconds: number } | null {
   try {
-    const parser = new DOMParser();
+    const parser = new DOMParser(); 
     const doc = parser.parseFromString(gpxText, "application/xml");
     const trkpts = Array.from(doc.querySelectorAll("trkpt"));
     if (!trkpts.length) return null;
@@ -135,11 +137,7 @@ export default function VisualizzaDiarioPage() {
     }
   }
 
-  if (loading) return (
-    <main className={appStyles.main}>
-      <p className={appStyles.message}>Caricamento diario...</p>
-    </main>
-  );
+  if (loading) return <PageLoader />;
 
   if (error) return (
     <main className={appStyles.main}>
@@ -170,7 +168,6 @@ export default function VisualizzaDiarioPage() {
 
       {entries.length === 0 ? (
         <div className={styles.emptyState}>
-          <p style={{ fontSize: "3rem" }}>📖</p>
           <p>Il tuo diario è ancora vuoto.</p>
           <button className={styles.saveButton} onClick={() => navigate("/diario/crea")}>
             Crea la prima voce
@@ -211,7 +208,7 @@ export default function VisualizzaDiarioPage() {
                 </div>
 
                 <div className={styles.entryBadges}>
-                  {entry.completato !== false && <span className={styles.badge}> Completato ✅</span>}
+                  {entry.completato !== false && <span className={styles.badge} style={{color: "var(--accent)", fontWeight: "bold"}}> Percorso completato</span>}
                   {entry.valutazione && (
                     <span className={styles.badge}>
                       {"★".repeat(entry.valutazione)}{"☆".repeat(5 - entry.valutazione)}

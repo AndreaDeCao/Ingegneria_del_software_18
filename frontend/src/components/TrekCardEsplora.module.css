@@ -1,43 +1,81 @@
+.cardLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
 .card {
   display: flex;
   flex-direction: row;
   background: var(--card-bg);
   border-radius: var(--radius-lg);
-  border: 0.5px solid var(--border);
+  border: 1px solid var(--border);
   overflow: hidden;
-  transition: transform 0.2s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   cursor: pointer;
-  min-height: 160px;
+  min-height: 120px;
 }
 
 .card:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.09);
   transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
 }
 
+/* ── Immagine ────────────────────────────────────── */
 .cardImg {
   flex-shrink: 0;
-  width: 200px;
+  width: 140px;
   align-self: stretch;
-  background: linear-gradient(135deg, var(--accent) 0%, #1b4332 100%);
+  background: linear-gradient(145deg, var(--accent) 0%, #1b4332 100%);
+  position: relative;
+  overflow: hidden;
 }
 
+/* motivo topografico leggero */
+.cardImg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 14px,
+      rgba(255,255,255,0.06) 14px,
+      rgba(255,255,255,0.06) 15px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 14px,
+      rgba(255,255,255,0.04) 14px,
+      rgba(255,255,255,0.04) 15px
+    );
+}
+
+/* ── Body ────────────────────────────────────────── */
 .cardBody {
-  padding: 18px 20px;
+  padding: 14px 18px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   flex: 1;
   justify-content: center;
+  min-width: 0;
 }
 
 .cardName {
-  font-size: 28px;
+  font-size: 17px;
   font-weight: 700;
+  font-family: var(--font-display);
   color: var(--text-primary);
-  margin-bottom: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* ── Badge ───────────────────────────────────────── */
 .cardMeta {
   display: flex;
   gap: 6px;
@@ -45,73 +83,54 @@
 }
 
 .badge {
-  font-size: 12px;
-  padding: 3px 10px;
+  font-size: 11px;
+  padding: 3px 9px;
   border-radius: 20px;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.2px;
 }
 
-.badgeEasy   { background: #d8f3dc; color: #308662; }
-.badgeMedium { background: #f3e8c3; color: #f0b812; }
-.badgeHard   { background: #fde2e4; color: #ae1d29; }
+.badgeEasy     { background: #d8f3dc; color: #308662; }
+.badgeMedium   { background: #f3e8c3; color: #a07000; }
+.badgeHard     { background: #fde2e4; color: #ae1d29; }
+.badgeInfo     { background: var(--accent-light); color: var(--accent-text); }
+.badgeClosed   { background: #fee2e2; color: #b91c1c; }
 
-.badgeInfo{
-  background: var(--accent-light);
-  color: var(--accent-text);
+/* ── Rating ──────────────────────────────────────── */
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
 }
 
 .stars {
   display: flex;
   align-items: center;
-  gap: 2px;
-  margin-top: auto;
+  gap: 1px;
 }
 
 .star {
-  font-size: 26px;
+  font-size: 14px;
   line-height: 1;
 }
 
-.starFull {
-  color: var(--accent);
-}
-
-.starHalf {
-  color: var(--accent);
-  opacity: 0.5;
-}
-
-.starEmpty {
-  color: var(--border);
-}
+.starFull  { color: var(--accent); }
+.starHalf  { color: var(--accent); opacity: 0.5; }
+.starEmpty { color: var(--border); }
 
 .ratingNum {
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin-left: 6px;
-}
-
-.cardFooter {
-  padding: 8px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-top: 0.5px solid var(--border);
-}
-
-.friends {
-  font-size: 11px;
-  color: var(--text-secondary);
-}
-
-.likes {
   font-size: 12px;
-  color: var(--accent);
-  font-weight: 500;
+  color: var(--text-secondary);
 }
 
-.cardLink {
-  text-decoration: none;
-  color: inherit;
-  display: block;
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 520px) {
+  .cardImg {
+    width: 90px;
+  }
+
+  .cardName {
+    font-size: 15px;
+  }
 }

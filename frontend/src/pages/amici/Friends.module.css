@@ -272,3 +272,31 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+@media (max-width: 768px) {
+  .main {
+    width: 100%;
+    padding: 1rem;
+    gap: 20px;
+  }
+
+  .card {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .actions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-end;
+  }
+
+  .searchRow {
+    flex-wrap: wrap;
+  }
+
+  .input {
+    flex: 1;
+    min-width: 0;
+  }
+}

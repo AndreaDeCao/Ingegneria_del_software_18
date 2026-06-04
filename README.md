@@ -182,6 +182,7 @@ Ingegneria_del_software_18
 │  │  │  ├─ Navbar.tsx
 │  │  │  ├─ ReportCard.module.css
 │  │  │  ├─ ReportCard.tsx
+│  │  │  ├─ SkeletonLoader.tsx
 │  │  │  ├─ StarRating.module.css
 │  │  │  ├─ StarRating.tsx
 │  │  │  ├─ TrekCard.module.css
@@ -204,6 +205,10 @@ Ingegneria_del_software_18
 │  │  │  │  ├─ ProfilePage.tsx
 │  │  │  │  └─ SecurityPage.tsx
 │  │  │  ├─ admin
+│  │  │  │  ├─ AdminattivitaPage.module.css
+│  │  │  │  ├─ AdminCreaAttivita.tsx
+│  │  │  │  ├─ AdminDettagliAttivita.css
+│  │  │  │  ├─ AdminVisualizzaListaAttivitaPage.tsx
 │  │  │  │  ├─ Gestionesegnalazioni.module.css
 │  │  │  │  └─ GestioneSegnalazioniPage.tsx
 │  │  │  ├─ amici
@@ -226,7 +231,6 @@ Ingegneria_del_software_18
 │  │  │  │  ├─ DettagliVoceDiarioPage.tsx
 │  │  │  │  ├─ Diario.module.css
 │  │  │  │  └─ VisualizzaDiarioPage.tsx
-│  │  │  ├─ Friends.tsx
 │  │  │  ├─ Home.tsx
 │  │  │  ├─ homepage
 │  │  │  │  ├─ AdminHomepage.tsx
@@ -256,6 +260,7 @@ Ingegneria_del_software_18
 │  │     ├─ Friend.ts
 │  │     ├─ Organizer.ts
 │  │     ├─ Participant.ts
+│  │     ├─ Reports.ts
 │  │     ├─ Trek.ts
 │  │     └─ User.ts
 │  ├─ tsconfig.app.json

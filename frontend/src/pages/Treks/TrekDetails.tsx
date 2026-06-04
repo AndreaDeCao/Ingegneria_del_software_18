@@ -12,6 +12,8 @@ import TrekMap from "../../components/TrekMap";
 import StarRating from "../../components/StarRating";
 import starStyles from "../../components/StarRating.module.css";
 
+import { PageLoader } from "../../components/SkeletonLoader";
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 function downloadGpx(geojson: any, trekName: string, distanceMeters?: number, durationSeconds?: number, routeType?: string ) {
   const coords: [number, number][] =
@@ -584,13 +586,7 @@ export default function TrekDetails() {
   }
 
 
-  if (loading) {
-    return (
-      <main className={appStyles.main}>
-        <p className={appStyles.message}>Caricamento percorso...</p>
-      </main>
-    );
-  }
+  if (loading)  return <PageLoader />;
 
   if (error || !trek) {
     return (

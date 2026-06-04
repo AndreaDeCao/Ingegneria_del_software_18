@@ -7,6 +7,7 @@ import type { Organizer } from "../../types/Organizer";
 
 import styles from "./AdminattivitaPage.module.css";
 import appStyles from "../../App.module.css";
+import { PageLoader } from "../../components/SkeletonLoader";
 
 type ModalType = "delete" | "suspend" | "unsuspend" | null;
 
@@ -185,7 +186,7 @@ export default function AdminDettagliAttivita() {
     return { isOrganizer, isParticipant, participantCount, spotsLeft, isSuspended, organizerName, pendingReports, acceptedReports, hasAcceptedReport, effectiveStatus };
   }, [activity, user?._id, organizer]);
 
-  if (loading) return <main className={styles.page}><p className={styles.message}>Caricamento attivita...</p></main>;
+  if (loading) return <PageLoader />
   if (error || !activity || !derived) return <main className={styles.page}><p className={styles.messageError}>{error || "Attivita non trovata"}</p></main>;
 
   const { isOrganizer, participantCount, spotsLeft, isSuspended, organizerName, pendingReports, acceptedReports, hasAcceptedReport, effectiveStatus } = derived;

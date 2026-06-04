@@ -1,8 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { http } from "../../auth/api";
+
 import styles from "../attivita/attivitaPage.module.css";
 import reportStyles from "./GestioneSegnalazioni.module.css";
+import { SkeletonReportCard  } from "../../components/SkeletonLoader";
+
 import { useAuth } from "../../auth/AuthProvider";
 import type { ActivityWithReports, Report, ReportStatus,} from "../../types/Reports.ts";
 import type { PopulatedUser } from "../../types/User.ts";
@@ -709,9 +712,15 @@ export default function GestioneSegnalazioniPage() {
       {/* ── TAB: ATTIVITÀ ── */}
       {tab === "attivita" && (
         <>
-          {activitiesLoading && <p className={styles.message}>Caricamento segnalazioni attività...</p>}
-          {activitiesError && <p className={styles.messageError}>{activitiesError}</p>}
-          {!activitiesLoading && !activitiesError && (
+          {activitiesLoading ? (
+            <>
+              <SkeletonReportCard />
+              <SkeletonReportCard />
+              <SkeletonReportCard />
+            </>
+          ) : activitiesError ? (
+            <p className={styles.messageError}>{activitiesError}</p>
+          ) : (
             <>
               <p className={styles.message}>
                 {actPendingCount > 0
@@ -735,15 +744,47 @@ export default function GestioneSegnalazioniPage() {
               )}
             </>
           )}
+          {/* {activitiesLoading && <p className={styles.message}>Caricamento segnalazioni attività...</p>} */}
+          {/* {activitiesError && <p className={styles.messageError}>{activitiesError}</p>} */}
+          {/* {!activitiesLoading && !activitiesError && (
+            <>
+              <p className={styles.message}>
+                {actPendingCount > 0
+                  ? `${actPendingCount} segnalazion${actPendingCount === 1 ? "e" : "i"} in attesa`
+                  : "Nessuna segnalazione attività in attesa"}
+              </p>
+              {flatActivities.length === 0 ? (
+                <p className={styles.message}>Nessuna segnalazione corrisponde ai filtri selezionati.</p>
+              ) : (
+                <div className={reportStyles.reportList}>
+                  {flatActivities.map(({ activity, report }) => (
+                    <ActivityReportCard
+                      key={report._id}
+                      activity={activity}
+                      report={report}
+                      actionLoading={actActionLoading}
+                      onAction={handleActivityAction}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )} */}
         </>
       )}
 
       {/* ── TAB: PERCORSI ── */}
       {tab === "percorsi" && (
         <>
-          {treksLoading && <p className={styles.message}>Caricamento segnalazioni percorsi...</p>}
-          {treksError && <p className={styles.messageError}>{treksError}</p>}
-          {!treksLoading && !treksError && (
+          {treksLoading ? (
+            <>
+              <SkeletonReportCard />
+              <SkeletonReportCard />
+              <SkeletonReportCard />
+            </>
+          ) : treksError ? (
+            <p className={styles.messageError}>{treksError}</p>
+          ) : (
             <>
               <p className={styles.message}>
                 {trekPendingCount > 0
@@ -768,6 +809,33 @@ export default function GestioneSegnalazioniPage() {
               )}
             </>
           )}
+          {/* {treksLoading && <p className={styles.message}>Caricamento segnalazioni percorsi...</p>} */}
+          {/* {treksError && <p className={styles.messageError}>{treksError}</p>} */}
+          {/* {!treksLoading && !treksError && (
+            <>
+              <p className={styles.message}>
+                {trekPendingCount > 0
+                  ? `${trekPendingCount} segnalazion${trekPendingCount === 1 ? "e" : "i"} in attesa`
+                  : "Nessuna segnalazione percorso in attesa"}
+              </p>
+              {flatTreks.length === 0 ? (
+                <p className={styles.message}>Nessuna segnalazione corrisponde ai filtri selezionati.</p>
+              ) : (
+                <div className={reportStyles.reportList}>
+                  {flatTreks.map(({ trekId, trekName, entry }) => (
+                    <TrekSegnalazioneCard
+                      key={entry._id}
+                      trekId={trekId}
+                      trekName={trekName}
+                      entry={entry}
+                      actionLoading={trekActionLoading}
+                      onAction={handleTrekAction}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )} */}
         </>
       )}
 
