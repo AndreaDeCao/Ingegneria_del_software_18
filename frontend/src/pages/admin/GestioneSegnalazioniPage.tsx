@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { http } from "../../auth/api";
 
 import styles from "../attivita/attivitaPage.module.css";
@@ -238,7 +238,6 @@ function TrekSegnalazioneCard({
   actionLoading: string | null;
   onAction: (entryId: string, action: "accept" | "dismiss" | "reopen", e: React.MouseEvent) => void;
 }) {
-  const navigate = useNavigate();
   const stato = entry.segnalazione.stato;
   const isPending = stato === "pending";
   const isLoading = actionLoading === entry._id;
@@ -253,8 +252,8 @@ function TrekSegnalazioneCard({
 
   const Wrapper = isUtente
     ? ({ children }: { children: React.ReactNode }) => (
-        <div className={reportStyles.reportCardLink}>{children}</div>
-      ) 
+        <Link to={reportedUser?._id ? `/admin/utenti?userId=${reportedUser._id}` : `/admin/utenti`} className={reportStyles.reportCardLink}>{children}</Link>
+      )
     : ({ children }: { children: React.ReactNode }) => (
         <Link to={`/admin/treks/${trekId}`} className={reportStyles.reportCardLink}>{children}</Link>
       );
@@ -332,21 +331,7 @@ function TrekSegnalazioneCard({
 
         
         
-        {isUtente && reportedUser?._id && (
-          <div className={reportStyles.reportActions}>
-            <button
-              className={styles.acceptReportButton}
-              onClick={(e) => { 
-                  e.stopPropagation(); 
-                  e.preventDefault(); 
-                  onAction(entry._id, "accept", e);
-                  navigate(`/admin/utenti?userId=${reportedUser._id}`); 
-              }}
-            >
-              Visualizza utente
-            </button>
-          </div>
-        )}
+
 
         {!isUtente && isPending && (
           <div className={reportStyles.reportActions}>

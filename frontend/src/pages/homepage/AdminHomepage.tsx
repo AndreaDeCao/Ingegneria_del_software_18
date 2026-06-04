@@ -70,15 +70,42 @@ export default function AdminHomepage() {
         activityCards.sort((a, b) => (b.reportCount ?? 1) - (a.reportCount ?? 1));
       }
 
-      // ── Percorsi — fan-out per trekId ──
+      // ── Percorsi e Utenti — in parallelo ──
       let trekCards: ReportCardProps[] = [];
       let userCards: ReportCardProps[] = [];
       let totalTrekPending = 0;
       let totalUserPending = 0;
 
-      const treksRes = await fetch(`${API_BASE}/treks/`);
-      if (treksRes.ok) {
-        const allTreks: { id: number; _id: string; name: string }[] = await treksRes.json();
+      // Fetch percorsi e segnalazioni utenti in parallelo
+      const [treksRes, userSegnalazioniRes] = await Promise.allSettled([
+        fetch(`${API_BASE}/treks/`),
+        http<SegnalazioneEntry[]>(`/api/diary/segnalazioni-utenti`),
+      ]);
+
+      // ── Segnalazioni utenti (endpoint dedicato) ──
+      if (userSegnalazioniRes.status === "fulfilled") {
+        const pendingUserEntries = userSegnalazioniRes.value.filter(
+          (s) => s.segnalazione.stato === "pending"
+        );
+        for (const entry of pendingUserEntries) {
+          const u = entry.userId;
+          const reportedUser = (entry as any).reportedUser as { _id?: string; nickname?: string } | undefined;
+          totalUserPending++;
+          userCards.push({
+            type: "user",
+            id: entry._id,
+            title: reportedUser?.nickname ? `@${reportedUser.nickname}` : "Utente segnalato",
+            reason: entry.segnalazione.descrizione || "Nessun motivo",
+            reportedBy: u?._id ?? "",
+            reportedByName: u?.nickname ?? u?.email ?? "Utente sconosciuto",
+            targetLink: reportedUser?._id ? `/admin/utenti?userId=${reportedUser._id}` : `/admin/utenti`,
+          });
+        }
+      }
+
+      // ── Percorsi — fan-out per trekId (solo segnalazioni non-Utente) ──
+      if (treksRes.status === "fulfilled" && treksRes.value.ok) {
+        const allTreks: { id: number; _id: string; name: string }[] = await treksRes.value.json();
         const BATCH = 10;
         for (let i = 0; i < allTreks.length; i += BATCH) {
           const batch = allTreks.slice(i, i + BATCH);
@@ -87,35 +114,23 @@ export default function AdminHomepage() {
           );
           settled.forEach((res, idx) => {
             if (res.status !== "fulfilled") return;
-            const pendingEntries = res.value.filter((s) => s.segnalazione.stato === "pending");
+            // Escludi tipo "Utente": gestite dall'endpoint dedicato
+            const pendingEntries = res.value.filter(
+              (s) => s.segnalazione.stato === "pending" && s.segnalazione.tipo !== "Utente"
+            );
             if (!pendingEntries.length) return;
             for (const entry of pendingEntries) {
               const u = entry.userId;
-              if (entry.segnalazione.tipo === "Utente") {
-                // segnalazione su un utente: punta alla pagina utenti
-                const reportedUser = (entry as any).reportedUser;
-                totalUserPending++;
-                userCards.push({
-                  type: "user",
-                  id: entry._id,
-                  title: reportedUser?.nickname ? `@${reportedUser.nickname}` : "Utente segnalato",
-                  reason: entry.segnalazione.descrizione || "Nessun motivo",
-                  reportedBy: u?._id ?? "",
-                  reportedByName: u?.nickname ?? u?.email ?? "Utente sconosciuto",
-                  targetLink: reportedUser?._id ? `/admin/utenti?userId=${reportedUser._id}` : `/admin/utenti`,
-                });
-              } else {
-                totalTrekPending++;
-                trekCards.push({
-                  type: "trek",
-                  id: entry._id,
-                  title: batch[idx].name,
-                  reason: [entry.segnalazione.tipo, entry.segnalazione.descrizione].filter(Boolean).join(": ") || "Nessun motivo",
-                  reportedBy: u?._id ?? "",
-                  reportedByName: u?.nickname ?? u?.email ?? "Utente sconosciuto",
-                  targetLink: `/admin/treks/${batch[idx].id}`,
-                });
-              }
+              totalTrekPending++;
+              trekCards.push({
+                type: "trek",
+                id: entry._id,
+                title: batch[idx].name,
+                reason: [entry.segnalazione.tipo, entry.segnalazione.descrizione].filter(Boolean).join(": ") || "Nessun motivo",
+                reportedBy: u?._id ?? "",
+                reportedByName: u?.nickname ?? u?.email ?? "Utente sconosciuto",
+                targetLink: `/admin/treks/${batch[idx].id}`,
+              });
             }
           });
         }
