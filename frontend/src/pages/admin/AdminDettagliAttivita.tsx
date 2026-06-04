@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
+import { http } from "../../auth/api"; // <-- AGGIUNGI QUESTA RIGA
 import type { ActivityPopulated } from "../../types/ActivityPopulated";
-
 import type { Organizer } from "../../types/Organizer";
 
 import styles from "./AdminattivitaPage.module.css";
@@ -11,8 +11,9 @@ import { PageLoader } from "../../components/SkeletonLoader";
 
 type ModalType = "delete" | "suspend" | "unsuspend" | null;
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-const POLL_INTERVAL = 20_000; // ogni 20 secondi
+// Rimuovi API_BASE perché non serve più con http()
+// const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+const POLL_INTERVAL = 20_000;
 
 export default function AdminDettagliAttivita() {
   const { id } = useParams();
@@ -33,22 +34,22 @@ export default function AdminDettagliAttivita() {
 
   const messageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Fetch attività e organizzatore in parallelo
+  // Fetch attività e organizzatore in parallelo usando http()
   const fetchActivity = useCallback(async () => {
     if (!id) return;
     try {
-      const res = await fetch(`${API_BASE}/activities/${id}`);
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || err.message || `Errore ${res.status}`);
-      }
-      const data: ActivityPopulated = await res.json();
+      // Usa http() invece di fetch()
+      const data = await http<ActivityPopulated>(`/activities/${id}`);
       data.partecipantList = data.partecipantList ?? [];
       setActivity(data);
 
       if (data.organizerID) {
-        const resOrg = await fetch(`${API_BASE}/users/${data.organizerID}`);
-        if (resOrg.ok) setOrganizer(await resOrg.json());
+        try {
+          const orgData = await http<Organizer>(`/users/${data.organizerID}`);
+          setOrganizer(orgData);
+        } catch {
+          // Ignora errore organizzatore non trovato
+        }
       }
     } catch (err: any) {
       setError(err.message);
@@ -78,17 +79,10 @@ export default function AdminDettagliAttivita() {
   const handleAction = useCallback(async (endpoint: string, method: string, body?: object) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/activities/${id}/${endpoint}`, {
+      const updated = await http<ActivityPopulated>(`/activities/${id}/${endpoint}`, {
         method,
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userID: user?._id, userRole: user?.role, ...body }),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || err.message || "Errore");
-      }
-      const updated: ActivityPopulated = await res.json();
       updated.partecipantList = updated.partecipantList ?? [];
       setActivity(updated);
     } catch (err: any) {
@@ -109,19 +103,13 @@ export default function AdminDettagliAttivita() {
   const handleDelete = useCallback(async () => {
     setActionLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/activities/${id}`, {
+      await http(`/activities/${id}`, {
         method: "DELETE",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userID: user?._id, userRole: user?.role }),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || err.message || "Errore durante l'eliminazione");
-      }
       navigate("/admin/attivita/visualizza");
     } catch (err: any) {
-      showMessage(err.message || "Errore");
+      showMessage(err.message || "Errore durante l'eliminazione");
       setActiveModal(null);
     } finally {
       setActionLoading(false);
@@ -131,17 +119,10 @@ export default function AdminDettagliAttivita() {
   const handleReportAction = useCallback(async (reportId: string, action: "accept" | "dismiss") => {
     setActionLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/activities/${id}/reports/${reportId}/${action}`, {
+      const updated = await http<ActivityPopulated>(`/activities/${id}/reports/${reportId}/${action}`, {
         method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userID: user?._id, userRole: user?.role }),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || err.message || "Errore");
-      }
-      const updated: ActivityPopulated = await res.json();
       updated.partecipantList = updated.partecipantList ?? [];
       setActivity(updated);
     } catch (err: any) {
