@@ -210,7 +210,7 @@ export default function AdminHomepage() {
             <>
               <SkeletonReportCard />
             </>
-          ) : pendingActivityReports.length === 0 ? (
+          ) : pendingTrekReports.length === 0 ? (
             <p className={styles.adminMessage}>Nessuna segnalazione percorso in attesa.</p>
           ) : (
             <>
