@@ -66,7 +66,7 @@ function setAuth(res, userId, role="user") {
   // Refresh token → cookie httpOnly (invisibile a JS)
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "none",
     secure: process.env.NODE_ENV === "production",
     maxAge: REFRESH_TOKEN_MAX_AGE_MS,
     path: "/api/auth/refresh", // cookie inviato SOLO a questo endpoint
@@ -80,7 +80,7 @@ function setAuth(res, userId, role="user") {
 function clearAuth(res) {
   res.clearCookie("refresh_token", {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "none",
     secure: process.env.NODE_ENV === "production",
     path: "/api/auth/refresh",
   });
@@ -92,7 +92,7 @@ exports.csrf = (req, res) => {
 
   res.cookie("csrf_token", csrfToken, {
     httpOnly: false, // deve essere leggibile dal frontend
-    sameSite: "lax",
+    sameSite: "none",
     secure: process.env.NODE_ENV === "production",
     maxAge: 2 * 60 * 60 * 1000, // 2 ore
     path: "/",
