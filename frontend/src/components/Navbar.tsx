@@ -166,8 +166,8 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
                   {isLinkHidden("Attività") && (
                     <DropdownItem label="Attività"
                       items={[
-                        { label: "Visualizza Lista Attività", path: "/attivita/visualizza" },
-                        { label: "Crea Nuova Attività",       path: "/attivita/crea" },
+                        { label: "Visualizza Lista Attività", path: "/admin//attivita/visualizza" },
+                        { label: "Crea Nuova Attività",       path: "/admin//attivita/crea" },
                       ]}
                       isOpen={openItem === "AttivitaAdmin"}
                       onToggle={() => setOpenItem(openItem === "AttivitaAdmin" ? null : "AttivitaAdmin")}
