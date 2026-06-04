@@ -66,7 +66,7 @@ function setAuth(res, userId, role="user") {
   // Refresh token → cookie httpOnly (invisibile a JS)
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
-    sameSite: "none",
+    sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     maxAge: REFRESH_TOKEN_MAX_AGE_MS,
     path: "/api/auth/refresh", // cookie inviato SOLO a questo endpoint
@@ -80,7 +80,7 @@ function setAuth(res, userId, role="user") {
 function clearAuth(res) {
   res.clearCookie("refresh_token", {
     httpOnly: true,
-    sameSite: "none",
+    sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/api/auth/refresh",
   });
@@ -92,7 +92,7 @@ exports.csrf = (req, res) => {
 
   res.cookie("csrf_token", csrfToken, {
     httpOnly: false, // deve essere leggibile dal frontend
-    sameSite: "none",
+    sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     maxAge: 2 * 60 * 60 * 1000, // 2 ore
     path: "/",
@@ -368,9 +368,9 @@ exports.googleRedirect = (req, res) => {
   //Salva state in un cookie per verificarlo nel callback
   res.cookie("oauth_state", state, {
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // "none" serve per il flusso OAuth cross-site su mobile
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     secure: process.env.NODE_ENV === "production",
-    maxAge: 5 * 60 * 1000,
+    maxAge: 5 * 60 * 1000,                             //5 min
     path: "/"
   });
 
@@ -405,7 +405,12 @@ exports.googleCallback = async(req, res) => {
 
     const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
 
-    res.clearCookie("oauth_state");
+    res.clearCookie("oauth_state", {
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+    });
     if(!state || state !== savedState) {
       return res.status(403).json({ error: "State non valido" });
     }
@@ -513,9 +518,14 @@ exports.githubCallback = async (req, res) => {
 
     // Verifica anti-CSRF — stesso cookie usato da Google
     const savedState = req.cookies?.oauth_state;
-    res.clearCookie("oauth_state"); 
 
     const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+
+    res.clearCookie("oauth_state", {
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
 
     if (!state || state !== savedState) {
       return res.status(403).json({ error: "State non valido" });
