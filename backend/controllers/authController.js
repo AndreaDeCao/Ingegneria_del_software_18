@@ -368,7 +368,8 @@ exports.googleRedirect = (req, res) => {
   //Salva state in un cookie per verificarlo nel callback
   res.cookie("oauth_state", state, {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production",
     maxAge: 5 * 60 * 1000,                             //5 min
     path: "/"
   });
@@ -404,9 +405,14 @@ exports.googleCallback = async(req, res) => {
 
     const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
 
-    res.clearCookie("oauth_state");
+    res.clearCookie("oauth_state", {
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/"
+    });
     if(!state || state !== savedState) {
-      return res.status(403).json({ error: "State non valido" });
+      return res.redirect(`${frontendUrl}/login?error=oauth_state`);
     }
 
     //Scambia autorizzazione (code) con Google per ottenere i token
@@ -491,8 +497,10 @@ exports.githubRedirect = (req, res) => {
 
   res.cookie("oauth_state", state, {
     httpOnly: true,
-    sameSite: "lax",
-    maxAge: 5 * 60 * 1000, // 5 minuti
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 5 * 60 * 1000,
+    path: "/"  // 5 minuti
   });
 
   const url = new URL("https://github.com/login/oauth/authorize"); // URL di autorizzazione di GitHub
@@ -511,12 +519,17 @@ exports.githubCallback = async (req, res) => {
 
     // Verifica anti-CSRF — stesso cookie usato da Google
     const savedState = req.cookies?.oauth_state;
-    res.clearCookie("oauth_state"); 
+    res.clearCookie("oauth_state", {
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/"
+    }); 
 
     const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
 
     if (!state || state !== savedState) {
-      return res.status(403).json({ error: "State non valido" });
+      return res.redirect(`${frontendUrl}/login?error=oauth_state`);
     }
 
     // Scambia code con GitHub per ottenere access_token
