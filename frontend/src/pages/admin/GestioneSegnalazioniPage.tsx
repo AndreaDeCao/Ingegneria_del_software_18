@@ -249,7 +249,17 @@ function TrekSegnalazioneCard({
 
   const Wrapper = isUtente
     ? ({ children }: { children: React.ReactNode }) => (
-        <Link to={reportedUser?._id ? `/admin/utenti?userId=${reportedUser._id}` : `/admin/utenti`} className={reportStyles.reportCardLink}>{children}</Link>
+        <Link 
+          to={reportedUser?._id ? `/admin/utenti?userId=${reportedUser._id}` : `/admin/utenti`} 
+          className={reportStyles.reportCardLink}
+          onClick={() => {
+            if (entry.segnalazione.stato === "pending") {
+              onAction(entry._id, "accept", { stopPropagation: () => {}, preventDefault: () => {} } as React.MouseEvent);
+          }
+          }}
+        >
+          {children}
+        </Link>
       )
     : ({ children }: { children: React.ReactNode }) => (
         <Link to={`/admin/treks/${trekId}`} className={reportStyles.reportCardLink}>{children}</Link>
