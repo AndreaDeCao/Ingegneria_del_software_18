@@ -370,8 +370,8 @@ exports.googleRedirect = (req, res) => {
     httpOnly: true,
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     secure: process.env.NODE_ENV === "production",
-    maxAge: 5 * 60 * 1000,                             //5 min
-    path: "/"
+    maxAge: 5 * 60 * 1000,
+    path: "/",
   });
 
 
@@ -411,8 +411,8 @@ exports.googleCallback = async(req, res) => {
       secure: process.env.NODE_ENV === "production",
       path: "/",
     });
-    if(!state || state !== savedState) {
-      return res.status(403).json({ error: "State non valido" });
+    if (!state || state !== savedState) {
+      return res.redirect(`${frontendUrl}/login?error=oauth_failed`);
     }
 
     //Scambia autorizzazione (code) con Google per ottenere i token
@@ -525,10 +525,11 @@ exports.githubCallback = async (req, res) => {
       httpOnly: true,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       secure: process.env.NODE_ENV === "production",
+      path: "/",
     });
 
     if (!state || state !== savedState) {
-      return res.status(403).json({ error: "State non valido" });
+      return res.redirect(`${frontendUrl}/login?error=oauth_failed`);
     }
 
     // Scambia code con GitHub per ottenere access_token

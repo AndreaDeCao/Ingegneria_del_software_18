@@ -19,11 +19,15 @@ export default function AuthCallback() {
       }
 
       if (token) {
-        // Token presente nell'URL — salvalo in memoria
+        // Token presente nell'URL — salva in memoria
         setAccessToken(token);
       } else {
         // Su mobile il token potrebbe non essere passato — prova via cookie di refresh
-        await refreshAccessToken().catch(() => null);
+        const refreshed = await refreshAccessToken().catch(() => null);
+        if (!refreshed) {
+          navigate("/login?error=oauth_failed", { replace: true });
+          return;
+        }
       }
 
       // Popola user nel contesto AuthProvider
