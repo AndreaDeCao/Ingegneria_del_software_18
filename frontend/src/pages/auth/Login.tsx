@@ -28,7 +28,6 @@ export default function Login() {
     const errorParam = searchParams.get("error");
     if (errorParam === "banned") return "Il tuo account è stato bannato permanentemente.";
     if (errorParam === "suspended") return "Il tuo account è sospeso. Contatta il supporto per maggiori informazioni.";
-    if (errorParam === "oauth_failed") return "Accesso social non riuscito. Riprova o usa email e password.";
     return null;
   });
 
