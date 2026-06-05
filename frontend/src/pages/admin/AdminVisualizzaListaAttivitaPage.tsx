@@ -19,7 +19,7 @@ type ActivityWithAdmin = Activity & {
 const POLL_INTERVAL = 20_000; // ogni 20 secondi
 
 export default function AdminVisualizzaListaAttivitaPage() {
-  const { user } = useAuth();
+  useAuth();
 
   const [activities, setActivities] = useState<ActivityWithAdmin[]>([]);
   const [treksMap, setTreksMap] = useState<Record<string, string>>({});
@@ -122,29 +122,21 @@ export default function AdminVisualizzaListaAttivitaPage() {
         (r) => r.reportStatus === "pending"
       );
 
-      const organizerId = activity.organizerID
-        ? (typeof activity.organizerID === "object"
-            ? activity.organizerID._id?.toString()
-            : activity.organizerID?.toString())
-        : undefined;
 
-      const currentUserId = user?._id?.toString();
-
-      const isMyActivity = Boolean(
-        organizerId &&
-        currentUserId &&
-        organizerId === currentUserId
-      );
+      const organizerRole =
+        activity.organizerID && typeof activity.organizerID === "object"
+          ? (activity.organizerID as any).role
+          : undefined;
 
       const matchesSearch =
       !searchTerm ||
       activity.title.toLowerCase().includes(searchTerm) ||
       (activity.description ?? "").toLowerCase().includes(searchTerm);
 
-      const matchesOrganizer =
+     const matchesOrganizer =
         organizerFilter === "Tutti" ||
-        (organizerFilter === "Organizzo" && isMyActivity) ||
-        (organizerFilter === "Non organizzo" && !isMyActivity);
+        (organizerFilter === "Organizzo" && organizerRole === "admin") ||
+        (organizerFilter === "Non organizzo" && organizerRole === "user");
 
       const matchesSuspended =
         suspendedFilter === "Tutte" ||
@@ -170,7 +162,6 @@ export default function AdminVisualizzaListaAttivitaPage() {
     organizerFilter,
     suspendedFilter,
     reportFilter,
-    user,
   ]);
 
   if (loading) return <PageLoader />
