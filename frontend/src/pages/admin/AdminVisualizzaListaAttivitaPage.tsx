@@ -122,9 +122,12 @@ export default function AdminVisualizzaListaAttivitaPage() {
         (r) => r.reportStatus === "pending"
       );
 
-     const isAdminOrganizer =
-        typeof activity.organizerID === "object" &&
-        (activity.organizerID as any)?.role === "admin";
+      const isMyActivity = 
+        activity.organizerID && user?._id && (
+          typeof activity.organizerID === "object"
+            ? activity.organizerID._id === user._id
+            : activity.organizerID === user._id
+        );
 
       const matchesSearch =
       !searchTerm ||
@@ -133,8 +136,8 @@ export default function AdminVisualizzaListaAttivitaPage() {
 
       const matchesOrganizer =
         organizerFilter === "Tutti" ||
-        (organizerFilter === "Organizzo" && isAdminOrganizer) ||
-        (organizerFilter === "Non organizzo" && !isAdminOrganizer);
+        (organizerFilter === "Organizzo" && isMyActivity) ||
+        (organizerFilter === "Non organizzo" && !isMyActivity);
 
       const matchesSuspended =
         suspendedFilter === "Tutte" ||
@@ -160,6 +163,7 @@ export default function AdminVisualizzaListaAttivitaPage() {
     organizerFilter,
     suspendedFilter,
     reportFilter,
+    user,
   ]);
 
   if (loading) return <PageLoader />
