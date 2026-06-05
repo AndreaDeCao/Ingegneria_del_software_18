@@ -130,13 +130,13 @@ export default function AdminVisualizzaListaAttivitaPage() {
 
       const organizerId =
         typeof activity.organizerID === "object"
-          ? (activity.organizerID as any)?._id
-          : activity.organizerID;
+          ? String((activity.organizerID as any)?._id)
+          : String(activity.organizerID);
 
       const matchesOrganizer =
         organizerFilter === "Tutti" ||
-        (organizerFilter === "Organizzo" && organizerId === currentUserID) ||
-        (organizerFilter === "Non organizzo" && organizerId !== currentUserID);
+        (organizerFilter === "Organizzo" && organizerId === String(currentUserID)) ||
+        (organizerFilter === "Non organizzo" && organizerId !== String(currentUserID));
 
       const matchesSuspended =
         suspendedFilter === "Tutte" ||
@@ -148,6 +148,8 @@ export default function AdminVisualizzaListaAttivitaPage() {
         (reportFilter === "Segnalate" && hasAcceptedReport) ||
         (reportFilter === "Non segnalate" && !hasAcceptedReport) ||
         (reportFilter === "In attesa" && hasPendingReport);
+      
+      console.log("organizerId:", organizerId, "currentUserID:", currentUserID);
 
       return (
         matchesSearch &&
