@@ -122,12 +122,19 @@ export default function AdminVisualizzaListaAttivitaPage() {
         (r) => r.reportStatus === "pending"
       );
 
-      const isMyActivity = 
-        activity.organizerID && user?._id && (
-          typeof activity.organizerID === "object"
-            ? activity.organizerID._id === user._id
-            : activity.organizerID === user._id
-        );
+      const organizerId = activity.organizerID
+        ? (typeof activity.organizerID === "object"
+            ? activity.organizerID._id?.toString()
+            : activity.organizerID?.toString())
+        : undefined;
+
+      const currentUserId = user?._id?.toString();
+
+      const isMyActivity = Boolean(
+        organizerId &&
+        currentUserId &&
+        organizerId === currentUserId
+      );
 
       const matchesSearch =
       !searchTerm ||
