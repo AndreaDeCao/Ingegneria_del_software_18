@@ -121,4 +121,12 @@ mongoose.connect(process.env.MONGODB_URI, { family: 4 })  // Imposta family: 4 p
 //   console.log("Server running on http://localhost:3000");
 // });
 
+const path = require("path");
+// Serve il frontend buildato
+app.use(express.static(path.join(__dirname, "../frontend/dist")));
+// Tutte le rotte non-API vanno a index.html (React Router)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+});
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
