@@ -123,11 +123,12 @@ export default function AdminVisualizzaListaAttivitaPage() {
         (r) => r.reportStatus === "pending"
       );
 
-      const isOrganizer = 
-        (typeof activity.organizerID === "string"
+      const organizerID =
+        typeof activity.organizerID === "string"
           ? activity.organizerID
-          : (activity.organizerID as any)?._id
-        ) === currentUserID;
+          : activity.organizerID?._id?.toString();
+
+      const isOrganizer = organizerID === currentUserID?.toString();
 
       const matchesSearch =
       !searchTerm ||
