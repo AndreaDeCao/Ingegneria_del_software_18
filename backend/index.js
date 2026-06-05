@@ -125,7 +125,7 @@ const path = require("path");
 // Serve il frontend buildato
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 // Tutte le rotte non-API vanno a index.html (React Router)
-app.get("*", (req, res) => {
+app.get("*path", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
 });
 
