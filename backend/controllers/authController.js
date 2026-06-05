@@ -368,7 +368,7 @@ exports.googleRedirect = (req, res) => {
   //Salva state in un cookie per verificarlo nel callback
   res.cookie("oauth_state", state, {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "none",
     maxAge: 5 * 60 * 1000,                             //5 min
     path: "/"
   });
@@ -491,7 +491,7 @@ exports.githubRedirect = (req, res) => {
 
   res.cookie("oauth_state", state, {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "none",
     maxAge: 5 * 60 * 1000, // 5 minuti
   });
 
