@@ -7,6 +7,8 @@ export default function AuthCallback() {
   const navigate = useNavigate();
   const { refreshUser } = useAuth();
 
+  console.log("AuthCallback renderizzato");
+  
   useEffect(() => {
   const params = new URLSearchParams(window.location.search);
   const token = params.get("accessToken");
