@@ -8,17 +8,20 @@ export default function AuthCallback() {
   const { refreshUser } = useAuth();
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("accessToken");
-    
-    (async () => {
-      if (token) {
-        setAccessToken(token);
-        await refreshUser(); 
-      }
-      navigate("/", { replace: true });
-    })();
-  }, [navigate, refreshUser]);
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("accessToken");
+  
+  (async () => {
+    console.log("token dall'URL:", token);
+    if (token) {
+      setAccessToken(token);
+      console.log("chiamo refreshUser...");
+      await refreshUser();
+      console.log("refreshUser completato");
+    }
+    navigate("/", { replace: true });
+  })();
+}, [navigate, refreshUser]);
 
   return <p>Accesso in corso...</p>;
 }
