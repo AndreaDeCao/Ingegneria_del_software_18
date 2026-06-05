@@ -57,7 +57,7 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
 
   const adminLinks = [
     { label: "Utenti",       path: "/admin/utenti" },
-    { label: "Esplora",      path: "/treks" },
+    { label: "Percorsi",      path: "/treks" },
     { label: "Attività",     path: "/admin/attivita/visualizza" },
     { label: "Segnalazioni", path: "/admin/segnalazioni" },
   ];
@@ -157,7 +157,7 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
                       onNavigate={handleNavigate} />
                   )}
                   {isLinkHidden("Esplora") && (
-                    <DropdownItem label="Esplora"
+                    <DropdownItem label="Percorsi"
                       items={[{ label: "Esplora Percorsi", path: "/treks" }]}
                       isOpen={openItem === "Esplora"}
                       onToggle={() => setOpenItem(openItem === "Esplora" ? null : "Esplora")}
@@ -179,6 +179,20 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
                       isOpen={openItem === "Segnalazioni"}
                       onToggle={() => setOpenItem(openItem === "Segnalazioni" ? null : "Segnalazioni")}
                       onNavigate={handleNavigate} />
+                  )}
+                  {/* Login/Logout se nascosto */}
+                  {isLinkHidden("Login") && !user && (
+                    <DropdownItem label="Login"
+                      items={[{ label: "Accedi", path: "/login" }]}
+                      isOpen={openItem === "Login"}
+                      onToggle={() => setOpenItem(openItem === "Login" ? null : "Login")}
+                      onNavigate={handleNavigate} />
+                  )}
+                  {isLinkHidden("Logout") && user && (
+                    <button className={styles.menuItem}
+                      onClick={async () => { await logout(); navigate("/", { replace: true }); setMenuOpen(false); }}>
+                      Logout
+                    </button>
                   )}
                 </>
               ) : (
@@ -221,7 +235,7 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
                     isOpen={openItem === "Attivita"}
                     onToggle={() => setOpenItem(openItem === "Attivita" ? null : "Attivita")}
                     onNavigate={handleNavigate} />
-                    {/* Login/Logout se nascosto */}
+                  {/* Login/Logout se nascosto */}
                   {isLinkHidden("Login") && !user && (
                     <DropdownItem label="Login"
                       items={[{ label: "Accedi", path: "/login" }]}

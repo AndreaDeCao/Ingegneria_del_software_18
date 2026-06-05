@@ -44,9 +44,17 @@ export default function VisualizzaAttivitaPage() {
 
   const currentUserID = user?._id;
 
+  const isOrganizer = (activity: Activity) =>
+    Boolean(
+      currentUserID &&
+      (activity.organizerID === currentUserID ||
+        (typeof (activity.organizerID as any) === "object" &&
+          (activity.organizerID as any)?._id === currentUserID))
+    );
+
   // Determina lo stato del bottone Partecipa per una singola attività
   function getJoinState(activity: Activity): "join" | "organizer" | "participant" | "closed" | "full" | "expired" | "private" {
-    if (activity.organizerID === currentUserID) return "organizer";
+    if (isOrganizer(activity)) return "organizer";
     if (new Date(activity.activityDate).getTime() < Date.now()) return "expired";
     if (activity.visibility === "private") return "private";
     if (activity.status !== "Aperto") return "closed";
@@ -108,7 +116,10 @@ export default function VisualizzaAttivitaPage() {
           : a.visibility === "private";
 
     const matchesSuspended = suspendedFilter === "Tutte" || (suspendedFilter === "Sospese" && a.suspended) || (suspendedFilter === "Non sospese" && !a.suspended);
-    const matchesOrganizer = organizerFilter === "Tutti" || (organizerFilter === "Le mie" && a.organizerID === currentUserID);
+    const matchesOrganizer =
+      organizerFilter === "Tutti" ||
+      (organizerFilter === "Organizzo" && isOrganizer(a)) ||
+      (organizerFilter === "Non organizzo" && !isOrganizer(a));
 
     return matchesSearch && matchesStatus && matchesDate && matchesTravelMode && matchesParticipation && matchesVisibility && matchesSuspended && matchesOrganizer;
   });

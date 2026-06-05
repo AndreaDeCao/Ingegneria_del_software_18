@@ -19,6 +19,7 @@ export default function AdminDettagliAttivita() {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const currentUserID = user?._id;
 
   const [activity, setActivity] = useState<ActivityPopulated | null>(null);
   const [organizer, setOrganizer] = useState<Organizer | null>(null);
@@ -33,6 +34,14 @@ export default function AdminDettagliAttivita() {
   const [suspendReason, setSuspendReason] = useState("");
 
   const messageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const isCurrentUserOrganizerID = (organizerID?: string | { _id?: string }) =>
+    Boolean(
+      currentUserID &&
+      (organizerID === currentUserID ||
+        (typeof organizerID === "object" &&
+          organizerID?._id === currentUserID))
+    );
 
   // Fetch attività e organizzatore in parallelo usando http()
   const fetchActivity = useCallback(async () => {
@@ -151,8 +160,7 @@ export default function AdminDettagliAttivita() {
   // Tutti i valori derivati memoizzati
   const derived = useMemo(() => {
     if (!activity) return null;
-    const currentUserID = user?._id;
-    const isOrganizer = !!currentUserID && activity.organizerID?.toString() === currentUserID;
+    const isOrganizer = isCurrentUserOrganizerID(activity.organizerID);
     const isParticipant = !isOrganizer && activity.partecipantList.some((p) => p._id === currentUserID);
     const participantCount = activity.partecipantList.length;
     const spotsLeft = activity.maxParticipants - participantCount;
@@ -165,7 +173,7 @@ export default function AdminDettagliAttivita() {
     const hasAcceptedReport = acceptedReports.length > 0;
     const effectiveStatus = (activity.status === "Aperto" && isExpired) ? "Chiuso" : activity.status;
     return { isOrganizer, isParticipant, participantCount, spotsLeft, isSuspended, organizerName, pendingReports, acceptedReports, hasAcceptedReport, effectiveStatus };
-  }, [activity, user?._id, organizer]);
+  }, [activity, currentUserID, organizer]);
 
   if (loading) return <PageLoader />
   if (error || !activity || !derived) return <main className={styles.page}><p className={styles.messageError}>{error || "Attivita non trovata"}</p></main>;
