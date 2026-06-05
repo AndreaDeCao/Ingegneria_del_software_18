@@ -44,12 +44,37 @@ function readCookie(name: string): string | null {
   return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : null;
 }
 
+// async function ensureCsrfToken(): Promise<string> {
+//   const cookieToken = readCookie("csrf_token");
+//   if (cookieToken) {
+//     csrfToken = cookieToken;
+//     return cookieToken;
+//   }
+//   if (csrfToken) return csrfToken;
+//   if (csrfTokenPromise) return csrfTokenPromise;
+
+//   csrfTokenPromise = (async () => {
+//     const res = await fetch(`${API_BASE}/api/auth/csrf`, {
+//       method: "GET",
+//       credentials: "include",
+//     });
+
+//     if (!res.ok) throw new Error("Impossibile ottenere CSRF token");
+//     const data = (await res.json()) as { csrfToken?: unknown };
+//     if (typeof data.csrfToken !== "string" || !data.csrfToken) {
+//       throw new Error("CSRF token non valido");
+//     }
+
+//     csrfToken = data.csrfToken;
+//     return csrfToken;
+//   })().finally(() => {
+//     csrfTokenPromise = null;
+//   });
+
+//   return csrfTokenPromise;
+// }
 async function ensureCsrfToken(): Promise<string> {
-  const cookieToken = readCookie("csrf_token");
-  if (cookieToken) {
-    csrfToken = cookieToken;
-    return cookieToken;
-  }
+  // RIMOSSO: readCookie non funziona cross-origin
   if (csrfToken) return csrfToken;
   if (csrfTokenPromise) return csrfTokenPromise;
 
@@ -58,13 +83,11 @@ async function ensureCsrfToken(): Promise<string> {
       method: "GET",
       credentials: "include",
     });
-
     if (!res.ok) throw new Error("Impossibile ottenere CSRF token");
     const data = (await res.json()) as { csrfToken?: unknown };
     if (typeof data.csrfToken !== "string" || !data.csrfToken) {
       throw new Error("CSRF token non valido");
     }
-
     csrfToken = data.csrfToken;
     return csrfToken;
   })().finally(() => {
