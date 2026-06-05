@@ -187,7 +187,7 @@ export default function AdminVisualizzaListaAttivitaPage() {
 
   return (
     <main className={styles.page}>
-      <h1 className={styles.pageTitle}>Attività in programma</h1>
+      <h1 className={styles.pageTitle}>Attività in programma v2</h1>
 
       <div className={styles.listHeader}>
         <input
