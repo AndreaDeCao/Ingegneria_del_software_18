@@ -123,7 +123,11 @@ export default function AdminVisualizzaListaAttivitaPage() {
         (r) => r.reportStatus === "pending"
       );
 
-      const isOrganizer = activity.organizerID === currentUserID;
+      const isOrganizer = 
+        (typeof activity.organizerID === "string"
+          ? activity.organizerID
+          : (activity.organizerID as any)?._id
+        ) === currentUserID;
 
       const matchesSearch =
       !searchTerm ||

@@ -61,6 +61,7 @@ exports.getActivityById = async (req, res) => {
 
 exports.createActivity = async (req, res) => {
   try {
+    const organizerID = req.userId;
     const {
       organizerID,
       maxParticipants = 10,
