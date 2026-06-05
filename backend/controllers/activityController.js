@@ -14,7 +14,7 @@ const User = require("../models/users");
 exports.getActivities = async (req, res) => {
   try {
     const activities = await Activity.find()
-      .populate("organizerID", "nickname")
+      .populate("organizerID", "nickname role")
       .populate("reports.reportedBy", "nickname");
     const now = new Date();
     activities.forEach(async (activity) => {

@@ -32,7 +32,6 @@ export default function AdminVisualizzaListaAttivitaPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const currentUserID = user?._id;
   const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
   const hasActiveFilters =
@@ -123,12 +122,9 @@ export default function AdminVisualizzaListaAttivitaPage() {
         (r) => r.reportStatus === "pending"
       );
 
-      const organizerID =
-        typeof activity.organizerID === "string"
-          ? activity.organizerID
-          : activity.organizerID?._id?.toString();
-
-      const isOrganizer = organizerID === currentUserID?.toString();
+     const isAdminOrganizer =
+        typeof activity.organizerID === "object" &&
+        (activity.organizerID as any)?.role === "admin";
 
       const matchesSearch =
       !searchTerm ||
@@ -137,8 +133,8 @@ export default function AdminVisualizzaListaAttivitaPage() {
 
       const matchesOrganizer =
         organizerFilter === "Tutti" ||
-        (organizerFilter === "Organizzo" && isOrganizer) ||
-        (organizerFilter === "Non organizzo" && !isOrganizer);
+        (organizerFilter === "Organizzo" && isAdminOrganizer) ||
+        (organizerFilter === "Non organizzo" && !isAdminOrganizer);
 
       const matchesSuspended =
         suspendedFilter === "Tutte" ||
@@ -164,7 +160,6 @@ export default function AdminVisualizzaListaAttivitaPage() {
     organizerFilter,
     suspendedFilter,
     reportFilter,
-    currentUserID
   ]);
 
   if (loading) return <PageLoader />

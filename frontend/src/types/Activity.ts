@@ -15,7 +15,7 @@ export type Activity = {
 
   visibility: "public" | "private";
 
-  organizerID: string;
+  organizerID: string | { _id: string; nickname?: string; role?: string};
   // favoriteTreks: string[]; // Array di ID dei trek salvati
 
   trekID: string;
