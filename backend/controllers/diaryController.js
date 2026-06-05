@@ -615,20 +615,6 @@ const reopenSegnalazione = (req, res) => _aggiornaStatoSegnalazione(req, res, "p
 // ── NOTIFICHE ────────────────────────────────────────────────────────────────
 
 /**
- * Aggiunge una notifica all'utente.
- */
-async function addNotification(userId, type, message, ref = null) {
-  try {
-    await User.findByIdAndUpdate(userId, {
-      $push: { notifications: { type, message, ref, createdAt: new Date() } }
-    });
-  } catch(err) {
-    console.error("addNotification error:", err.message);
-  }
-}
-
-
-/**
  * GET /api/diary/segnalazioni-utenti
  * Restituisce tutte le voci con segnalazione di tipo "Utente".
  */

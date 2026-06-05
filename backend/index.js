@@ -96,11 +96,6 @@ app.use("/api/friendships", friendshipRoutes);
 
 app.use("/api/admin", adminRoutes);
 
-// Connessione a MongoDB
-mongoose.connect(process.env.MONGODB_URI, { family: 4 })  // Imposta family: 4 per forzare l'uso di IPv4
-  .then(() => console.log("MongoDB connesso!"))
-  .catch(err => console.error("Errore connessione:", err));
-
 
 // /**
 //  * Restituisce un singolo percorso in base all'id.
@@ -131,7 +126,12 @@ app.get("*path", (req, res) => {
 
 //app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
-if (require.main === module) {
+if(require.main === module) {
+  // Connessione a MongoDB
+  mongoose.connect(process.env.MONGODB_URI, { family: 4 })  // Imposta family: 4 per forzare l'uso di IPv4
+    .then(() => console.log("MongoDB connesso!"))
+    .catch(err => console.error("Errore connessione:", err));
+    
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }
 
