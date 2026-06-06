@@ -7,7 +7,11 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "build": "cd ../frontend && npm install && npm run build",
-    "test": "jest --testPathPatterns=tests/ --forceExit"
+    "test": "jest --testPathPatterns=tests/ --forceExit",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:sprint1": "jest --testNamePattern='Sprint 1'",
+    "test:sprint2": "jest --testNamePattern='Sprint 2'"
   },
   "keywords": [],
   "author": "",

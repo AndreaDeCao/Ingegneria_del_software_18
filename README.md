@@ -111,6 +111,7 @@ Ingegneria_del_software_18
 │  │  └─ meteoLocations.json
 │  ├─ Dockerfile
 │  ├─ index.js
+│  ├─ jest.config.js
 │  ├─ middleware
 │  │  ├─ requireAdmin.js
 │  │  ├─ requireAuth.js
@@ -140,9 +141,14 @@ Ingegneria_del_software_18
 │  ├─ oas3.yaml
 │  ├─ package-lock.json
 │  ├─ package.json
-│  └─ services
-│     ├─ routeService.js
-│     └─ emailService.js
+│  ├─ services
+│  │   ├─ routeService.js
+│  │   └─ emailService.js
+│  └─ tests
+│     ├─ auth.test.js
+│     └─ helpers
+│        ├─ db.js
+│        └─ tokens.js
 ├─ docker-compose.yml
 ├─ frontend
 │  ├─ .dockerignore
