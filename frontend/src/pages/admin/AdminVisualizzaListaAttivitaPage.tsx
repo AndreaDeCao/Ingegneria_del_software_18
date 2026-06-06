@@ -101,16 +101,6 @@ export default function AdminVisualizzaListaAttivitaPage() {
     fetchData();
   }, [fetchData]);
 
-  useEffect(() => {
-    console.log("currentUserID:", currentUserID);
-    activities.slice(0, 3).forEach(a => {
-      const organizerId = typeof a.organizerID === "object"
-        ? String((a.organizerID as any)?._id)
-        : String(a.organizerID);
-      console.log("organizerId:", organizerId, "match:", organizerId === String(currentUserID));
-    });
-  }, [activities, currentUserID]);
-
   // aggiungi questo subito sotto
   useEffect(() => {
     const interval = setInterval(() => {
