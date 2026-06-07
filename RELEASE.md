@@ -308,8 +308,6 @@ DoloMate: https://ingegneria-del-software-18.onrender.com
 
 ## Versione
 
-Current version: **v3.15.0**
+Current version: **v4.0.0**
 
 Semantic versioning adottato (MAJOR.MINOR.PATCH)
-
-**Full Changelog**: https://github.com/AndreaDeCao/Ingegneria_del_software_18/compare/v3.0.0...v3.15.0
