@@ -28,14 +28,18 @@ info:
     - `admin` — accesso aggiuntivo a operazioni privilegiate (es. creazione trek)
     
     ## Prefissi route
-    | Modulo     | Prefisso        |
-    |------------|-----------------|
-    | Auth       | /api/auth       |
-    | Treks      | /api/treks      |
-    | Activities | /api/activities |
-    | Diary      | /api/diary      |
-    | Weather    | /api/weather    |
-    | Users      | /api/users      |
+    | Modulo      | Prefisso          |
+    |-------------|-------------------|
+    | Auth        | /api/auth         |
+    | Treks       | /api/treks        |
+    | Activities  | /api/activities   |
+    | Diary       | /api/diary        |
+    | Weather     | /api/weather      |
+    | Users       | /api/users        |
+    | Admin       | /api/admin        |
+    | Friendships | /api/friendships  |
+    | Events      | /api/events       |
+    | Routes      | /api/route        |
   
     ## Codici di errore comuni
     | Codice | Significato                        |
@@ -55,7 +59,7 @@ info:
     - `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` — OAuth GitHub
 
 servers:
-  - url: http://localhost:3000
+  - url: https://ingegneria-del-software-18.onrender.com
     description: Development server
 
 # ---------------------------------------------------------------------------
@@ -367,6 +371,310 @@ components:
           format: date-time
           example: "2025-06-15T21:00:00Z"
 
+    ActivityInvitation:
+      type: object
+      description: Invito a partecipare a un'attività.
+      properties:
+        _id:
+          type: string
+          example: "664e5f6a1b2c3d4e5f6a7b8c"
+        activity:
+          type: string
+          description: _id dell'attività.
+          example: "664c3d4e0f1a2b3c4d5e6f7a"
+        sender:
+          description: Organizzatore che ha inviato l'invito (popolato con nome, cognome, nickname, avatarUrl).
+          $ref: '#/components/schemas/SafeUser'
+        receiver:
+          description: Utente invitato (popolato con nome, cognome, nickname, avatarUrl).
+          $ref: '#/components/schemas/SafeUser'
+        status:
+          type: string
+          enum: [pending, accepted, declined]
+          example: "pending"
+        acceptedAt:
+          type: string
+          format: date-time
+          nullable: true
+        declinedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    Rating:
+      type: object
+      description: Valutazione di un trek da parte di un utente.
+      properties:
+        _id:
+          type: string
+          example: "664f7b8c2d3e4f5a6b7c8d9e"
+        trek:
+          type: string
+          description: _id del trek valutato.
+          example: "664b2c3d9e4f5a6b7c8d9e0f"
+        user:
+          type: string
+          description: _id dell'utente che ha votato.
+          example: "664a1f2e8b3c4d5e6f7a8b9c"
+        vote:
+          type: number
+          minimum: 1
+          maximum: 5
+          example: 4
+        note:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: "Sentiero stupendo, un po' impegnativo."
+
+    Event:
+      type: object
+      description: Evento pubblico (es. comune di Trento, SAT).
+      properties:
+        _id:
+          type: string
+          example: "665a1b2c3d4e5f6a7b8c9d0e"
+        title:
+          type: string
+          example: "Escursione guidata al Monte Bondone"
+        abstract:
+          type: string
+          nullable: true
+          example: "Passeggiata guidata con esperto botanico."
+        topics:
+          type: array
+          items:
+            type: string
+          example: ["Ambiente", "Tempo libero"]
+        typology:
+          type: array
+          items:
+            type: string
+          example: ["Escursione"]
+        startDate:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-07-10T09:00:00Z"
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-07-10T17:00:00Z"
+        address:
+          type: string
+          nullable: true
+          example: "Piazza Dante, Trento"
+        coordinates:
+          type: object
+          nullable: true
+          properties:
+            lat:
+              type: number
+              nullable: true
+            lon:
+              type: number
+              nullable: true
+        isFree:
+          type: boolean
+          example: true
+        imageUrl:
+          type: string
+          nullable: true
+          example: "https://example.com/evento.jpg"
+        sourceUrl:
+          type: string
+          nullable: true
+          example: "https://www.comune.trento.it/..."
+        source:
+          type: string
+          enum: [comune_trento, sat, manual]
+          example: "comune_trento"
+
+    Friendship:
+      type: object
+      description: Relazione di amicizia tra due utenti.
+      properties:
+        _id:
+          type: string
+          example: "665b2c3d4e5f6a7b8c9d0e1f"
+        sender:
+          description: Utente che ha inviato la richiesta.
+          $ref: '#/components/schemas/SafeUser'
+        receiver:
+          description: Utente che ha ricevuto la richiesta.
+          $ref: '#/components/schemas/SafeUser'
+        status:
+          type: string
+          enum: [pending, accepted, declined]
+          example: "pending"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Notification:
+      type: object
+      description: Notifica in-app per un utente.
+      properties:
+        _id:
+          type: string
+          example: "665c3d4e5f6a7b8c9d0e1f2a"
+        type:
+          type: string
+          enum: [friend_request, friend_accepted, friend_declined, diary_tag, activity_invite, activity_join]
+          example: "friend_request"
+        message:
+          type: string
+          example: "marioR ti ha inviato una richiesta di amicizia"
+        read:
+          type: boolean
+          default: false
+          example: false
+        status:
+          type: string
+          enum: [pending, accepted, rejected]
+          default: pending
+          example: "pending"
+        ref:
+          type: string
+          nullable: true
+          description: _id della risorsa correlata (es. Friendship, Activity).
+          example: "665b2c3d4e5f6a7b8c9d0e1f"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-06-01T10:00:00Z"
+
+    DiaryStats:
+      type: object
+      description: Statistiche aggregate del diario dell'utente.
+      properties:
+        totaleUscite:
+          type: number
+          example: 12
+        totaleKm:
+          type: number
+          example: 87.5
+        totaleOre:
+          type: number
+          example: 34
+        totaleMinutiExtra:
+          type: number
+          example: 20
+        mediaValutazione:
+          type: number
+          nullable: true
+          example: 4.2
+        percentualeFacile:
+          type: number
+          nullable: true
+          example: 41.67
+        percentualeMedio:
+          type: number
+          nullable: true
+          example: 41.67
+        percentualeDifficile:
+          type: number
+          nullable: true
+          example: 16.67
+
+    Report:
+      type: object
+      description: Segnalazione su un'attività o un utente.
+      properties:
+        _id:
+          type: string
+          example: "665d4e5f6a7b8c9d0e1f2a3b"
+        reportedBy:
+          type: string
+          description: _id dell'utente che ha segnalato.
+          example: "664a1f2e8b3c4d5e6f7a8b9c"
+        reason:
+          type: string
+          example: "Comportamento scorretto durante l'escursione."
+        reportedAt:
+          type: string
+          format: date-time
+        reportStatus:
+          type: string
+          enum: [pending, accepted, dismissed]
+          example: "pending"
+        reviewedBy:
+          type: string
+          nullable: true
+          description: _id dell'admin che ha gestito la segnalazione.
+        reviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+        reviewNote:
+          type: string
+          nullable: true
+
+    RouteResponse:
+      type: object
+      description: Risposta con tracciato GeoJSON e sommario del percorso.
+      properties:
+        geojson:
+          type: object
+          description: Tracciato GeoJSON (FeatureCollection) calcolato da ORS.
+          additionalProperties: true
+        distanceMeters:
+          type: number
+          nullable: true
+          description: Distanza totale in metri.
+          example: 12340
+        durationSeconds:
+          type: number
+          nullable: true
+          description: Durata stimata in secondi.
+          example: 14400
+
+    RouteVariantsResponse:
+      type: object
+      description: Risposta con 4 varianti di percorso per profilo di trasporto.
+      properties:
+        variants:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+                example: "hiking_road"
+              label:
+                type: string
+                example: "Sentiero hiking"
+              profile:
+                type: string
+                example: "foot-hiking"
+              startLat:
+                type: number
+              startLon:
+                type: number
+              distanceMeters:
+                type: number
+                nullable: true
+              durationSeconds:
+                type: number
+                nullable: true
+              geojson:
+                type: object
+                additionalProperties: true
+                nullable: true
+              error:
+                type: boolean
+                default: false
+              errorMessage:
+                type: string
+                nullable: true
+
     WeatherResponse:
       type: object
       description: Risposta meteo per un trek, con dati dalla stazione più vicina.
@@ -419,7 +727,32 @@ tags:
       la stazione meteo più vicina alle coordinate del trek.
 
   - name: Users
-    description: CRUD diretto sugli utenti (uso amministrativo).
+    description: |
+      Gestione del profilo utente autenticato, avatar, password, notifiche e trek preferiti.
+      Alcuni endpoint sono pubblici (GET /api/users, GET /api/users/:id);
+      la maggior parte richiede autenticazione JWT.
+
+  - name: Admin
+    description: |
+      Operazioni privilegiate riservate agli utenti con ruolo `admin`.
+      Tutti gli endpoint richiedono autenticazione JWT + ruolo admin.
+      Permettono di gestire la lista utenti (sospensione, ban) e le segnalazioni.
+
+  - name: Friendships
+    description: |
+      Gestione delle amicizie tra utenti.
+      Tutti gli endpoint richiedono autenticazione JWT.
+      Flusso: invia richiesta → accetta/rifiuta → rimuovi amicizia.
+
+  - name: Events
+    description: |
+      Visualizzazione di eventi pubblici aggregati da Comune di Trento e SAT.
+      Non richiede autenticazione.
+
+  - name: Routes
+    description: |
+      Calcolo dei tracciati GeoJSON per i trek tramite OpenRouteService (ORS).
+      Non richiede autenticazione. Usa l'ID numerico del trek (campo `id`, non `_id`).
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -1183,6 +1516,2998 @@ paths:
                 $ref: '#/components/schemas/User'
         '400':
           description: Dati non validi o campi obbligatori mancanti.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  # ==========================================================================
+  # TREKS — endpoint aggiuntivi
+  # ==========================================================================
+
+  /api/treks/by-mongo-id/{mongoId}:
+    get:
+      summary: Ottieni ID numerico da MongoDB _id
+      description: |
+        Dato il `_id` MongoDB di un trek, restituisce il suo ID numerico progressivo (`id`).
+        Utile per navigare dal ObjectId (usato internamente) all'ID numerico (usato nelle URL).
+        Non richiede autenticazione.
+      tags: [Treks]
+      parameters:
+        - in: path
+          name: mongoId
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB del trek (ObjectId).
+          example: "664b2c3d9e4f5a6b7c8d9e0f"
+      responses:
+        '200':
+          description: ID numerico trovato.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                    example: 42
+        '400':
+          description: Mongo ID non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Percorso non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/treks/{id}/rate:
+    get:
+      summary: Ottieni il voto dell'utente per un trek
+      description: |
+        Restituisce il voto (1–5) e la nota che l'utente autenticato ha assegnato al trek.
+        Se non ha ancora votato, restituisce `{ vote: null, note: "" }`.
+        Gli admin non possono votare (403).
+      tags: [Treks]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID numerico del trek.
+          example: 42
+      responses:
+        '200':
+          description: Voto dell'utente (null se non ancora votato).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vote:
+                    type: number
+                    minimum: 1
+                    maximum: 5
+                    nullable: true
+                    example: 4
+                  note:
+                    type: string
+                    example: "Bellissimo sentiero"
+        '403':
+          description: Gli admin non possono votare.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Percorso non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Assegna o aggiorna il voto a un trek
+      description: |
+        Permette all'utente autenticato di votare un trek (upsert: crea o sovrascrive il voto precedente).
+        Aggiorna automaticamente `averageRating` e `ratingCount` nel trek.
+        Gli admin non possono votare (403).
+      tags: [Treks]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID numerico del trek.
+          example: 42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [vote]
+              properties:
+                vote:
+                  type: number
+                  minimum: 1
+                  maximum: 5
+                  example: 4
+                note:
+                  type: string
+                  maxLength: 500
+                  nullable: true
+                  example: "Percorso impegnativo ma panoramico."
+      responses:
+        '200':
+          description: Voto salvato. Restituisce la media e il conteggio aggiornati.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Voto salvato"
+                  averageRating:
+                    type: number
+                    example: 4.2
+                  ratingCount:
+                    type: number
+                    example: 17
+        '400':
+          description: Voto non valido (deve essere tra 1 e 5).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Gli admin non possono votare.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Percorso non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/treks/{id}/description:
+    patch:
+      summary: Aggiorna la descrizione di un trek (solo admin)
+      description: |
+        Modifica il campo `description` del trek identificato dall'ID numerico.
+        Richiede autenticazione JWT e ruolo `admin`.
+      tags: [Treks]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID numerico del trek.
+          example: 42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [description]
+              properties:
+                description:
+                  type: string
+                  example: "Percorso panoramico tra le cime delle Odle, adatto ad escursionisti esperti."
+      responses:
+        '200':
+          description: Descrizione aggiornata. Restituisce il trek aggiornato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trek'
+        '400':
+          description: Campo description mancante o non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Accesso riservato agli amministratori.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trek non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/treks/{id}/closed:
+    patch:
+      summary: Apri/chiudi un trek (solo admin)
+      description: |
+        Inverte il campo `closed` del trek (toggle).
+        Se `closed: false` → diventa `true` (percorso chiuso) e viceversa.
+        Richiede autenticazione JWT e ruolo `admin`.
+      tags: [Treks]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID numerico del trek.
+          example: 42
+      responses:
+        '200':
+          description: Stato aggiornato.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  closed:
+                    type: boolean
+                    example: true
+        '403':
+          description: Accesso riservato agli amministratori.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trek non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ==========================================================================
+  # ACTIVITIES — endpoint aggiuntivi
+  # ==========================================================================
+
+  /api/activities/mine:
+    get:
+      summary: Ottieni le attività create dall'utente autenticato
+      description: Restituisce tutte le attività di cui l'utente è organizzatore.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista delle attività dell'utente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Activity'
+        '401':
+          description: Token mancante o non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/joined:
+    get:
+      summary: Ottieni le attività a cui l'utente partecipa
+      description: Restituisce tutte le attività in cui l'utente è presente nella `partecipantList` ma non è l'organizzatore.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista delle attività a cui l'utente partecipa.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Activity'
+        '401':
+          description: Token mancante o non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/invited:
+    get:
+      summary: Ottieni le attività per cui l'utente ha ricevuto un invito
+      description: |
+        Restituisce le attività per cui esiste un `ActivityInvitation` con `receiver`
+        pari all'utente autenticato e `status: pending`.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista delle attività con invito pendente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Activity'
+        '401':
+          description: Token mancante o non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/{id}:
+    get:
+      summary: Ottieni un'attività per ID
+      description: |
+        Restituisce l'attività con la lista partecipanti popolata.
+        Aggiorna automaticamente lo stato a "Chiuso" se la data è passata.
+      tags: [Activities]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB dell'attività.
+          example: "664c3d4e0f1a2b3c4d5e6f7a"
+      responses:
+        '200':
+          description: Attività trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '400':
+          description: ID non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Attività non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Elimina un'attività
+      description: |
+        Elimina definitivamente l'attività. Solo l'organizzatore o un admin possono farlo.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB dell'attività.
+          example: "664c3d4e0f1a2b3c4d5e6f7a"
+      responses:
+        '200':
+          description: Attività eliminata.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Attività eliminata definitivamente"
+        '403':
+          description: Solo l'organizzatore o un admin possono eliminare l'attività.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Attività non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/{id}/join:
+    post:
+      summary: Partecipa a un'attività
+      description: |
+        Aggiunge l'utente autenticato alla `partecipantList` dell'attività.
+        Vincoli: attività aperta, non passata, non sospesa, non privata, posti disponibili.
+        Se raggiunge `maxParticipants`, lo stato passa automaticamente a "Chiuso".
+        Notifica l'organizzatore dell'iscrizione.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB dell'attività.
+          example: "664c3d4e0f1a2b3c4d5e6f7a"
+      responses:
+        '200':
+          description: Iscrizione avvenuta. Restituisce l'attività aggiornata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '400':
+          description: |
+            Possibili motivi: attività già passata, non aperta, già iscritto,
+            posti esauriti, sei l'organizzatore.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Attività privata (richede accettazione invito) o sospesa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Attività non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/{id}/leave:
+    post:
+      summary: Abbandona un'attività
+      description: |
+        Rimuove l'utente autenticato dalla `partecipantList`.
+        Se l'attività era "Chiusa" e ora ci sono posti liberi, torna ad "Aperto".
+        L'organizzatore non può abbandonare la propria attività.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB dell'attività.
+      responses:
+        '200':
+          description: Uscita avvenuta. Restituisce l'attività aggiornata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '400':
+          description: |
+            Possibili motivi: attività già passata, non sei iscritto,
+            sei l'organizzatore.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Attività non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/{id}/cancel:
+    patch:
+      summary: Annulla un'attività
+      description: |
+        Imposta lo stato a "Annullato". Solo l'organizzatore o un admin.
+        Non applicabile ad attività già passate o già annullate.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Attività annullata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '400':
+          description: Attività già passata o già annullata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Solo l'organizzatore può annullare.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/{id}/uncancel:
+    patch:
+      summary: Riattiva un'attività annullata
+      description: |
+        Riporta lo stato da "Annullato" ad "Aperto" o "Chiuso" in base ai posti.
+        Solo l'organizzatore o un admin. Non applicabile ad attività già passate.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Attività riattivata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '400':
+          description: Attività non annullata o già passata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Solo l'organizzatore può riattivare.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/{id}/close:
+    patch:
+      summary: Chiudi manualmente un'attività
+      description: |
+        Imposta lo stato a "Chiuso". Solo l'organizzatore o un admin.
+        Non applicabile se già chiusa o già passata.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Attività chiusa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '400':
+          description: Attività già chiusa o già passata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Solo l'organizzatore può chiudere.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/{id}/open:
+    patch:
+      summary: Riapri manualmente un'attività
+      description: |
+        Imposta lo stato a "Aperto". Solo l'organizzatore o un admin.
+        Non applicabile se già aperta, già passata, o se i posti sono esauriti.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Attività riaperta.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '400':
+          description: Attività già aperta, già passata, o posti esauriti.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Solo l'organizzatore può riaprire.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/{id}/report:
+    post:
+      summary: Segnala un'attività
+      description: |
+        Un partecipante (non l'organizzatore) segnala un'attività.
+        Un utente può segnalare la stessa attività una sola volta.
+        La segnalazione viene creata con `reportStatus: pending` e attende revisione admin.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB dell'attività.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  example: "L'organizzatore ha avuto un comportamento inappropriato."
+      responses:
+        '201':
+          description: Segnalazione inviata, in attesa di revisione.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Segnalazione inviata. Verrà esaminata dall'amministrazione."
+        '400':
+          description: |
+            Possibili motivi: non sei un partecipante, hai già segnalato, sei l'organizzatore,
+            motivo mancante.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Attività non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/{id}/reports/{reportId}/accept:
+    patch:
+      summary: Accetta una segnalazione su un'attività (solo admin)
+      description: |
+        Imposta `reportStatus: accepted`. Solo utenti con ruolo `admin`.
+        Il banner di avviso diventa visibile a tutti nella pagina dell'attività.
+        È possibile aggiungere una nota di revisione nel body.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB dell'attività.
+        - in: path
+          name: reportId
+          required: true
+          schema:
+            type: string
+          description: _id della segnalazione nell'array `reports`.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reviewNote:
+                  type: string
+                  nullable: true
+                  example: "Confermato dopo verifica."
+      responses:
+        '200':
+          description: Segnalazione accettata. Restituisce l'attività aggiornata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '403':
+          description: Accesso riservato agli amministratori.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Attività o segnalazione non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/{id}/reports/{reportId}/dismiss:
+    patch:
+      summary: Rigetta una segnalazione su un'attività (solo admin)
+      description: |
+        Imposta `reportStatus: dismissed`. Solo utenti con ruolo `admin`.
+        La segnalazione viene nascosta agli utenti.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: reportId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reviewNote:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Segnalazione rigettata. Restituisce l'attività aggiornata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '403':
+          description: Accesso riservato agli amministratori.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Attività o segnalazione non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/{id}/suspend:
+    patch:
+      summary: Sospendi un'attività (solo admin)
+      description: |
+        Sospende l'attività: imposta `suspended: true`, salva lo stato corrente in
+        `statusBeforeSuspend`, e imposta lo stato a "Annullato".
+        L'organizzatore non può modificare lo stato mentre l'attività è sospesa.
+        Registra l'azione nell'`adminLog`.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB dell'attività.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  nullable: true
+                  example: "Violazione delle linee guida della community."
+      responses:
+        '200':
+          description: Attività sospesa. Restituisce l'attività aggiornata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '400':
+          description: Attività già sospesa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Accesso riservato agli amministratori.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Attività non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/{id}/unsuspend:
+    patch:
+      summary: Rimuovi la sospensione di un'attività (solo admin)
+      description: |
+        Riattiva l'attività sospesa: imposta `suspended: false` e ripristina
+        lo stato salvato in `statusBeforeSuspend`. Registra nell'`adminLog`.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Sospensione rimossa. Restituisce l'attività aggiornata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '400':
+          description: L'attività non è sospesa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Accesso riservato agli amministratori.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/{id}/invites:
+    get:
+      summary: Ottieni gli inviti pendenti di un'attività
+      description: |
+        Restituisce tutti gli inviti con `status: pending` per l'attività specificata.
+        Solo l'organizzatore può visualizzarli.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB dell'attività.
+      responses:
+        '200':
+          description: Lista degli inviti pendenti.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivityInvitation'
+        '403':
+          description: Solo l'organizzatore può vedere gli inviti.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Attività non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/{id}/invites/me:
+    get:
+      summary: Ottieni l'invito ricevuto dall'utente per un'attività
+      description: |
+        Restituisce l'eventuale invito pendente ricevuto dall'utente autenticato
+        per la specifica attività. Restituisce un array vuoto se non esiste.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB dell'attività.
+      responses:
+        '200':
+          description: Array con l'invito (1 elemento) o array vuoto.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivityInvitation'
+
+  /api/activities/{id}/invite/{userId}:
+    post:
+      summary: Invia un invito a un amico
+      description: |
+        L'organizzatore invita un amico (relazione `accepted`) all'attività.
+        Non è possibile invitare utenti già partecipanti, se stessi, o non amici.
+        Se esiste già un invito precedente (accepted/declined), viene resettato a `pending`.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB dell'attività.
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB dell'utente da invitare.
+      responses:
+        '200':
+          description: Invito inviato nuovamente (esisteva già un invito precedente).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invito inviato nuovamente"
+                  invitation:
+                    $ref: '#/components/schemas/ActivityInvitation'
+        '201':
+          description: Invito creato e inviato.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invito inviato"
+                  invitation:
+                    $ref: '#/components/schemas/ActivityInvitation'
+        '400':
+          description: |
+            Possibili motivi: invito già pendente, utente già partecipante,
+            attività non aperta, sei te stesso, non è un amico.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Solo l'organizzatore può invitare.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/{id}/invites/{inviteId}/accept:
+    put:
+      summary: Accetta un invito a un'attività
+      description: |
+        Il destinatario dell'invito accetta e viene aggiunto alla `partecipantList`.
+        Aggiorna la notifica correlata a `status: accepted`.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB dell'attività.
+        - in: path
+          name: inviteId
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB dell'invito.
+      responses:
+        '200':
+          description: Invito accettato. Restituisce attività e invito aggiornati.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invito accettato"
+                  activity:
+                    $ref: '#/components/schemas/Activity'
+                  invitation:
+                    $ref: '#/components/schemas/ActivityInvitation'
+        '400':
+          description: |
+            Possibili motivi: invito non pending, attività non aperta o passata,
+            già iscritto, posti esauriti.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Solo il destinatario dell'invito può accettarlo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Invito o attività non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/{id}/invites/{inviteId}/decline:
+    put:
+      summary: Rifiuta un invito a un'attività
+      description: |
+        Il destinatario dell'invito lo rifiuta. L'invito passa a `status: declined`.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: inviteId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Invito rifiutato. Restituisce l'invito aggiornato.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invito rifiutato"
+                  invitation:
+                    $ref: '#/components/schemas/ActivityInvitation'
+        '403':
+          description: Solo il destinatario può rifiutare l'invito.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Invito non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/activities/{id}/invites/{inviteId}/cancel:
+    put:
+      summary: Annulla un invito inviato (organizzatore)
+      description: |
+        L'organizzatore annulla un invito pendente. L'invito viene eliminato o impostato a `declined`.
+      tags: [Activities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: inviteId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Invito annullato.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invito annullato"
+        '403':
+          description: Solo l'organizzatore può annullare l'invito.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Invito non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ==========================================================================
+  # DIARY — endpoint aggiuntivi
+  # ==========================================================================
+
+  /api/diary/stats:
+    get:
+      summary: Statistiche aggregate del diario
+      description: |
+        Calcola statistiche aggregate su tutte le voci del diario dell'utente:
+        totale uscite, km, ore, minuti, media valutazione e percentuali di difficoltà.
+        I km e la durata vengono estratti dal GPX se disponibile, altrimenti dai dati del trek.
+      tags: [Diary]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Statistiche calcolate.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiaryStats'
+        '401':
+          description: Token mancante o non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/diary/{id}:
+    get:
+      summary: Ottieni una voce del diario per ID
+      description: |
+        Restituisce la voce del diario dell'utente autenticato identificata dall'`_id`.
+        La voce deve appartenere all'utente (controllo userId).
+      tags: [Diary]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB della voce del diario.
+          example: "664d4e5f1a2b3c4d5e6f7a8b"
+      responses:
+        '200':
+          description: Voce trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiaryEntry'
+        '404':
+          description: Voce non trovata (non esiste o non appartiene all'utente).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Aggiorna una voce del diario
+      description: |
+        Aggiorna i campi di una voce del diario dell'utente autenticato.
+        Solo i campi presenti nel body vengono aggiornati (merge parziale).
+        Il `trekId` accetta l'ID numerico del trek (campo `id`).
+      tags: [Diary]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB della voce.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                titolo:
+                  type: string
+                data:
+                  type: string
+                  format: date-time
+                note:
+                  type: string
+                  nullable: true
+                foto:
+                  type: array
+                  items:
+                    type: string
+                valutazione:
+                  type: number
+                  minimum: 1
+                  maximum: 5
+                  nullable: true
+                completato:
+                  type: boolean
+                trekId:
+                  type: number
+                  nullable: true
+                  description: ID numerico del trek (campo `id`, non `_id`).
+                percorsoPersonalizzato:
+                  type: string
+                  nullable: true
+                gpxData:
+                  type: string
+                  nullable: true
+                  description: GeoJSON del tracciato in formato stringa.
+                segnalazione:
+                  type: object
+                  nullable: true
+                  properties:
+                    tipo:
+                      type: string
+                      enum: [Utente, "Sentiero danneggiato", "Neve/ghiaccio", "Sentiero chiuso", "Fauna pericolosa", Altro]
+                    descrizione:
+                      type: string
+                      maxLength: 1000
+                    utenteId:
+                      type: string
+                      nullable: true
+      responses:
+        '200':
+          description: Voce aggiornata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiaryEntry'
+        '404':
+          description: Voce non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Elimina una voce del diario
+      description: Elimina definitivamente la voce. Solo il proprietario può farlo.
+      tags: [Diary]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Voce eliminata.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Voce eliminata"
+        '404':
+          description: Voce non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/diary/segnalazioni-accettate:
+    get:
+      summary: Segnalazioni accettate per un percorso (pubblico)
+      description: |
+        Endpoint pubblico (senza autenticazione). Restituisce il numero e i tipi di segnalazioni
+        con `stato: accepted` per il percorso specificato.
+        Usato dal frontend per mostrare il banner di avviso nella pagina di dettaglio trek.
+      tags: [Diary]
+      parameters:
+        - in: query
+          name: trekId
+          required: true
+          schema:
+            type: integer
+          description: ID numerico del trek.
+          example: 42
+      responses:
+        '200':
+          description: Conteggio e tipi di segnalazioni accepted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: number
+                    example: 2
+                  tipi:
+                    type: array
+                    items:
+                      type: string
+                    example: ["Neve/ghiaccio", "Sentiero danneggiato"]
+        '400':
+          description: trekId obbligatorio o non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Percorso non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/diary/segnalazioni:
+    get:
+      summary: Lista segnalazioni su percorso (solo admin)
+      description: |
+        Restituisce tutte le voci del diario con segnalazione (escl. tipo "Utente")
+        per il percorso specificato. Solo admin.
+        Ordine: pending → accepted → dismissed.
+      tags: [Diary]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: trekId
+          required: true
+          schema:
+            type: integer
+          description: ID numerico del trek.
+          example: 42
+      responses:
+        '200':
+          description: Lista delle voci con segnalazione.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiaryEntry'
+        '400':
+          description: trekId obbligatorio.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Accesso riservato agli amministratori.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Percorso non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/diary/segnalazioni/{entryId}/accept:
+    patch:
+      summary: Accetta una segnalazione su percorso (solo admin)
+      description: Imposta stato accepted sulla segnalazione della voce del diario.
+      tags: [Diary]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: entryId
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB della voce del diario.
+      responses:
+        '200':
+          description: Segnalazione accettata.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Segnalazione aggiornata a \"accepted\""
+                  entry:
+                    $ref: '#/components/schemas/DiaryEntry'
+        '400':
+          description: La voce non ha una segnalazione o è già nel nuovo stato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Accesso riservato agli amministratori.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Voce non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/diary/segnalazioni/{entryId}/dismiss:
+    patch:
+      summary: Rigetta una segnalazione su percorso (solo admin)
+      description: Imposta stato dismissed sulla segnalazione della voce del diario.
+      tags: [Diary]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: entryId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Segnalazione rigettata.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  entry:
+                    $ref: '#/components/schemas/DiaryEntry'
+        '403':
+          description: Accesso riservato agli amministratori.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Voce non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/diary/segnalazioni/{entryId}/reopen:
+    patch:
+      summary: Riapri una segnalazione in pending (solo admin)
+      description: Riporta stato pending per rivalutare una segnalazione gia gestita.
+      tags: [Diary]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: entryId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Segnalazione riportata in pending.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  entry:
+                    $ref: '#/components/schemas/DiaryEntry'
+        '403':
+          description: Accesso riservato agli amministratori.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Voce non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/diary/segnalazioni-utenti:
+    get:
+      summary: Lista segnalazioni di tipo "Utente" (solo admin)
+      description: |
+        Restituisce tutte le voci del diario con segnalazione di tipo "Utente"
+        (segnalazioni riguardanti il comportamento di un altro utente).
+        Ordine: pending → accepted → dismissed. Solo admin.
+      tags: [Diary]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista segnalazioni su utenti.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiaryEntry'
+        '403':
+          description: Accesso riservato agli amministratori.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ==========================================================================
+  # USERS — endpoint aggiuntivi
+  # ==========================================================================
+
+  /api/users/{id}:
+    get:
+      summary: Ottieni un utente per ID
+      description: |
+        Restituisce nome, cognome, nickname ed email dell'utente.
+        Endpoint pubblico (non richiede autenticazione).
+      tags: [Users]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB dell'utente.
+          example: "664a1f2e8b3c4d5e6f7a8b9c"
+      responses:
+        '200':
+          description: Utente trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeUser'
+        '400':
+          description: ID non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Utente non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/users/me:
+    get:
+      summary: Ottieni il profilo completo dell'utente autenticato
+      description: |
+        Restituisce tutti i campi dell'utente (incluse notifiche e favoriteTreks).
+        Non esclude i campi sensibili — usare per il profilo personale.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profilo utente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Token mancante o non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Aggiorna il profilo dell'utente autenticato
+      description: |
+        Aggiorna nome, cognome, nickname e/o email.
+        Se l'email viene modificata, viene inviata una mail di verifica al nuovo indirizzo:
+        la vecchia email rimane attiva fino alla conferma cliccando il link.
+        Il nickname deve essere univoco.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nome:
+                  type: string
+                  example: "Mario"
+                cognome:
+                  type: string
+                  nullable: true
+                  example: "Rossi"
+                nickname:
+                  type: string
+                  example: "marioR_new"
+                email:
+                  type: string
+                  format: email
+                  example: "nuova.email@example.com"
+      responses:
+        '200':
+          description: Profilo aggiornato.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Profilo aggiornato con successo"
+        '400':
+          description: Nickname già in uso o email già associata ad altro account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Token mancante o non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Elimina l'account dell'utente autenticato
+      description: Elimina definitivamente l'account. L'operazione è irreversibile.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Account eliminato.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Account eliminato"
+        '401':
+          description: Token mancante o non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/users/me/avatar:
+    put:
+      summary: Aggiorna l'avatar dell'utente
+      description: Salva l'immagine avatar come stringa Base64 nel campo `avatarUrl`.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [avatarBase64]
+              properties:
+                avatarBase64:
+                  type: string
+                  description: Immagine codificata in Base64.
+                  example: "data:image/jpeg;base64,/9j/4AAQ..."
+      responses:
+        '200':
+          description: Avatar aggiornato.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Avatar aggiornato"
+        '404':
+          description: Utente non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Elimina l'avatar dell'utente
+      description: Imposta `avatarUrl` a null.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Avatar eliminato.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Avatar eliminato"
+        '404':
+          description: Utente non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/users/me/password:
+    put:
+      summary: Aggiorna la password dell'utente autenticato
+      description: |
+        Aggiorna la password. Richiede la password attuale per conferma.
+        Regole password: 6–32 caratteri, almeno una lettera maiuscola, una minuscola e un numero.
+        Per account OAuth senza password, usare prima `POST /api/auth/request-temp-password`.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                  format: password
+                  example: "VecchiaPassword1"
+                newPassword:
+                  type: string
+                  format: password
+                  example: "NuovaPassword2"
+      responses:
+        '200':
+          description: Password aggiornata.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password aggiornata con successo"
+        '400':
+          description: |
+            Possibili motivi: campi mancanti, password attuale errata,
+            nuova password non valida, account senza password (OAuth).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Token mancante o non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/users/me/notifications:
+    get:
+      summary: Ottieni le notifiche dell'utente
+      description: Restituisce le notifiche dell'utente autenticato, ordinate dalla più recente.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista delle notifiche.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+        '401':
+          description: Token mancante o non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Elimina tutte le notifiche dell'utente
+      description: Svuota l'array `notifications` dell'utente autenticato.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Notifiche eliminate.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Notifiche eliminate"
+
+  /api/users/me/notifications/read-all:
+    put:
+      summary: Segna tutte le notifiche come lette
+      description: Imposta read true su tutte le notifiche dell'utente.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Tutte le notifiche segnate come lette.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Tutte le notifiche sono segnate come lette"
+
+  /api/users/me/notifications/{notifId}/read:
+    put:
+      summary: Segna una notifica come letta
+      description: Imposta read true sulla singola notifica.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: notifId
+          required: true
+          schema:
+            type: string
+          description: _id della notifica nell'array `notifications`.
+      responses:
+        '200':
+          description: Notifica segnata come letta.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Notifica segnata come letta"
+        '404':
+          description: Notifica non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/users/me/notifications/{notifId}/status:
+    put:
+      summary: Aggiorna lo status di una notifica
+      description: |
+        Aggiorna il campo `status` (accepted / rejected) di una notifica e la segna come letta.
+        Usato per le notifiche di tipo `friend_request` e `activity_invite`.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: notifId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [accepted, rejected]
+                  example: "accepted"
+      responses:
+        '200':
+          description: Notifica aggiornata.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Notifica aggiornata"
+        '400':
+          description: Status non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Notifica non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/users/favorites:
+    get:
+      summary: Ottieni i trek preferiti dell'utente
+      description: |
+        Restituisce la lista dei trek preferiti dell'utente autenticato, popolati con i dati del trek.
+        Gli admin non possono avere trek preferiti (403).
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista dei trek preferiti.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Trek'
+        '403':
+          description: Gli admin non possono avere percorsi preferiti.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/users/favorites/{trekId}:
+    post:
+      summary: Aggiungi un trek ai preferiti
+      description: |
+        Aggiunge il trek identificato dall'ID numerico ai `favoriteTreks` dell'utente.
+        Gli admin non possono avere trek preferiti (403).
+        Restituisce l'utente aggiornato con i favoriti popolati.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: trekId
+          required: true
+          schema:
+            type: integer
+          description: ID numerico del trek.
+          example: 42
+      responses:
+        '200':
+          description: Trek aggiunto ai preferiti. Restituisce l'utente aggiornato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Trek già nei preferiti.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Gli admin non possono avere percorsi preferiti.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trek o utente non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Rimuovi un trek dai preferiti
+      description: |
+        Rimuove il trek dai `favoriteTreks` dell'utente. Restituisce l'utente aggiornato.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: trekId
+          required: true
+          schema:
+            type: integer
+          description: ID numerico del trek.
+      responses:
+        '200':
+          description: Trek rimosso dai preferiti. Restituisce l'utente aggiornato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Trek non presente nei preferiti.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trek o utente non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/users/search:
+    get:
+      summary: Cerca utenti per nickname/nome/cognome
+      description: |
+        Ricerca case-insensitive su nickname, nome e cognome. Richiede almeno 2 caratteri.
+        Esclude l'utente autenticato dai risultati. Max 10 risultati.
+        Restituisce solo campi pubblici: nome, cognome, nickname, avatarUrl.
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+            minLength: 2
+          description: Query di ricerca (minimo 2 caratteri).
+          example: "mario"
+      responses:
+        '200':
+          description: Lista utenti trovati (max 10).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SafeUser'
+        '400':
+          description: Query troppo corta (meno di 2 caratteri).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/users/verify-email-change/{token}:
+    get:
+      summary: Conferma cambio email
+      description: |
+        L'utente clicca il link ricevuto alla nuova email.
+        Se il token è valido e non scaduto, aggiorna `email` con il nuovo indirizzo.
+        Reindirizza al frontend con query param `email-verified=success|invalid|taken`.
+      tags: [Users]
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+          description: Token di verifica cambio email (hex 32 byte).
+      responses:
+        '302':
+          description: |
+            Redirect al frontend su `/account/profile?email-verified=success` (successo),
+            `?email-verified=invalid` (token non valido/scaduto),
+            o `?email-verified=taken` (email già in uso).
+
+  # ==========================================================================
+  # ADMIN
+  # ==========================================================================
+
+  /api/admin/users:
+    get:
+      summary: Ottieni tutti gli utenti (solo admin)
+      description: |
+        Restituisce la lista degli utenti con ruolo `user`.
+        Supporta filtri via query string: ricerca testuale e filtro per stato.
+        Richiede autenticazione JWT e ruolo `admin`.
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Ricerca case-insensitive su nickname, nome, cognome, email (min 2 caratteri).
+          example: "mario"
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [active, suspended, banned]
+          description: Filtra utenti per stato.
+          example: "suspended"
+      responses:
+        '200':
+          description: Lista degli utenti.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Token mancante o non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Accesso riservato agli amministratori.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/admin/users/{id}:
+    get:
+      summary: Ottieni un utente per ID (solo admin)
+      description: |
+        Restituisce dati dell'utente con la lista completa delle segnalazioni ricevute.
+        Richiede autenticazione JWT e ruolo `admin`.
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB dell'utente.
+      responses:
+        '200':
+          description: Utente trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: ID non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Accesso riservato agli amministratori.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Utente non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/admin/users/{id}/suspend:
+    patch:
+      summary: Sospendi un utente (solo admin)
+      description: |
+        Sospende l'utente per un numero specificato di giorni.
+        Un utente bannato non può essere sospeso (400).
+        Imposta `isSuspended: true` e calcola `suspendedUntil`.
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [days]
+              properties:
+                days:
+                  type: number
+                  minimum: 1
+                  description: Numero di giorni di sospensione.
+                  example: 7
+      responses:
+        '200':
+          description: Utente sospeso.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Utente sospeso per 7 giorni"
+        '400':
+          description: Numero di giorni non valido o utente già bannato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Utente non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/admin/users/{id}/unsuspend:
+    patch:
+      summary: Rimuovi la sospensione di un utente (solo admin)
+      description: Imposta isSuspended false e suspendedUntil null.
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sospensione rimossa.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Sospensione rimossa"
+        '404':
+          description: Utente non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/admin/users/{id}/ban:
+    patch:
+      summary: Banna permanentemente un utente (solo admin)
+      description: |
+        Imposta `isBanned: true` e rimuove eventuale sospensione attiva.
+        Il ban è permanente e impedisce il login.
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Utente bannato.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Utente bannato"
+        '404':
+          description: Utente non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/admin/users/{id}/unban:
+    patch:
+      summary: Rimuovi il ban di un utente (solo admin)
+      description: Imposta isBanned false.
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ban rimosso.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Ban rimosso"
+        '404':
+          description: Utente non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/admin/users/{id}/reports/{reportId}/{action}:
+    patch:
+      summary: Gestisci una segnalazione su un utente (solo admin)
+      description: |
+        Accetta (`action: accept`) o rigetta (`action: dismiss`) una segnalazione.
+        Aggiorna `reportStatus`, `reviewedBy` e `reviewedAt`.
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB dell'utente segnalato.
+        - in: path
+          name: reportId
+          required: true
+          schema:
+            type: string
+          description: _id della segnalazione nell'array `reports`.
+        - in: path
+          name: action
+          required: true
+          schema:
+            type: string
+            enum: [accept, dismiss]
+          description: Azione da eseguire sulla segnalazione.
+      responses:
+        '200':
+          description: Segnalazione aggiornata. Restituisce l'utente aggiornato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Azione non valida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Utente o segnalazione non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ==========================================================================
+  # FRIENDSHIPS
+  # ==========================================================================
+
+  /api/friendships:
+    get:
+      summary: Ottieni la lista degli amici
+      description: |
+        Restituisce gli amici dell'utente autenticato (amicizie con `status: accepted`).
+        Ogni elemento include `friendshipId`, i dati dell'amico e la data di inizio amicizia.
+      tags: [Friendships]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista degli amici.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    friendshipId:
+                      type: string
+                      example: "665b2c3d4e5f6a7b8c9d0e1f"
+                    user:
+                      $ref: '#/components/schemas/SafeUser'
+                    since:
+                      type: string
+                      format: date-time
+                      description: Data di accettazione dell'amicizia.
+
+  /api/friendships/request/{userId}:
+    post:
+      summary: Invia una richiesta di amicizia
+      description: |
+        Invia una richiesta di amicizia all'utente con l'ID specificato.
+        Non è possibile inviare richieste a se stessi, a utenti già amici,
+        o se esiste già una richiesta pendente.
+        Se era stato rifiutato in precedenza, viene re-inviata.
+        Invia una notifica al destinatario di tipo `friend_request`.
+      tags: [Friendships]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB dell'utente destinatario.
+      responses:
+        '200':
+          description: Richiesta inviata nuovamente (era precedentemente rifiutata).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Richiesta di amicizia inviata nuovamente"
+                  friendship:
+                    $ref: '#/components/schemas/Friendship'
+        '201':
+          description: Richiesta di amicizia creata.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Richiesta di amicizia inviata"
+                  friendship:
+                    $ref: '#/components/schemas/Friendship'
+        '400':
+          description: Siete già amici, richiesta già pendente, o sei te stesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Utente destinatario non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/friendships/requests/incoming:
+    get:
+      summary: Ottieni le richieste di amicizia ricevute
+      description: Restituisce le richieste con status pending ricevute dall'utente.
+      tags: [Friendships]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista delle richieste in entrata.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Friendship'
+
+  /api/friendships/requests/outgoing:
+    get:
+      summary: Ottieni le richieste di amicizia inviate
+      description: Restituisce le richieste con status pending inviate dall'utente.
+      tags: [Friendships]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista delle richieste in uscita.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Friendship'
+
+  /api/friendships/accept/{friendshipId}:
+    put:
+      summary: Accetta una richiesta di amicizia
+      description: |
+        Solo il destinatario (`receiver`) può accettare la richiesta.
+        Imposta `status: accepted`. Invia notifica al mittente di tipo `friend_accepted`.
+      tags: [Friendships]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: friendshipId
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB della relazione Friendship.
+      responses:
+        '200':
+          description: Richiesta accettata.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Richiesta di amicizia accettata."
+                  friendship:
+                    $ref: '#/components/schemas/Friendship'
+        '400':
+          description: Richiesta non in stato pending.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Solo il destinatario può accettare.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Richiesta non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/friendships/decline/{friendshipId}:
+    put:
+      summary: Rifiuta una richiesta di amicizia
+      description: |
+        Solo il destinatario può rifiutare. Imposta `status: declined`.
+        Invia notifica al mittente di tipo `friend_declined`.
+      tags: [Friendships]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: friendshipId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Richiesta rifiutata.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Richiesta di amicizia rifiutata."
+                  friendship:
+                    $ref: '#/components/schemas/Friendship'
+        '403':
+          description: Solo il destinatario può rifiutare.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Richiesta non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/friendships/{friendshipId}:
+    delete:
+      summary: Rimuovi un'amicizia
+      description: |
+        Elimina la relazione di amicizia. Entrambi i membri possono rimuoverla.
+      tags: [Friendships]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: friendshipId
+          required: true
+          schema:
+            type: string
+          description: _id MongoDB della relazione Friendship.
+      responses:
+        '200':
+          description: Amicizia rimossa.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Amicizia rimossa"
+        '403':
+          description: Non autorizzato (non sei parte di questa amicizia).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Amicizia non trovata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/friendships/search:
+    get:
+      summary: Cerca utenti per aggiungere come amici
+      description: |
+        Ricerca case-insensitive su nickname, nome e cognome.
+        Esclude: l'utente stesso, utenti già amici, utenti con richiesta pendente.
+        Max 10 risultati. Restituisce solo: nome, cognome, nickname, avatarUrl.
+      tags: [Friendships]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+            minLength: 2
+          description: Query di ricerca (minimo 2 caratteri).
+          example: "luca"
+      responses:
+        '200':
+          description: Lista utenti trovati (max 10).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SafeUser'
+        '400':
+          description: Query troppo corta.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ==========================================================================
+  # EVENTS
+  # ==========================================================================
+
+  /api/events:
+    get:
+      summary: Ottieni eventi pubblici
+      description: |
+        Restituisce eventi filtrati per topic rilevanti (`Ambiente`, `Beni comuni`, `Tempo libero`),
+        deduplicati per titolo/data/luogo, ordinati per data di inizio, limitati a 20 risultati.
+        Fonti: Comune di Trento, SAT, manuale. Non richiede autenticazione.
+      tags: [Events]
+      responses:
+        '200':
+          description: Lista eventi pubblici.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+        '500':
+          description: Errore interno del server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ==========================================================================
+  # ROUTES
+  # ==========================================================================
+
+  /api/route/{id}:
+    get:
+      summary: Ottieni il tracciato GeoJSON di un trek
+      description: |
+        Calcola il percorso foot-hiking dal punto di partenza al punto di arrivo del trek
+        tramite OpenRouteService (ORS). Usa l'ID numerico del trek (campo `id`).
+        Non richiede autenticazione.
+      tags: [Routes]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID numerico del trek.
+          example: 42
+      responses:
+        '200':
+          description: Tracciato GeoJSON e sommario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteResponse'
+        '400':
+          description: Coordinate mancanti nel trek.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trek non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Errore nel calcolo del percorso (es. ORS non raggiungibile).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/route/{id}/custom:
+    get:
+      summary: Ottieni il tracciato con partenza personalizzata
+      description: |
+        Calcola il percorso foot-hiking dal punto di partenza personalizzato
+        (passato come query string) al punto di arrivo del trek.
+      tags: [Routes]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID numerico del trek.
+        - in: query
+          name: startLat
+          required: true
+          schema:
+            type: number
+          description: Latitudine del punto di partenza personalizzato.
+          example: 46.6200
+        - in: query
+          name: startLon
+          required: true
+          schema:
+            type: number
+          description: Longitudine del punto di partenza personalizzato.
+          example: 11.7600
+      responses:
+        '200':
+          description: Tracciato GeoJSON e sommario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteResponse'
+        '400':
+          description: Coordinate partenza non valide o coordinate arrivo mancanti.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trek non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/route/{id}/variants:
+    get:
+      summary: Ottieni le varianti di percorso per profilo
+      description: |
+        Calcola in parallelo 4 varianti di percorso con profili diversi:
+        1. `foot-hiking` — sentiero hiking
+        2. `foot-walking` — a piedi (strada/valle)
+        3. `cycling-mountain` — MTB
+        4. `cycling-road` — bici da strada
+
+        La partenza può essere sovrascritta via query string. Se una variante fallisce,
+        restituisce `error: true` invece di bloccare tutta la risposta.
+      tags: [Routes]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID numerico del trek.
+        - in: query
+          name: startLat
+          schema:
+            type: number
+          description: Latitudine partenza personalizzata (opzionale, default dal trek).
+        - in: query
+          name: startLon
+          schema:
+            type: number
+          description: Longitudine partenza personalizzata (opzionale, default dal trek).
+      responses:
+        '200':
+          description: Quattro varianti di percorso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteVariantsResponse'
+        '400':
+          description: Coordinate partenza non valide.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trek non trovato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/route/{id}/parking:
+    get:
+      summary: Ottieni il percorso dal parcheggio più vicino
+      description: |
+        Cerca il parcheggio più vicino al punto di partenza del trek (o a coordinate custom)
+        tramite Overpass API (OSM), entro 3 km.
+        Calcola poi il percorso foot-hiking dal parcheggio all'arrivo del trek.
+        Restituisce anche coordinate e label del parcheggio trovato.
+      tags: [Routes]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID numerico del trek.
+        - in: query
+          name: startLat
+          schema:
+            type: number
+          description: Latitudine di partenza custom (opzionale).
+        - in: query
+          name: startLon
+          schema:
+            type: number
+          description: Longitudine di partenza custom (opzionale).
+      responses:
+        '200':
+          description: Percorso dal parcheggio con coordinate e label.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  label:
+                    type: string
+                    example: "Parcheggio Malga Zannes (50 posti)"
+                  startLat:
+                    type: number
+                    example: 46.6185
+                  startLon:
+                    type: number
+                    example: 11.7555
+                  distanceMeters:
+                    type: number
+                    nullable: true
+                  durationSeconds:
+                    type: number
+                    nullable: true
+                  geojson:
+                    type: object
+                    additionalProperties: true
+        '404':
+          description: Trek non trovato oppure nessun parcheggio entro 3 km.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Errore nel calcolo del percorso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/request-temp-password:
+    post:
+      summary: Richiedi una password temporanea
+      description: |
+        Genera una password temporanea (valida 1 ora) e la invia via email.
+        Usato quando l'utente ha dimenticato la password o ha un account OAuth
+        e vuole impostare una password locale.
+        Richiede la verifica Cloudflare Turnstile (`turnstileToken` nel body).
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, turnstileToken]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "mario.rossi@example.com"
+                turnstileToken:
+                  type: string
+                  example: "0.xxxxxx..."
+      responses:
+        '200':
+          description: Password temporanea inviata via email.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password provvisoria inviata via email. Controlla la tua casella di posta."
+        '400':
+          description: Email mancante o non valida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: CAPTCHA Turnstile non valido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Utente non trovato.
           content:
             application/json:
               schema:

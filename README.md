@@ -1,7 +1,12 @@
-# Smart Hiking Planner
+# DoloMate
 
-Smart Hiking Planner is a web application designed to help users explore and plan hiking activities in Trentino.
-It provides personalized route recommendations based on user preferences and external conditions, along with interactive maps, offline GPX support, and social features for organizing and sharing outdoor experiences.
+DoloMate is a full-stack web application designed to help users discover, plan, and share hiking experiences in the Dolomites.
+The platform combines route exploration with social and organizational features: users can browse and rate trekking routes, save favorites, keep a personal hiking diary with notes and photos, and create group activities involving other users.
+
+DoloMate also focuses on security and reliability, integrating modern authentication mechanisms (JWT, OAuth2), protection against common web threats (CSRF, bot protection), and administrative tools for content moderation and user management.
+From a technical perspective, the system is built as a full-stack application with a RESTful backend developed in Node.js/Express and a React/TypeScript frontend, using MongoDB for data persistence.
+
+The goal of the project is to enhance the hiking experience by combining route planning, real-time data, and community interaction in a single platform.
 
 ---
 
@@ -19,7 +24,7 @@ The goal is to design and develop a system that improves the hiking experience b
 * Download routes (GPX) for offline use
 * Save favorite routes
 * Personal hiking diary with notes and statistics
-* Upload photos and contribute to trail information
+* Upload photos and notes in your on personale diary
 * Create and manage group activities
 * Notifications for participation requests and updates
 * Report trail conditions (snow, obstacles, etc.)
@@ -43,24 +48,28 @@ The goal is to design and develop a system that improves the hiking experience b
 
 * Weather APIs for real-time and forecast data
 * Map and geolocation services
-* (Optional) services for estimating trail popularity
 
 ---
 
 ## Objectives
 
-* Improve the hiking experience through smart recommendations
+* Allowing people to meet others
 * Increase safety using updated environmental data
 * Promote outdoor activities and user interaction
 
 ---
 
-## Technologies (to be defined)
+## Technologies 
 
-* Frontend: TBD
-* Backend: TBD
-* Database: TBD
+* Frontend: React + TypeScript + Vite
+* Runtime: Node.js + Express 
 * APIs: Weather, Maps, Geolocation
+* Database: MongoDB + Mongoose 
+* Database cloud: MongoDB Atlas 
+* Autenticazione: JWT (`jsonwebtoken`) + bcrypt 
+* OAuth2: Google Auth Library + GitHub REST API 
+* Email: Nodemailer 
+* Hosting: Render (backend + frontend statico) 
 
 ---
 
@@ -74,7 +83,7 @@ The goal is to design and develop a system that improves the hiking experience b
 
 ## Project Info
 
-* **Course:** Software Engineering
+### **Course:** Software Engineering
 
 * **Deliverable:** D1
 * **Deadline:** 27/03/2026
@@ -85,13 +94,13 @@ The goal is to design and develop a system that improves the hiking experience b
 * **Deliverable:** D2
 * **Deadline:** 24/04/2026
 
-***
-
 * **Deliverable:** D3
 * **Deadline:** 17/05/2026
 
 * **Deliverable:** D4
-* **Deadline:** 07/06/2026
+* **Deadline:** 10/06/2026
+
+### Project structure
 
 ```
 Ingegneria_del_software_18
@@ -99,6 +108,7 @@ Ingegneria_del_software_18
 │  ├─ .dockerignore
 │  ├─ controllers
 │  │  ├─ activityController.js
+│  │  ├─ adminController.js
 │  │  ├─ authController.js
 │  │  ├─ diaryController.js
 │  │  ├─ routeController.js
@@ -119,6 +129,7 @@ Ingegneria_del_software_18
 │  │  └─ verifyTurnstile.js
 │  ├─ routes
 │  │  ├─ activityRoutes.js
+│  │  ├─ adminRoutesAdmin.js
 │  │  ├─ authRoutes.js
 │  │  ├─ diaryRoutes.js
 │  │  ├─ routeRoutes.js
@@ -150,11 +161,14 @@ Ingegneria_del_software_18
 │        ├─ db.js
 │        └─ tokens.js
 ├─ docker-compose.yml
+├─ docker-compose.prod.yml
 ├─ frontend
 │  ├─ .dockerignore
 │  ├─ Dockerfile
+│  ├─ Dockerfile.prod
 │  ├─ eslint.config.js
 │  ├─ index.html
+│  ├─ nginx.conf
 │  ├─ package-lock.json
 │  ├─ package.json
 │  ├─ public
@@ -162,13 +176,13 @@ Ingegneria_del_software_18
 │  │  ├─ logo_ing_sw.svg
 │  │  ├─ moon.svg
 │  │  └─ sun.svg
-│  ├─ README.md
 │  ├─ src
 │  │  ├─ App.module.css
 │  │  ├─ App.tsx
 │  │  ├─ auth
 │  │  │  ├─ api.ts
 │  │  │  ├─ ProtectedRoute.ts
+│  │  │  ├─ BanModal.module.css
 │  │  │  └─ AuthProvider.tsx
 │  │  ├─ components
 │  │  │  ├─ ActivityCard.module.css
@@ -205,18 +219,19 @@ Ingegneria_del_software_18
 │  │  ├─ main.tsx
 │  │  ├─ pages
 │  │  │  ├─ account
-│  │  │  │  ├─ AccountPage.tsx
-│  │  │  │  ├─ PolicyPage.tsx
 │  │  │  │  ├─ ProfilePage.module.css
-│  │  │  │  ├─ ProfilePage.tsx
-│  │  │  │  └─ SecurityPage.tsx
+│  │  │  │  └─ ProfilePage.tsx
 │  │  │  ├─ admin
 │  │  │  │  ├─ AdminattivitaPage.module.css
 │  │  │  │  ├─ AdminCreaAttivita.tsx
 │  │  │  │  ├─ AdminDettagliAttivita.css
 │  │  │  │  ├─ AdminVisualizzaListaAttivitaPage.tsx
 │  │  │  │  ├─ Gestionesegnalazioni.module.css
-│  │  │  │  └─ GestioneSegnalazioniPage.tsx
+│  │  │  │  ├─ GestioneSegnalazioniPage.tsx
+│  │  │  │  ├─ TrekCreateAdmin.css
+│  │  │  │  ├─ TrekDetailsAdmin.tsx
+│  │  │  │  ├─ UtentiPageAdmin.module.css
+│  │  │  │  └─ UtentiPageAdmin.tsx
 │  │  │  ├─ amici
 │  │  │  │  ├─ Friends.module.css
 │  │  │  │  └─ Friends.tsx
@@ -237,7 +252,6 @@ Ingegneria_del_software_18
 │  │  │  │  ├─ DettagliVoceDiarioPage.tsx
 │  │  │  │  ├─ Diario.module.css
 │  │  │  │  └─ VisualizzaDiarioPage.tsx
-│  │  │  ├─ Home.tsx
 │  │  │  ├─ homepage
 │  │  │  │  ├─ AdminHomepage.tsx
 │  │  │  │  ├─ Homepage.tsx
@@ -254,7 +268,9 @@ Ingegneria_del_software_18
 │  │  │  │  ├─ Treks.module.css
 │  │  │  │  └─ Treks.tsx
 │  │  │  └─ versione
+│  │  │     ├─ VersioneCorrentePage.module.css
 │  │  │     └─ VersioneCorrentePage.tsx
+│  │  ├─ Home.tsx
 │  │  ├─ ScrollToTop.tsx
 │  │  └─ types
 │  │     ├─ Activity.ts
@@ -276,5 +292,6 @@ Ingegneria_del_software_18
 ├─ LICENSE
 ├─ package-lock.json
 ├─ package.json
+├─ RELEASE.md
 └─ README.md
 ```
